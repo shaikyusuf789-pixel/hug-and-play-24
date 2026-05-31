@@ -6,7 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 function createSupabaseAdminClient() {
-  const SUPABASE_URL = "https://klhcrdacefntzqwqwiiu.supabase.co";
+  const SUPABASE_URL = "https://eozteueesaemhcmbqcxt.supabase.co";
   const SUPABASE_SERVICE_ROLE_KEY = process.env.CUSTOM_SUPABASE_SERVICE_ROLE_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
