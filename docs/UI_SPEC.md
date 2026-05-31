@@ -19,8 +19,8 @@ Sky Studio is a premium, autonomous AI video production pipeline designed for SK
 ![Dashboard](screenshots/dashboard.png)
 - **Purpose**: High-level command center for the Idea Engine.
 - **UI Components**:
-  - **Phase 1 Header**: Title and subtitle with live status indicators.
-  - **Control Bar**: Watchdog (auto-run) toggle, interval slider, and "Initialize Scraper" button.
+  - **System Core v4.2 Header**: Title and subtitle with live status indicators.
+  - **Action Bar**: "Initialize Scraper" (manual trigger) and "Backup" (GitHub sync).
   - **Status Tiles**: Real-time counts of ideas at each stage (Pending, Approved, Priority, etc.).
 - **Logic**: Calls `run-engine` Edge Function to scrape YouTube channels via Apify.
 - **Data**: Reads from `raw_content`, `app_settings`, and `sources_master` tables.
