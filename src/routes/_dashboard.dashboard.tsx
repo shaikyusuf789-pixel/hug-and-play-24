@@ -19,11 +19,10 @@ const DASHBOARD_TABLES = [
   "sources_master",
   "raw_content",
   "scripts",
-  "user_uploads",
+  "script_chunks",
   "app_settings",
   "notifications",
   "daily_backup_logs",
-  "script_chunks",
   "youtube_seo",
   "ai_chat_memory"
 ];
