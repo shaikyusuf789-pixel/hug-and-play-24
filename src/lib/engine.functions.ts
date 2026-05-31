@@ -398,3 +398,13 @@ export const getDashboardStats = createServerFn({ method: "GET" })
       audioDone: audioDone.count ?? 0,
     };
   });
+
+export const getSources = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { data, error } = await supabaseAdmin
+      .from("sources_master")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data;
+  });
