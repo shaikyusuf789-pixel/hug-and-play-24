@@ -98,9 +98,13 @@ function Dashboard() {
             variant="outline"
             onClick={async () => {
               try {
-                const { data, error } = await supabase.functions.invoke("ai-assistant", {
-                  body: { messages: [{ role: "user", content: "Trigger a backup of our database tables to GitHub now." }] },
+                const { data, error } = await supabase.functions.invoke("run-engine", {
+                  body: { sourceId: null },
                 });
+
+
+
+
                 if (error) throw error;
                 toast.success("GitHub Backup triggered successfully!");
               } catch (e: any) {
