@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    const { messages, session_id } = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -257,8 +257,8 @@ Always be professional, concise, and incredibly helpful.`;
     const lastUserMsg = messages[messages.length - 1];
     if (lastUserMsg && lastUserMsg.role === "user") {
       await supabase.from("ai_chat_memory").insert([
-        { role: "user", content: lastUserMsg.content },
-        { role: "assistant", content: message.content }
+        { role: "user", content: lastUserMsg.content, session_id: session_id },
+        { role: "assistant", content: message.content, session_id: session_id }
       ]);
     }
 

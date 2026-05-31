@@ -3,14 +3,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bot, Send, X, MessageSquare, Loader2, User, ChevronDown, Trash2, CheckCircle2 } from "lucide-react";
+import { Bot, Send, X, MessageSquare, Loader2, User, ChevronDown, Trash2, History, Plus, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 interface Message {
   role: "user" | "assistant" | "system" | "tool";
   content: string;
+}
+
+interface ChatSession {
+  id: string;
+  title: string;
+  created_at: string;
 }
 
 export function AIChatAssistant() {
@@ -18,13 +25,22 @@ export function AIChatAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [showSessions, setShowSessions] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isOpen && messages.length === 0) {
-      loadHistory();
+    if (isOpen) {
+      loadSessions();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (currentSessionId) {
+      loadSessionMessages(currentSessionId);
+    }
+  }, [currentSessionId]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -33,37 +49,92 @@ export function AIChatAssistant() {
         scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
     }
-  }, [messages, isLoading, isOpen]);
+  }, [messages, isLoading, isOpen, showSessions]);
 
-  const loadHistory = async () => {
+  const loadSessions = async () => {
     try {
+      const { data, error } = await supabase
+        .from('chat_sessions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSessions(data || []);
+
+      if (!currentSessionId && data && data.length > 0) {
+        setCurrentSessionId(data[0].id);
+      } else if (!currentSessionId && (!data || data.length === 0)) {
+        await handleNewChat();
+      }
+    } catch (error) {
+      console.error("Error loading sessions:", error);
+    }
+  };
+
+  const loadSessionMessages = async (sessionId: string) => {
+    try {
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('ai_chat_memory')
         .select('role, content')
-        .order('created_at', { ascending: true })
-        .limit(50);
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setMessages(data?.map(m => ({ role: m.role as any, content: m.content })) || []);
+    } catch (error) {
+      console.error("Error loading session messages:", error);
+      toast.error("Failed to load chat history");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNewChat = async () => {
+    try {
+      const title = `Session ${format(new Date(), "MMM d, HH:mm")}`;
+      const { data, error } = await supabase
+        .from('chat_sessions')
+        .insert([{ title }])
+        .select()
+        .single();
 
       if (error) throw error;
       if (data) {
-        setMessages(data.map(m => ({ role: m.role as any, content: m.content })));
+        setSessions(prev => [data, ...prev]);
+        setCurrentSessionId(data.id);
+        setMessages([]);
+        setShowSessions(false);
+        return data.id as string;
       }
+      return null;
     } catch (error) {
-      console.error("Error loading history:", error);
+      console.error("Error creating new session:", error);
+      toast.error("Failed to start new chat");
+      return null;
     }
   };
 
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
+    let sessionId = currentSessionId;
+    if (!sessionId) {
+      sessionId = await handleNewChat();
+    }
+
+    if (!sessionId) return;
+
     const userMessage: Message = { role: "user", content: input };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
+    const currentInput = input;
     setInput("");
     setIsLoading(true);
 
     try {
       const { data, error } = await supabase.functions.invoke("ai-assistant", {
-        body: { messages: newMessages },
+        body: { messages: newMessages, session_id: sessionId },
       });
 
       if (error) throw error;
@@ -74,24 +145,32 @@ export function AIChatAssistant() {
     } catch (error: any) {
       console.error("AI Assistant Error:", error);
       toast.error("Failed to get response from AI: " + error.message);
+      // Restore input if it failed
+      setInput(currentInput);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleClearChat = async () => {
+  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     try {
-      setIsLoading(true);
-      const { data, error } = await supabase.functions.invoke("ai-assistant", {
-        body: { messages: [{ role: "user", content: "Please clear our chat memory." }] },
-      });
+      const { error } = await supabase
+        .from('chat_sessions')
+        .delete()
+        .eq('id', sessionId);
+
       if (error) throw error;
-      setMessages([]);
-      toast.success("Chat history cleared");
-    } catch (error: any) {
-      toast.error("Failed to clear history: " + error.message);
-    } finally {
-      setIsLoading(false);
+      
+      setSessions(prev => prev.filter(s => s.id !== sessionId));
+      if (currentSessionId === sessionId) {
+        setCurrentSessionId(null);
+        setMessages([]);
+      }
+      toast.success("Session deleted");
+    } catch (error) {
+      console.error("Error deleting session:", error);
+      toast.error("Failed to delete session");
     }
   };
 
@@ -109,27 +188,28 @@ export function AIChatAssistant() {
           <CardHeader className="border-b bg-card p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-muted-foreground"
+                  onClick={() => setShowSessions(!showSessions)}
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
                   <Bot className="h-6 w-6" />
                 </div>
-                <div>
-                  <CardTitle className="text-sm font-bold text-foreground">SKY Second Brain</CardTitle>
+                <div className="overflow-hidden">
+                  <CardTitle className="text-xs font-bold text-foreground truncate">
+                    {sessions.find(s => s.id === currentSessionId)?.title || "SKY Second Brain"}
+                  </CardTitle>
                   <div className="flex items-center gap-1.5">
                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] font-medium uppercase text-muted-foreground tracking-wider">Neural Core Active</span>
+                    <span className="text-[9px] font-medium uppercase text-muted-foreground tracking-wider">Neural Core Active</span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 text-muted-foreground hover:text-rose-500"
-                  onClick={handleClearChat}
-                  title="Clear Chat Memory"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -140,20 +220,72 @@ export function AIChatAssistant() {
                 </Button>
               </div>
             </div>
-            <div className="flex items-center gap-2 mt-2">
-              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[9px] font-black text-primary uppercase tracking-widest border border-primary/20">Read/Write Access</span>
-              <span className="rounded-full bg-indigo-500/10 px-2.5 py-0.5 text-[9px] font-black text-indigo-600 uppercase tracking-widest border border-indigo-500/20">Global History</span>
-            </div>
           </CardHeader>
 
-          <CardContent className="flex-1 min-h-0 bg-background p-0 relative">
+          <CardContent className="flex-1 min-h-0 bg-background p-0 relative flex overflow-hidden">
+            {showSessions && (
+              <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="h-full w-3/4 border-r bg-card shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
+                  <div className="p-3 border-b flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">History</span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowSessions(false)}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <div className="p-2">
+                    <Button 
+                      className="w-full justify-start gap-2 h-9 text-xs font-medium mb-2" 
+                      variant="outline"
+                      onClick={() => handleNewChat()}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      New Chat
+                    </Button>
+                  </div>
+                  <ScrollArea className="flex-1">
+                    <div className="p-2 space-y-1">
+                      {sessions.map((session) => (
+                        <div
+                          key={session.id}
+                          className={cn(
+                            "group flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors",
+                            currentSessionId === session.id 
+                              ? "bg-primary/10 text-primary border border-primary/20" 
+                              : "hover:bg-secondary text-muted-foreground"
+                          )}
+                          onClick={() => {
+                            setCurrentSessionId(session.id);
+                            setShowSessions(false);
+                          }}
+                        >
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <History className="h-3.5 w-3.5 shrink-0" />
+                            <span className="text-[11px] font-medium truncate">{session.title}</span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-rose-500"
+                            onClick={(e) => handleDeleteSession(session.id, e)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+                <div className="flex-1 h-full" onClick={() => setShowSessions(false)} />
+              </div>
+            )}
+
             <ScrollArea 
               ref={scrollRef} 
-              className="h-full p-4 [&>[data-radix-scroll-area-viewport]]:overscroll-contain"
+              className="h-full w-full p-4 [&>[data-radix-scroll-area-viewport]]:overscroll-contain"
               type="always"
             >
               <div className="space-y-4">
-                {messages.length === 0 && (
+                {messages.length === 0 && !isLoading && (
                   <div className="text-center py-8">
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
                       <Bot className="h-8 w-8 text-primary" />
@@ -259,4 +391,3 @@ export function AIChatAssistant() {
     </>
   );
 }
-

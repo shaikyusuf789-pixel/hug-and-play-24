@@ -22,6 +22,8 @@ export type Database = {
           id: string
           metadata: Json | null
           role: string
+          session_id: string | null
+          user_id: string | null
         }
         Insert: {
           category?: string | null
@@ -30,6 +32,8 @@ export type Database = {
           id?: string
           metadata?: Json | null
           role: string
+          session_id?: string | null
+          user_id?: string | null
         }
         Update: {
           category?: string | null
@@ -38,8 +42,18 @@ export type Database = {
           id?: string
           metadata?: Json | null
           role?: string
+          session_id?: string | null
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_chat_memory_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       app_metadata: {
         Row: {
@@ -86,6 +100,33 @@ export type Database = {
           key?: string
           updated_at?: string | null
           value?: Json | null
+        }
+        Relationships: []
+      }
+      chat_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          status: string | null
+          title: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string | null
+          title: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
