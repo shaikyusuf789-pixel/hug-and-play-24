@@ -1,4 +1,4 @@
-import { createRootRoute, Scripts, ScrollRestoration, Outlet } from "@tanstack/react-router";
+import { createRootRoute, HeadContent, Scripts, ScrollRestoration, Outlet } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "@/styles.css";
@@ -36,11 +36,18 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ScrollRestoration />
-      <Outlet />
-      <Toaster position="top-right" expand={true} richColors />
-      <Scripts />
-    </QueryClientProvider>
+    <html lang="en">
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        <QueryClientProvider client={queryClient}>
+          <ScrollRestoration />
+          <Outlet />
+          <Toaster position="top-right" expand={true} richColors />
+        </QueryClientProvider>
+        <Scripts />
+      </body>
+    </html>
   );
 }
