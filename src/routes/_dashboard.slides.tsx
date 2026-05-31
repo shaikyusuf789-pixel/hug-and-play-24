@@ -273,157 +273,103 @@ function SlideChunkCard({
   const isPromptLong = (localPrompt || "").length > 80;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5 bg-white p-4 md:p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-300">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
       {/* Column 1: Chunk Preview */}
-      <div className="flex flex-col space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-5 w-5 bg-slate-900 text-white flex items-center justify-center rounded-md text-[10px] font-bold">
-              {idx + 1}
-            </div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Script Chunk
-            </span>
+      <div className="flex flex-col space-y-2">
+        <div className="flex items-center gap-2">
+          <div className="h-4 w-4 bg-purple-600 text-white flex items-center justify-center rounded text-[9px] font-bold">
+            {idx + 1}
           </div>
-          <div className="text-[10px] text-slate-300 font-bold uppercase tracking-tight">
-            {chunk.content.split(' ').length} WORDS
-          </div>
+          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Chunk Text</span>
         </div>
         
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className={cn(
-            "relative p-3 bg-slate-50/50 rounded-xl border border-slate-100 text-[11px] md:text-xs text-slate-600 leading-relaxed overflow-hidden transition-all duration-300",
-            showFullContent ? "max-h-none" : "max-h-[80px]"
-          )}>
-            {chunk.content}
-            {!showFullContent && isContentLong && (
-              <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-50 to-transparent pointer-events-none" />
-            )}
-          </div>
-          {isContentLong && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="mt-1 h-6 text-[10px] text-rose-600 hover:text-rose-700 hover:bg-rose-50/50 flex items-center justify-start gap-1 p-0 px-2 w-fit font-bold uppercase tracking-wider"
-              onClick={() => setShowFullContent(!showFullContent)}
-            >
-              {showFullContent ? <><ChevronUp className="h-3 w-3" /> LESS</> : <><ChevronDown className="h-3 w-3" /> MORE</>}
-            </Button>
+        <div className={cn(
+          "relative p-2 bg-slate-50 rounded-lg border border-slate-100 text-[10px] text-slate-600 leading-normal overflow-hidden",
+          showFullContent ? "max-h-none" : "max-h-[100px]"
+        )}>
+          {chunk.content}
+          {!showFullContent && isContentLong && (
+            <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-slate-50 to-transparent" />
           )}
         </div>
+        
+        {isContentLong && (
+          <button 
+            className="text-[9px] text-purple-600 font-bold uppercase w-fit"
+            onClick={() => setShowFullContent(!showFullContent)}
+          >
+            {showFullContent ? "See Less" : "See More"}
+          </button>
+        )}
 
         <Button 
-          className={cn(
-            "w-full h-8 text-[11px] font-bold uppercase tracking-wider shadow-sm transition-all",
-            chunk.slide_prompt ? "bg-slate-100 text-slate-600 hover:bg-slate-200" : "bg-rose-600 text-white hover:bg-rose-700 shadow-rose-200"
-          )}
+          className="w-full h-7 text-[9px] font-bold uppercase bg-purple-600 hover:bg-purple-700 text-white"
           onClick={() => generateSlidePrompt(chunk.id)}
           disabled={processingId === `${chunk.id}-prompt`}
         >
           {processingId === `${chunk.id}-prompt` ? (
-            <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
           ) : (
-            <Type className="h-3 w-3 mr-2" />
+            <Type className="h-3 w-3 mr-1" />
           )}
-          {chunk.slide_prompt ? "Regenerate Prompt" : "Generate Prompt"}
+          {chunk.slide_prompt ? "Regenerate Outline" : "Generate Outline"}
         </Button>
       </div>
 
       {/* Column 2: Prompt Preview */}
-      <div className="flex flex-col space-y-3">
-        <div className="flex items-center gap-2">
-          <Type className="h-3 w-3 text-rose-500" />
-          <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">GPT-4o Slide Content</span>
-          {chunk.slide_prompt && <CheckCircle2 className="h-3 w-3 text-emerald-500 ml-auto" />}
+      <div className="flex flex-col space-y-2">
+        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Slide Outline</span>
+        <div className={cn(
+          "relative",
+          showFullPrompt ? "h-auto" : "h-[100px]"
+        )}>
+          <Textarea 
+            className="w-full h-full bg-slate-50 border-slate-100 text-[10px] resize-none p-2 rounded-lg"
+            placeholder="Generate outline first →"
+            value={localPrompt}
+            onChange={(e) => setLocalPrompt(e.target.value)}
+            onBlur={() => updatePrompt(chunk.id, localPrompt)}
+          />
         </div>
-        
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className={cn(
-            "relative transition-all duration-300",
-            showFullPrompt ? "h-auto min-h-[120px]" : "h-[80px]"
-          )}>
-            <Textarea 
-              className="w-full h-full bg-rose-50/20 border-rose-100/50 text-[11px] md:text-xs font-medium resize-none focus-visible:ring-rose-500 p-2.5 rounded-xl placeholder:text-slate-300"
-              placeholder="Slide prompt will appear here..."
-              value={localPrompt}
-              onChange={(e) => setLocalPrompt(e.target.value)}
-              onBlur={() => updatePrompt(chunk.id, localPrompt)}
+        {isPromptLong && (
+          <button 
+            className="text-[9px] text-purple-600 font-bold uppercase w-fit"
+            onClick={() => setShowFullPrompt(!showFullPrompt)}
+          >
+            {showFullPrompt ? "See Less" : "See More"}
+          </button>
+        )}
+      </div>
+
+      {/* Column 3: Generated Slide Preview */}
+      <div className="flex flex-col space-y-2">
+        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Gamma Slide</span>
+        <div className="aspect-video bg-slate-50 rounded-lg border border-slate-100 overflow-hidden relative">
+          {chunk.slide_url ? (
+            <iframe 
+              src={chunk.slide_url} 
+              className="w-full h-full border-none"
+              title={`Slide ${idx + 1}`}
             />
-          </div>
-          {isPromptLong && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="mt-1 h-6 text-[10px] text-rose-600 hover:bg-rose-50/50 flex items-center justify-start gap-1 p-0 px-2 w-fit font-bold uppercase tracking-wider"
-              onClick={() => setShowFullPrompt(!showFullPrompt)}
-            >
-              {showFullPrompt ? <><ChevronUp className="h-3 w-3" /> MINIMIZE</> : <><ChevronDown className="h-3 w-3" /> EXPAND</>}
-            </Button>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[9px] text-slate-400 font-bold uppercase">
+              No slide yet
+            </div>
           )}
         </div>
-
         <Button 
           variant="outline"
-          className={cn(
-            "w-full h-8 text-[11px] font-bold uppercase tracking-wider border-slate-200",
-            chunk.slide_url ? "bg-slate-50 text-slate-500" : "bg-white text-rose-600 hover:bg-rose-50 border-rose-200"
-          )}
+          className="w-full h-7 text-[9px] font-bold uppercase border-slate-200 text-slate-500"
           onClick={() => generateGammaSlide(chunk.id)}
           disabled={!localPrompt || processingId === `${chunk.id}-slide`}
         >
           {processingId === `${chunk.id}-slide` ? (
-            <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
           ) : (
-            <Layout className="h-3 w-3 mr-2" />
+            <Layout className="h-3 w-3 mr-1" />
           )}
-          {chunk.slide_url ? "Update Slide" : "Create Slide"}
+          {chunk.slide_url ? "Update Slide" : "Generate Slide"}
         </Button>
-      </div>
-
-      {/* Column 3: Generated Slide Preview */}
-      <div className="flex flex-col space-y-3">
-        <div className="flex items-center gap-2">
-          <Eye className="h-3 w-3 text-rose-500" />
-          <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Gamma Preview</span>
-        </div>
-        <div className="aspect-video bg-slate-900 rounded-xl border-2 border-slate-100 shadow-inner overflow-hidden relative group">
-          {chunk.slide_url ? (
-            <iframe 
-              src={chunk.slide_url} 
-              className="w-full h-full border-none scale-100"
-              title={`Slide ${idx + 1}`}
-            />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center text-slate-700 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-800 to-slate-950">
-              <Layout className="h-6 w-6 mb-1 opacity-20 text-white" />
-              <p className="text-[10px] font-bold text-slate-500 tracking-tighter uppercase">NO SLIDE YET</p>
-            </div>
-          )}
-          
-          {chunk.slide_url && (
-            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-              <Button variant="secondary" size="sm" className="h-7 text-[10px] font-bold uppercase bg-white text-slate-900 hover:bg-slate-100" asChild>
-                <a href={chunk.slide_url} target="_blank" rel="noreferrer">
-                  Open
-                </a>
-              </Button>
-            </div>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex-1 text-[9px] font-bold uppercase h-7 border-slate-200 text-slate-500 hover:bg-slate-50"
-            onClick={() => generateGammaSlide(chunk.id)}
-            disabled={!localPrompt || processingId === `${chunk.id}-slide`}
-          >
-            <RefreshCcw className="h-2.5 w-2.5 mr-1" /> Regenerate
-          </Button>
-          <Button variant="outline" size="sm" className="flex-1 text-[9px] font-bold uppercase h-7 border-slate-200 text-slate-500 hover:bg-slate-50">
-            <Play className="h-2.5 w-2.5 mr-1" /> Preview
-          </Button>
-        </div>
       </div>
     </div>
   );
