@@ -154,7 +154,7 @@ function Dashboard() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {DASHBOARD_TABLES.map((table) => (
-            <Card key={table} className="rounded-2xl border-white/5 shadow-xl shadow-black/20 border p-5 bg-[#151624]/40 hover:bg-[#1e1b4b]/80 transition-all hover:-translate-y-2 hover:border-indigo-500/30 cursor-pointer group backdrop-blur-md">
+            <Card key={table} className="rounded-2xl border-white/10 shadow-xl shadow-black/20 border p-5 bg-card hover:bg-white/[0.05] transition-all hover:-translate-y-2 hover:border-white/30 cursor-pointer group backdrop-blur-md">
               <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3 truncate group-hover:text-indigo-300 transition-colors">
                 {table.replace(/_/g, " ")}
               </div>
