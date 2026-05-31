@@ -83,9 +83,9 @@ export function AIChatAssistant() {
     <>
       <Button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-primary shadow-lg transition-transform duration-200 hover:scale-105"
+        className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 h-12 w-12 md:h-14 md:w-14 rounded-full bg-primary shadow-lg transition-transform duration-200 hover:scale-105"
       >
-        {isOpen ? <X className="h-6 w-6" /> : <MessageSquare className="h-6 w-6" />}
+        {isOpen ? <X className="h-5 w-5 md:h-6 md:w-6" /> : <MessageSquare className="h-5 w-5 md:h-6 md:w-6" />}
       </Button>
 
       {isOpen && (
