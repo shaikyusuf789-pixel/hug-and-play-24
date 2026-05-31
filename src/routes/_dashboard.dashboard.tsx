@@ -100,11 +100,13 @@ function Dashboard() {
               variant="outline"
               onClick={async () => {
                 try {
-                  const { data, error } = await supabase.functions.invoke("run-engine", {
-                    body: { sourceId: null },
+                  // Reverting to server-side backup logic if run-engine is not an edge function
+                  const { error } = await supabase.from('daily_backup_logs').insert({
+                    status: 'PENDING',
+                    tables_backed_up: DASHBOARD_TABLES
                   });
                   if (error) throw error;
-                  toast.success("GitHub Backup triggered successfully!");
+                  toast.success("GitHub Backup queued successfully!");
                 } catch (e: any) {
                   toast.error("Failed to trigger backup: " + e.message);
                 }
