@@ -903,7 +903,7 @@ function ScriptGenerator() {
                         <div className="flex justify-between items-center">
                           <h3 className="font-bold text-lg">{seg.title}</h3>
                           <Badge variant="secondary" className="text-[10px] uppercase">
-                            {seg.telugu_text.split(" ").length} words
+                            {(seg.telugu_text || seg.voiceover || "").split(" ").length} words
                           </Badge>
                         </div>
                         {isEditing ? (
@@ -918,7 +918,7 @@ function ScriptGenerator() {
                           />
                         ) : (
                           <div className="p-4 bg-muted/30 rounded-lg border leading-relaxed text-lg font-telugu min-h-[300px] whitespace-pre-wrap">
-                            {seg.telugu_text}
+                            {seg.telugu_text || seg.voiceover}
                           </div>
                         )}
                       </TabsContent>
