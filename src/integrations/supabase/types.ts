@@ -166,6 +166,7 @@ export type Database = {
           target_audience: string | null
           thumbnail_url: string | null
           updated_at: string | null
+          video_id: string | null
           video_outline: Json | null
           video_url: string
           views: number | null
@@ -189,6 +190,7 @@ export type Database = {
           target_audience?: string | null
           thumbnail_url?: string | null
           updated_at?: string | null
+          video_id?: string | null
           video_outline?: Json | null
           video_url: string
           views?: number | null
@@ -212,6 +214,7 @@ export type Database = {
           target_audience?: string | null
           thumbnail_url?: string | null
           updated_at?: string | null
+          video_id?: string | null
           video_outline?: Json | null
           video_url?: string
           views?: number | null
