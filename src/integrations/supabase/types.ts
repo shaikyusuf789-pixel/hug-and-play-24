@@ -132,6 +132,7 @@ export type Database = {
           new_thumbnail_outline: string | null
           original_summary: string | null
           original_title: string
+          processing_step: string | null
           proposed_title: string | null
           published_at: string | null
           published_date: string | null
@@ -154,6 +155,7 @@ export type Database = {
           new_thumbnail_outline?: string | null
           original_summary?: string | null
           original_title: string
+          processing_step?: string | null
           proposed_title?: string | null
           published_at?: string | null
           published_date?: string | null
@@ -176,6 +178,7 @@ export type Database = {
           new_thumbnail_outline?: string | null
           original_summary?: string | null
           original_title?: string
+          processing_step?: string | null
           proposed_title?: string | null
           published_at?: string | null
           published_date?: string | null
