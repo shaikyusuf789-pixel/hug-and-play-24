@@ -115,25 +115,21 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Main Stats Grid */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 relative z-10">
+      <div className="relative z-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((c) => {
           const Icon = c.icon;
           return (
-            <Card key={c.label} className="rounded-[2.5rem] border border-white/10 shadow-2xl shadow-black/40 overflow-hidden bg-white/5 backdrop-blur-2xl transition-all hover:scale-[1.03] duration-500 group hover:border-white/30 relative">
-              <div className="absolute inset-0 bg-linear-to-br from-white/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-transparent relative overflow-hidden">
-                <div className={cn("absolute inset-0 opacity-10 bg-linear-to-br transition-opacity duration-500 group-hover:opacity-25", c.gradient)} />
-                <CardTitle className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 group-hover:text-white transition-colors relative z-10">{c.label}</CardTitle>
-                <div className={cn("p-2 rounded-xl bg-white/5 border border-white/5 transition-all group-hover:scale-110", c.color)}>
+            <Card key={c.label} className="group relative overflow-hidden rounded-xl border bg-card shadow-sm transition-colors hover:border-primary/30">
+              <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="relative z-10 text-[10px] font-black uppercase text-muted-foreground transition-colors group-hover:text-primary">{c.label}</CardTitle>
+                <div className="rounded-lg border bg-secondary p-2 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                   <Icon className="h-5 w-5" />
                 </div>
               </CardHeader>
-              <CardContent className="pt-6 pb-10 relative z-10">
+              <CardContent className="relative z-10 pb-8 pt-4">
                 <div className="flex items-baseline gap-2">
-                   <div className="text-6xl font-black text-white tracking-tighter group-hover:translate-x-2 transition-all duration-700">{c.value ?? "0"}</div>
-                   <div className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse group-hover:scale-150 transition-transform" />
+                   <div className="text-5xl font-black text-foreground">{c.value ?? "0"}</div>
+                   <div className="h-2 w-2 rounded-full bg-accent" />
                 </div>
               </CardContent>
             </Card>
@@ -141,24 +137,23 @@ function Dashboard() {
         })}
       </div>
 
-      {/* Tables Section */}
-      <div className="space-y-6 relative z-10">
+      <div className="relative z-10 space-y-4">
         <div className="flex items-center gap-4">
-           <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Live Database Schema</h2>
-           <div className="h-px flex-1 bg-white/5" />
+           <h2 className="text-xs font-black uppercase text-muted-foreground">Live Database Schema</h2>
+           <div className="h-px flex-1 bg-border" />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
           {DASHBOARD_TABLES.map((table) => (
-            <Card key={table} className="rounded-2xl border-white/10 shadow-xl shadow-black/20 border p-5 bg-white/5 hover:bg-white/[0.05] transition-all hover:-translate-y-2 hover:border-white/30 cursor-pointer group backdrop-blur-md">
-              <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3 truncate group-hover:text-indigo-300 transition-colors">
+            <Card key={table} className="group cursor-pointer rounded-lg border bg-card p-4 shadow-sm transition-colors hover:border-primary/30">
+              <div className="mb-3 truncate text-[9px] font-black uppercase text-muted-foreground transition-colors group-hover:text-primary">
                 {table.replace(/_/g, " ")}
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <div className="h-1 w-1 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
-                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-tighter group-hover:text-cyan-400 transition-colors">Wired</span>
+                  <div className="h-1.5 w-1.5 rounded-full bg-accent" />
+                  <span className="text-[10px] font-black uppercase text-accent transition-colors">Wired</span>
                 </div>
-                <TableIcon className="h-4 w-4 text-slate-700 group-hover:text-indigo-400 group-hover:rotate-12 transition-all duration-500" />
+                <TableIcon className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
               </div>
             </Card>
           ))}
