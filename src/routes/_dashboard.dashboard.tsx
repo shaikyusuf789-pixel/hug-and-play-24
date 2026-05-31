@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { runIdeaEngine, updateLastRunTimestamp } from "@/lib/engine.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Play, Radio, ListVideo, CheckCircle2, Github } from "lucide-react";
+import { Loader2, Play, Radio, ListVideo, CheckCircle2, Github, Table as TableIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { WatchdogControl } from "@/components/WatchdogControl";
@@ -130,6 +130,20 @@ function Dashboard() {
             </Card>
           );
         })}
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        {DASHBOARD_TABLES.map((table) => (
+          <Card key={table} className="rounded-2xl border-slate-100 shadow-sm border p-4 bg-white hover:bg-slate-50 transition-colors cursor-pointer">
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 truncate">
+              {table.replace(/_/g, " ")}
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-indigo-600">Active</span>
+              <TableIcon className="h-3 w-3 text-slate-300" />
+            </div>
+          </Card>
+        ))}
       </div>
 
       <Card className="rounded-[2.5rem] border-slate-100 shadow-sm overflow-hidden border">
