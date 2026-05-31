@@ -263,11 +263,13 @@ function StatusBadge({
 }) {
   const map: Record<string, string> = {
     Pending: "bg-muted text-muted-foreground",
+    Processing: "bg-primary/20 text-primary border border-primary/20",
     Approved: "gradient-accept text-white",
     Rejected: "gradient-reject text-white",
     Priority: "gradient-orange text-white",
     Done: "gradient-primary text-primary-foreground",
   };
+
   if (status === "Pending") return null;
   return (
     <span
