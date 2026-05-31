@@ -314,18 +314,18 @@ function SlideChunkCard({
         </div>
         
         <div className={cn(
-          "relative p-2 bg-slate-50 rounded-lg border border-slate-100 text-[10px] text-slate-600 leading-normal overflow-hidden",
-          showFullContent ? "max-h-none" : "max-h-[100px]"
+          "relative p-2.5 bg-white rounded-lg border border-slate-200 text-[10px] text-slate-600 leading-relaxed overflow-hidden shadow-sm",
+          showFullContent ? "max-h-none" : "max-h-[120px]"
         )}>
           {chunk.content}
           {!showFullContent && isContentLong && (
-            <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-slate-50 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent" />
           )}
         </div>
         
         {isContentLong && (
           <button 
-            className="text-[9px] text-purple-600 font-bold uppercase w-fit"
+            className="text-[9px] text-purple-600 font-bold uppercase w-fit hover:underline"
             onClick={() => setShowFullContent(!showFullContent)}
           >
             {showFullContent ? "See Less" : "See More"}
@@ -333,14 +333,14 @@ function SlideChunkCard({
         )}
 
         <Button 
-          className="w-full h-7 text-[9px] font-bold uppercase bg-purple-600 hover:bg-purple-700 text-white"
+          className="w-full h-8 text-[9px] font-bold uppercase bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-sm"
           onClick={() => generateSlidePrompt(chunk.id)}
           disabled={processingId === `${chunk.id}-prompt`}
         >
           {processingId === `${chunk.id}-prompt` ? (
-            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
           ) : (
-            <Type className="h-3 w-3 mr-1" />
+            <Type className="h-3 w-3 mr-1.5" />
           )}
           {chunk.slide_prompt ? "Regenerate Outline" : "Generate Outline"}
         </Button>
@@ -350,11 +350,11 @@ function SlideChunkCard({
       <div className="flex flex-col space-y-2">
         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Slide Outline</span>
         <div className={cn(
-          "relative",
-          showFullPrompt ? "h-auto" : "h-[100px]"
+          "relative transition-all duration-200 shadow-sm rounded-lg border border-slate-200",
+          showFullPrompt ? "h-auto" : "h-[120px]"
         )}>
           <Textarea 
-            className="w-full h-full bg-slate-50 border-slate-100 text-[10px] resize-none p-2 rounded-lg"
+            className="w-full h-full bg-white border-none text-[10px] resize-none p-2.5 rounded-lg focus-visible:ring-0 focus-visible:ring-offset-0"
             placeholder="Generate outline first →"
             value={localPrompt}
             onChange={(e) => setLocalPrompt(e.target.value)}
@@ -363,7 +363,7 @@ function SlideChunkCard({
         </div>
         {isPromptLong && (
           <button 
-            className="text-[9px] text-purple-600 font-bold uppercase w-fit"
+            className="text-[9px] text-purple-600 font-bold uppercase w-fit hover:underline"
             onClick={() => setShowFullPrompt(!showFullPrompt)}
           >
             {showFullPrompt ? "See Less" : "See More"}
