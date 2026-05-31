@@ -1,0 +1,241 @@
+import { useState, useEffect } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { Layers, Scissors, CheckCircle2, ChevronRight, Play, Save, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { saveChunks } from "@/lib/engine.functions";
+
+export const Route = createFileRoute("/_dashboard/chunks")({
+  component: ChunksPage,
+});
+
+function ChunksPage() {
+  const saveChunksFn = useServerFn(saveChunks);
+  const [scripts, setScripts] = useState<any[]>([]);
+  const [selectedScriptId, setSelectedScriptId] = useState<string>("");
+  const [chunks, setChunks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+
+  useEffect(() => {
+    fetchScripts();
+  }, []);
+
+  const fetchScripts = async () => {
+    const { data, error } = await supabase
+      .from("scripts")
+      .select("*")
+      .eq("status", "SCRIPT_DONE")
+      .order("created_at", { ascending: false });
+    
+    if (error) {
+      toast.error("Failed to fetch scripts");
+      return;
+    }
+    setScripts(data || []);
+  };
+
+  useEffect(() => {
+    if (selectedScriptId) {
+      fetchExistingChunks(selectedScriptId);
+    } else {
+      setChunks([]);
+    }
+  }, [selectedScriptId]);
+
+  const fetchExistingChunks = async (scriptId: string) => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("script_chunks")
+      .select("*")
+      .eq("script_id", scriptId)
+      .order("chunk_index", { ascending: true });
+    
+    if (error) {
+      toast.error("Failed to fetch existing chunks");
+    } else {
+      setChunks(data || []);
+    }
+    setLoading(false);
+  };
+
+  const handleGenerateChunks = async () => {
+    if (!selectedScriptId) {
+      toast.error("Please select a script first");
+      return;
+    }
+
+    const script = scripts.find(s => s.id === selectedScriptId);
+    if (!script) return;
+
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('process-chunks', {
+        body: { scriptContent: script.content, scriptId: selectedScriptId }
+      });
+
+      if (error) throw error;
+
+      const newChunks = data.chunks.map((content: string, index: number) => ({
+        id: `temp-${index}`,
+        chunk_index: index,
+        content,
+        word_count: content.trim().split(/\s+/).length,
+        status: 'PENDING'
+      }));
+
+      setChunks(newChunks);
+      toast.success(`Generated ${newChunks.length} chunks`);
+    } catch (error: any) {
+      console.error("Chunking error:", error);
+      toast.error(error.message || "Failed to generate chunks");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleSaveAll = async () => {
+    if (!selectedScriptId || chunks.length === 0) return;
+    setSaving(true);
+    try {
+      await saveChunksFn({
+        data: {
+          script_id: selectedScriptId,
+          chunks: chunks.map(c => c.content)
+        }
+      });
+      toast.success("All chunks saved successfully");
+      fetchExistingChunks(selectedScriptId);
+    } catch (error) {
+
+      toast.error("Failed to save chunks");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateChunkContent = (index: number, content: string) => {
+    const updated = [...chunks];
+    updated[index] = { ...updated[index], content, word_count: content.trim().split(/\s+/).length };
+    setChunks(updated);
+  };
+
+  return (
+    <div className="p-8 max-w-5xl mx-auto space-y-8">
+      <div className="flex justify-between items-end flex-wrap gap-6">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Phase 2</span>
+            <span className="text-[10px] text-slate-400 font-medium tracking-wider">• SEGMENTATION ENGINE</span>
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900">Chunking Engine</h1>
+          <p className="text-slate-500 mt-1">Smart script segmentation for optimized visual matching.</p>
+        </div>
+        
+        <div className="flex items-center gap-4 flex-wrap">
+          <Select value={selectedScriptId} onValueChange={setSelectedScriptId}>
+            <SelectTrigger className="w-[320px] bg-white border-slate-200">
+              <SelectValue placeholder="Select a script to chunk" />
+            </SelectTrigger>
+            <SelectContent>
+              {scripts.length > 0 ? (
+                scripts.map((script) => (
+                  <SelectItem key={script.id} value={script.id}>
+                    {script.title}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="none" disabled>No finished scripts found</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+          
+          <Button 
+            onClick={handleGenerateChunks} 
+            disabled={generating || !selectedScriptId}
+            className="bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100 px-6 gap-2"
+          >
+            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Scissors className="h-4 w-4" />}
+            Auto Chunk Script
+          </Button>
+        </div>
+      </div>
+
+      {chunks.length > 0 && (
+        <div className="flex justify-between items-center">
+          <div className="text-sm font-medium text-slate-500">
+            {chunks.length} Chunks Generated
+          </div>
+          <Button onClick={handleSaveAll} disabled={saving} variant="outline" className="gap-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            Save All Chunks
+          </Button>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex justify-center p-24">
+          <Loader2 className="h-10 w-10 animate-spin text-indigo-500 opacity-50" />
+        </div>
+      ) : chunks.length > 0 ? (
+        <div className="grid gap-6">
+          {chunks.map((chunk, index) => (
+            <Card key={chunk.id} className="overflow-hidden border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="bg-slate-50/50 py-3 px-6 border-b flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]">
+                    {index + 1}
+                  </span>
+                  Chunk Content
+                </CardTitle>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-bold text-slate-400 bg-white border px-2 py-0.5 rounded uppercase">
+                    {chunk.word_count} words
+                  </span>
+                  <span className={cn(
+                    "text-[10px] font-bold px-2 py-0.5 rounded uppercase",
+                    chunk.status === "DONE" ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"
+                  )}>
+                    {chunk.status}
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                <Textarea 
+                  value={chunk.content}
+                  onChange={(e) => handleUpdateChunkContent(index, e.target.value)}
+                  className="min-h-[140px] text-slate-900 leading-relaxed resize-none focus-visible:ring-indigo-500 border-none p-0 focus-visible:ring-0 shadow-none text-base font-telugu"
+                  placeholder="Chunk content..."
+                />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-20 text-center space-y-4">
+          <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto border border-slate-100">
+            <Layers className="h-8 w-8 text-slate-300" />
+          </div>
+          <div className="max-w-xs mx-auto space-y-2">
+            <h3 className="text-lg font-bold text-slate-900">No Chunks Segmented</h3>
+            <p className="text-slate-500">Select a finished script from the dropdown and click "Auto Chunk Script" to split it into 170-200 word segments using AI.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

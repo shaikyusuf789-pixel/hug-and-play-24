@@ -194,6 +194,13 @@ export type Database = {
             foreignKeyName: "raw_content_source_id_fkey"
             columns: ["source_id"]
             isOneToOne: false
+            referencedRelation: "channel_rejection_stats"
+            referencedColumns: ["source_id"]
+          },
+          {
+            foreignKeyName: "raw_content_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
             referencedRelation: "sources_master"
             referencedColumns: ["id"]
           },
@@ -201,7 +208,6 @@ export type Database = {
       }
       script_chunks: {
         Row: {
-          annotations: Json | null
           audio_url: string | null
           chunk_index: number
           content: string
@@ -216,7 +222,6 @@ export type Database = {
           word_count: number | null
         }
         Insert: {
-          annotations?: Json | null
           audio_url?: string | null
           chunk_index: number
           content: string
@@ -231,7 +236,6 @@ export type Database = {
           word_count?: number | null
         }
         Update: {
-          annotations?: Json | null
           audio_url?: string | null
           chunk_index?: number
           content?: string
@@ -417,10 +421,19 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      channel_rejection_stats: {
+        Row: {
+          channel_name: string | null
+          rejected_count: number | null
+          rejection_rate: number | null
+          source_id: string | null
+          total_ideas: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      check_channel_performance: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
