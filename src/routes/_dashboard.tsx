@@ -205,7 +205,7 @@ function DashboardLayout() {
       </aside>
 
       <main className="flex-1 overflow-x-hidden overflow-y-auto">
-        <header className="h-16 border-b border-white/5 bg-[#0a0b14]/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between">
+        <header className="h-16 border-b border-white/10 bg-background/60 backdrop-blur-2xl sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between shadow-sm shadow-white/[0.02]">
           <div className="flex items-center gap-3 flex-1 max-w-xl">
              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                <SheetTrigger asChild>
