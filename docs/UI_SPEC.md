@@ -18,12 +18,15 @@ Sky Studio is a premium, autonomous AI video production pipeline designed for SK
 ### 2.1 Dashboard (/dashboard)
 ![Dashboard](screenshots/dashboard.png)
 - **Purpose**: High-level command center for the Idea Engine.
+- **Theme**: Lightweight light theme. Tokens defined in `src/styles.css` (`--background`, `--card`, `--primary` = blue 221/83/53, `--accent` = sky 199/89/48). All UI uses semantic tokens — no hard-coded dark/glass classes.
 - **UI Components**:
-  - **System Core v4.2 Header**: Title and subtitle with live status indicators.
-  - **Action Bar**: "Initialize Scraper" (manual trigger) and "Backup" (GitHub sync).
-  - **Status Tiles**: Real-time counts of ideas at each stage (Pending, Approved, Priority, etc.). Current verified state: 155 total ideas, 131 pending approval, 1 approved, 0 priority, 1 script done, 0 audio done.
-- **Logic**: `Initialize Scraper` runs the local `runIdeaEngine` server function. It reads `sources_master`, scrapes YouTube RSS feeds, deduplicates by `video_url`, and inserts new rows into `raw_content`.
-- **Data**: Reads from and writes to `raw_content`, `app_settings`, and `sources_master` in Supabase project `eozteueesaemhcmbqcxt`.
+  - **Header bar**: Mobile menu (Sheet), search, Live indicator, notifications, settings.
+  - **Hero**: System Core v4.2 chip + Active chip, title "Sky Studio", Watchdog control + Initialize Scraper / Backup buttons (stacked on mobile).
+  - **Status Tiles**: 6 cards (Total / Pending Approval / Priority / Scripting / Audio / Slides) — flat card with bordered icon, mobile-first 1-col → 2-col → 3-col.
+  - **Live Database Schema** grid + **Autonomous Workflow** explainer card.
+- **Logic**: `Initialize Scraper` runs the local `runIdeaEngine` server fn; reads `sources_master`, scrapes RSS, inserts new `raw_content`.
+- **Data**: `raw_content`, `app_settings`, `sources_master` in user's direct Supabase project.
+
 
 ### 2.2 Idea Cards (/idea-cards)
 ![Idea Cards](screenshots/idea-cards.png)
