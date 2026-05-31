@@ -227,7 +227,7 @@ const ACTION_META: Record<
   reject: { label: "Reject", className: "gradient-reject text-white" },
   priority: { label: "Priority", className: "gradient-orange text-white" },
   done: { label: "Done", className: "gradient-primary text-primary-foreground" },
-  generate: { label: "Generate Script", className: "gradient-blue text-white col-span-full" },
+  generate: { label: "Generate", className: "gradient-blue text-white" },
 };
 
 function ActionButton({
