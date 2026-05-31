@@ -104,12 +104,16 @@ function RawContentPage() {
       Rejected: 0,
       Done: 0,
     };
-    for (const i of ideas) {
-      const status = i.status === "Processing" ? "Approved" : i.status;
-      if (c[status] !== undefined) c[status]++;
-    }
+    
+    ideas.forEach(i => {
+      let status = i.status;
+      if (status === "Processing") status = "Approved";
+      if (c[status] !== undefined) {
+        c[status]++;
+      }
+    });
+    
     return c;
-
   }, [ideas]);
 
   const filtered = useMemo(
