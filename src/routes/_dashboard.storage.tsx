@@ -21,7 +21,7 @@ function StoragePage() {
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Asset Management</span>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">Cloud Storage</h1>
+          <h1 className="text-3xl font-bold text-slate-900">App Storage</h1>
           <p className="text-slate-500 mt-1">Unified storage for all your generated content and raw assets.</p>
         </div>
         <div className="flex items-center gap-6 bg-white p-4 rounded-2xl border shadow-sm">

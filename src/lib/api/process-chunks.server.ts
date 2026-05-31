@@ -7,7 +7,7 @@ export const processChunks = createServerFn({ method: "POST" })
   .handler(async ({ data: { scriptContent } }) => {
     console.log("Splitting chunks via Fallback ServerFn...");
     const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) throw new Error("OPENAI_API_KEY is not set in Lovable Secrets.");
+    if (!apiKey) throw new Error("OPENAI_API_KEY is not set in project secrets.");
 
     const systemPrompt = `
 You are an expert script editor for SKY Academy. Your task is to split a long Telugu script into smaller chunks for video production.

@@ -20,7 +20,7 @@ async function apifyRun(actorId: string, input: unknown, token: string) {
 
 async function callAI(prompt: string, system: string) {
   const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error("OPENAI_API_KEY not configured in Lovable Secrets");
+  if (!key) throw new Error("OPENAI_API_KEY not configured in project secrets");
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -186,7 +186,7 @@ export const approveAndProcessIdea = createServerFn({ method: "POST" })
   .handler(async ({ data: { id } }) => {
     console.log(`Approving and processing idea (Fallback to ServerFn): ${id}`);
     const token = process.env.APIFY_API_TOKEN;
-    if (!token) throw new Error("APIFY_API_TOKEN not configured in Lovable Secrets");
+    if (!token) throw new Error("APIFY_API_TOKEN not configured in project secrets");
 
     // 1. Set status to Processing
     await supabaseAdmin.from("raw_content").update({ 
