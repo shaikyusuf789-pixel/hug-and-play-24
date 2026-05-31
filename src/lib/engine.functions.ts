@@ -255,7 +255,7 @@ export const getIdeas = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     let query = supabaseAdmin
       .from("raw_content")
-      .select("*, sources_master!fk_raw_content_source(channel_name)")
+      .select("*")
       .order("created_at", { ascending: false });
 
     if (data.status) {
@@ -263,7 +263,10 @@ export const getIdeas = createServerFn({ method: "GET" })
     }
 
     const { data: ideas, error } = await query;
-    if (error) throw error;
+    if (error) {
+      console.error("[getIdeas] Error:", error);
+      throw error;
+    }
     console.log(`[getIdeas] Returning ${ideas?.length} ideas`);
     return { ideas: (ideas || []) as any[] };
   });
