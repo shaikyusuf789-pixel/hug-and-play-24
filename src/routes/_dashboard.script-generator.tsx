@@ -802,29 +802,59 @@ function ScriptGenerator() {
               </Button>
 
               {segments.length > 0 && (
-                <div className="space-y-4 pt-4 border-t border-slate-100">
+                <div className="space-y-4 pt-6 border-t border-slate-100">
                   <div className="flex items-center justify-between">
-                    <Label className="text-indigo-600 font-bold uppercase text-[10px]">Full Script Preview</Label>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-7 text-[10px]"
-                      onClick={() => {
-                        const fullScript = segments.map(s => s.telugu_text || s.voiceover).join("\n\n");
-                        navigator.clipboard.writeText(fullScript);
-                        toast.success("Full script copied to clipboard!");
-                      }}
-                    >
-                      Copy All
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-4 bg-blue-600 rounded-full" />
+                      <Label className="text-slate-900 font-black uppercase text-[11px] tracking-wider">Generated Full Script</Label>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 text-[10px] font-bold"
+                        onClick={() => {
+                          const fullScript = segments.map(s => s.telugu_text || s.voiceover).join("\n\n");
+                          navigator.clipboard.writeText(fullScript);
+                          toast.success("Script copied!");
+                        }}
+                      >
+                        Copy
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 text-[10px] font-bold text-green-600"
+                        onClick={handleSaveScript}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+                        Save
+                      </Button>
+                    </div>
                   </div>
-                  <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 leading-relaxed text-sm font-telugu max-h-[400px] overflow-y-auto whitespace-pre-wrap">
+                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 leading-relaxed text-sm font-telugu max-h-[500px] overflow-y-auto whitespace-pre-wrap shadow-inner text-slate-700">
                     {segments.map(s => s.telugu_text || s.voiceover).join("\n\n")}
                   </div>
                   {isExistingScript && (
-                    <div className="bg-blue-50 border border-blue-100 p-3 rounded-lg flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-blue-500" />
-                      <span className="text-xs text-blue-700 font-medium">Script already exists for this idea</span>
+                    <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                        <CheckCircle2 className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-indigo-900 font-bold">Previous version found</p>
+                        <p className="text-[10px] text-indigo-600 font-medium">This script was already generated and is saved in your pipeline.</p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 text-[10px] font-bold bg-white"
+                        onClick={handleGenerate}
+                        disabled={isGenerating}
+                      >
+                        {isGenerating ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RotateCcw className="h-3 w-3 mr-1" />}
+                        Regenerate
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -883,14 +913,20 @@ function ScriptGenerator() {
             </CardHeader>
             <CardContent className="flex-1 p-0">
               {segments.length > 0 ? (
-                <Tabs defaultValue="seg-0" className="flex flex-col h-full">
+                <Tabs defaultValue="full-script" className="flex flex-col h-full">
                   <div className="border-b px-4 overflow-x-auto">
                     <TabsList className="bg-transparent h-12">
+                      <TabsTrigger 
+                        value="full-script"
+                        className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none h-12 font-bold text-xs"
+                      >
+                        Full Script
+                      </TabsTrigger>
                       {segments.map((_, i) => (
                         <TabsTrigger 
                           key={i} 
                           value={`seg-${i}`}
-                          className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none h-12"
+                          className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none h-12 text-xs"
                         >
                           Seg {i + 1}
                         </TabsTrigger>
@@ -898,6 +934,17 @@ function ScriptGenerator() {
                     </TabsList>
                   </div>
                   <div className="p-6 flex-1">
+                    <TabsContent value="full-script" className="mt-0 space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-black text-xl text-slate-900">Entire Production Script</h3>
+                        <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 border-none font-bold">
+                          {segments.map(s => s.telugu_text || s.voiceover).join("\n\n").split(/\s+/).length} Total Words
+                        </Badge>
+                      </div>
+                      <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 leading-relaxed text-lg font-telugu min-h-[400px] whitespace-pre-wrap text-slate-800">
+                        {segments.map(s => s.telugu_text || s.voiceover).join("\n\n")}
+                      </div>
+                    </TabsContent>
                     {segments.map((seg, i) => (
                       <TabsContent key={i} value={`seg-${i}`} className="mt-0 space-y-4">
                         <div className="flex justify-between items-center">
