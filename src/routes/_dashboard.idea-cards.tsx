@@ -67,6 +67,32 @@ function RawContentPage() {
     },
   });
 
+  // Realtime subscription for live updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('raw_content_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'raw_content'
+        },
+        (payload) => {
+          console.log('Change received!', payload);
+          // Simply invalidate queries to refetch fresh data
+          // This ensures the counts and the list stay in sync
+          qc.invalidateQueries({ queryKey: ["ideas"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
+
   // Also fetch Priority ideas for Script Generator context if needed
   const { data: priorityIdeasData } = useQuery({
     queryKey: ["priority-ideas"],
@@ -84,15 +110,21 @@ function RawContentPage() {
       Done: 0,
     };
     for (const i of ideas) {
-      if (c[i.status] !== undefined) c[i.status]++;
+      const status = i.status === "Processing" ? "Approved" : i.status;
+      if (c[status] !== undefined) c[status]++;
     }
     return c;
+
   }, [ideas]);
 
   const filtered = useMemo(
-    () => ideas.filter((i) => i.status === activeTab),
+    () => ideas.filter((i) => {
+      if (activeTab === "Approved") return i.status === "Approved" || i.status === "Processing";
+      return i.status === activeTab;
+    }),
     [ideas, activeTab]
   );
+
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
@@ -156,15 +188,28 @@ function RawContentPage() {
     }
     
     if (action === "approve") {
-      toast.info("Processing idea transcript and AI analysis...");
+      toast.info("Moving to Approved section and starting AI pipeline...");
+      
+      // Optimistic update
+      qc.setQueryData(["ideas"], (old: any) => ({
+        ideas: old.ideas.map((i: any) =>
+          i.id === idea.id ? { ...i, status: "Processing", processing_step: "Initializing..." } : i
+        ),
+      }));
+
       try {
         await approveFn({ data: { id: idea.id } });
+        // Realtime will handle the final "Approved" state update, 
+        // but we invalidate just in case
         qc.invalidateQueries({ queryKey: ["ideas"] });
       } catch (err: any) {
         toast.error("Failed to process idea: " + err.message);
+        // Rollback
+        qc.invalidateQueries({ queryKey: ["ideas"] });
       }
       return;
     }
+
 
     const status = ACTION_TO_STATUS[action];
     mutate.mutate({ idea, status });

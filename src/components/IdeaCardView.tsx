@@ -19,7 +19,9 @@ export interface IdeaCard {
   video_outline: any;
   original_summary: string | null;
   status: string;
+  processing_step?: string | null;
   sources_master?: {
+
     channel_name: string;
   };
 }
@@ -54,7 +56,13 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/5 backdrop-blur-[1px]">
           <Loader2 className="size-8 animate-spin text-primary mb-2" />
           <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Processing...</span>
+          {idea.processing_step && (
+            <span className="text-[10px] text-primary/80 mt-1 font-medium italic animate-pulse">
+              {idea.processing_step}
+            </span>
+          )}
         </div>
+
       )}
       {/* Thumbnail */}
       <div className="relative w-full aspect-video bg-muted overflow-hidden">
@@ -255,11 +263,13 @@ function StatusBadge({
 }) {
   const map: Record<string, string> = {
     Pending: "bg-muted text-muted-foreground",
+    Processing: "bg-primary/20 text-primary border border-primary/20",
     Approved: "gradient-accept text-white",
     Rejected: "gradient-reject text-white",
     Priority: "gradient-orange text-white",
     Done: "gradient-primary text-primary-foreground",
   };
+
   if (status === "Pending") return null;
   return (
     <span
