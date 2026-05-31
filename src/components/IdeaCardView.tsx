@@ -49,7 +49,7 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
 
   return (
     <article className={cn(
-      "rounded-[2rem] sm:rounded-3xl bg-card/60 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl shadow-indigo-500/10 overflow-hidden flex flex-col animate-fade-in relative group transition-all duration-300 hover:shadow-indigo-500/20 hover:-translate-y-1",
+      "rounded-[2rem] sm:rounded-3xl bg-card backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/40 overflow-hidden flex flex-col animate-fade-in relative group transition-all duration-300 hover:shadow-white-lg hover:-translate-y-1",
       isProcessing && "opacity-70 grayscale-[0.5]"
     )}>
 
@@ -251,7 +251,7 @@ function ActionButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "py-2 sm:py-2.5 rounded-xl font-bold text-[10px] sm:text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all duration-200 disabled:opacity-50 hover:brightness-110 hover:shadow-xl",
+        "py-2 sm:py-2.5 rounded-xl font-bold text-[10px] sm:text-xs uppercase tracking-widest shadow-button active:scale-95 transition-all duration-300 disabled:opacity-50 hover:shadow-white-lg hover:brightness-110",
         meta.className
       )}
 

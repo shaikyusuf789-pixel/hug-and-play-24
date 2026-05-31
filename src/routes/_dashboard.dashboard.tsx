@@ -35,8 +35,6 @@ function Dashboard() {
     queryKey: ["stats"],
     queryFn: () => fetchStatsFn(),
   });
-  
-  console.log("Dashboard Stats Data:", stats.data);
 
   const runFn = useServerFn(runIdeaEngine);
   const setLastRun = useServerFn(updateLastRunTimestamp);
@@ -87,13 +85,13 @@ function Dashboard() {
           </p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-4 bg-white/[0.02] p-2 rounded-[2rem] border border-white/5 backdrop-blur-xl">
+        <div className="flex flex-wrap items-center gap-4 bg-white/[0.03] p-2 rounded-[2rem] border border-white/10 backdrop-blur-3xl shadow-white-lg">
           <WatchdogControl className="bg-transparent border-none shadow-none p-2" />
           <div className="flex gap-2">
             <Button 
               onClick={() => run.mutate()} 
               disabled={run.isPending} 
-              className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-2xl shadow-indigo-500/40 h-12 px-8 gap-3 rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all hover:scale-105 active:scale-95"
+              className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-button hover:shadow-white-lg h-12 px-8 gap-3 rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all hover:scale-105 active:scale-95"
             >
               {run.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4 fill-white/20" />}
               Initialize Scraper
@@ -111,7 +109,7 @@ function Dashboard() {
                   toast.error("Failed to trigger backup: " + e.message);
                 }
               }}
-              className="border-white/10 bg-white/5 hover:bg-white/10 text-white h-12 px-6 gap-3 rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all"
+              className="border-white/20 bg-white/5 hover:bg-white/10 hover:shadow-white-lg text-white h-12 px-6 gap-3 rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all"
             >
               <Github className="h-4 w-4" />
               Backup
@@ -125,8 +123,8 @@ function Dashboard() {
         {cards.map((c) => {
           const Icon = c.icon;
           return (
-            <Card key={c.label} className="rounded-[2.5rem] border border-white/5 shadow-2xl shadow-black/80 overflow-hidden bg-[#151624]/60 backdrop-blur-xl transition-all hover:scale-[1.03] duration-500 group hover:border-indigo-500/30 relative">
-              <div className="absolute inset-0 bg-linear-to-br from-indigo-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <Card key={c.label} className="rounded-[2.5rem] border border-white/10 shadow-2xl shadow-black/40 overflow-hidden bg-card backdrop-blur-2xl transition-all hover:scale-[1.03] duration-500 group hover:border-white/30 relative">
+              <div className="absolute inset-0 bg-linear-to-br from-white/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-transparent relative overflow-hidden">
                 <div className={cn("absolute inset-0 opacity-10 bg-linear-to-br transition-opacity duration-500 group-hover:opacity-25", c.gradient)} />
@@ -154,7 +152,7 @@ function Dashboard() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {DASHBOARD_TABLES.map((table) => (
-            <Card key={table} className="rounded-2xl border-white/5 shadow-xl shadow-black/20 border p-5 bg-[#151624]/40 hover:bg-[#1e1b4b]/80 transition-all hover:-translate-y-2 hover:border-indigo-500/30 cursor-pointer group backdrop-blur-md">
+            <Card key={table} className="rounded-2xl border-white/10 shadow-xl shadow-black/20 border p-5 bg-card hover:bg-white/[0.05] transition-all hover:-translate-y-2 hover:border-white/30 cursor-pointer group backdrop-blur-md">
               <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3 truncate group-hover:text-indigo-300 transition-colors">
                 {table.replace(/_/g, " ")}
               </div>

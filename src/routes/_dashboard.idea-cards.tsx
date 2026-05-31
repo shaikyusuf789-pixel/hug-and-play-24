@@ -60,8 +60,6 @@ function RawContentPage() {
     queryFn: () => fetchFn({ data: {} }),
   });
 
-  console.log("IdeaCards Data:", data);
-
   // Realtime subscription for live updates
   useEffect(() => {
     const channel = supabase
@@ -218,7 +216,7 @@ function RawContentPage() {
   const tabConfig = TABS.find((t) => t.key === activeTab)!;
 
   return (
-    <div className="min-h-screen w-full bg-muted/10">
+    <div className="min-h-screen w-full bg-background/50">
       <div className="mx-auto w-full max-w-2xl px-3 sm:px-4 pt-4 sm:pt-6 pb-20">
         <div className="sticky top-0 z-30 -mx-3 sm:-mx-4 px-3 sm:px-4 pt-2 pb-3 glass border-b border-border/40 mb-4 sm:rounded-b-2xl">
           <header className="flex items-center justify-between mb-4">
@@ -227,7 +225,7 @@ function RawContentPage() {
                 <GraduationCap className="size-5 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-base font-bold leading-none text-gradient tracking-tight">
+                <h1 className="text-base font-bold leading-none text-white tracking-tight">
                   SKY Academy
                 </h1>
                 <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-[0.14em] font-medium">

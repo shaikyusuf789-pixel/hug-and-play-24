@@ -84,7 +84,7 @@ function DashboardLayout() {
   ];
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full sidebar-gradient">
+    <div className="flex flex-col h-full sidebar-gradient backdrop-blur-3xl bg-white/[0.02]">
 
       <div className="px-6 py-6 flex items-center gap-3 border-b mb-4">
         <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-black shadow-lg shadow-indigo-500/40 border border-white/10 italic tracking-tighter">SKY</div>
@@ -108,7 +108,7 @@ function DashboardLayout() {
             )}
           >
             <LayoutDashboard className={cn("h-4 w-4", path === "/dashboard" ? "text-white" : "text-slate-400 group-hover:text-slate-600")} />
-            <span className="font-semibold">Dashboard</span>
+            <span className="font-semibold text-white">Dashboard</span>
             {path === "/dashboard" && <div className="absolute left-0 w-1 h-6 bg-white rounded-r-full my-auto inset-y-0" />}
           </Link>
 
@@ -124,7 +124,7 @@ function DashboardLayout() {
             )}
           >
             <Database className={cn("h-4 w-4", path === "/tables" ? "text-white" : "text-slate-400 group-hover:text-slate-600")} />
-            <span className="font-semibold">Database Tables</span>
+            <span className="font-semibold text-white">Database Tables</span>
             {path === "/tables" && <div className="absolute left-0 w-1 h-6 bg-white rounded-r-full my-auto inset-y-0" />}
           </Link>
 
@@ -199,13 +199,13 @@ function DashboardLayout() {
   );
 
   return (
-    <div className="flex min-h-screen bg-[#0a0b14] text-slate-200 selection:bg-indigo-500/30">
-      <aside className="hidden w-64 shrink-0 border-r border-white/5 bg-[#0f111a] md:flex md:flex-col shadow-2xl">
+    <div className="flex min-h-screen bg-background text-foreground selection:bg-primary/30">
+      <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-sidebar/80 md:flex md:flex-col shadow-2xl backdrop-blur-3xl">
         <SidebarContent />
       </aside>
 
       <main className="flex-1 overflow-x-hidden overflow-y-auto">
-        <header className="h-16 border-b border-white/5 bg-[#0a0b14]/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between">
+        <header className="h-16 border-b border-white/10 bg-background/60 backdrop-blur-2xl sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between shadow-sm shadow-white/[0.02]">
           <div className="flex items-center gap-3 flex-1 max-w-xl">
              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                <SheetTrigger asChild>
