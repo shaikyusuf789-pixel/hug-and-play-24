@@ -31,9 +31,10 @@ function UploadsPage() {
 
   const fetchFiles = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("user_uploads")
+    const { data, error } = await (supabase
+      .from("user_uploads" as any) as any)
       .select("*")
+
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -87,7 +88,7 @@ function UploadsPage() {
 
     try {
       setUploading(true);
-      const { error: dbError } = await supabase.from("user_uploads").insert({
+      const { error: dbError } = await (supabase.from("user_uploads" as any) as any).insert({
         file_name: pendingFile.file.name as any,
         display_name: customName || pendingFile.file.name,
         file_path: pendingFile.filePath,
@@ -130,9 +131,10 @@ function UploadsPage() {
       if (storageError) throw storageError;
 
       // 2. Delete from Database
-      const { error: dbError } = await supabase
-        .from("user_uploads")
+      const { error: dbError } = await (supabase
+        .from("user_uploads" as any) as any)
         .delete()
+
         .eq("id", file.id);
 
       if (dbError) throw dbError;
@@ -147,8 +149,9 @@ function UploadsPage() {
 
   const handleRename = async (fileId: string, newName: string) => {
     try {
-      const { error } = await supabase
-        .from("user_uploads")
+      const { error } = await (supabase
+        .from("user_uploads" as any) as any)
+
         .update({ display_name: newName } as any)
         .eq("id", fileId);
 
