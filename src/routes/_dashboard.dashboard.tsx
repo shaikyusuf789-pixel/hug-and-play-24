@@ -34,12 +34,12 @@ function Dashboard() {
     queryKey: ["stats"],
     queryFn: async () => {
       const [total, pending, approved, priority, scriptDone, audioDone] = await Promise.all([
-        supabase.from("raw_content").select("*", { count: "exact", head: true }),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Pending"),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Approved"),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Priority"),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Script Done"),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Audio Done"),
+        supabase.from("raw_content").select("*", { count: "exact" }).limit(1),
+        supabase.from("raw_content").select("*", { count: "exact" }).eq("status", "Pending").limit(1),
+        supabase.from("raw_content").select("*", { count: "exact" }).eq("status", "Approved").limit(1),
+        supabase.from("raw_content").select("*", { count: "exact" }).eq("status", "Priority").limit(1),
+        supabase.from("raw_content").select("*", { count: "exact" }).eq("status", "Script Done").limit(1),
+        supabase.from("raw_content").select("*", { count: "exact" }).eq("status", "Audio Done").limit(1),
       ]);
       return { 
         total: total.count ?? 0, 
