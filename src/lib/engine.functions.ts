@@ -192,20 +192,15 @@ export const approveAndProcessIdea = createServerFn({ method: "POST" })
     // 1. Set status to Processing
     try {
       await supabaseAdmin.from("raw_content").update({ 
-        status: "Processing",
-        processing_step: "Initializing..." 
+        status: "Processing"
       } as any).eq("id", id);
     } catch (e) {
-      console.warn("Failed to update processing_step (initial), continuing...", e);
+      console.warn("Failed to update status to Processing, continuing...", e);
     }
 
     try {
-      // Update step: Fetching Transcript
-      try {
-        await supabaseAdmin.from("raw_content").update({ 
-          processing_step: "Fetching transcript from YouTube..." 
-        } as any).eq("id", id);
-      } catch (e) {}
+      // Update progress
+      console.log(`[${id}] Fetching transcript...`);
 
       // 2. Fetch the idea details
       const { data: idea, error: fetchErr } = await supabaseAdmin
@@ -233,12 +228,8 @@ export const approveAndProcessIdea = createServerFn({ method: "POST" })
         console.warn(`Transcript failed for ${idea.original_title}`, e);
       }
 
-      // Update step: AI Analysis
-      try {
-        await supabaseAdmin.from("raw_content").update({ 
-          processing_step: "AI Analysis: Generating strategy..." 
-        } as any).eq("id", id);
-      } catch (e) {}
+      // AI Analysis
+      console.log(`[${id}] Starting AI analysis...`);
 
 
       // 4. Call AI for new content
@@ -257,7 +248,6 @@ ${transcript || "(no transcript available)"}`;
         .from("raw_content")
         .update({
           status: "Approved",
-          processing_step: null,
           original_summary: transcript,
           proposed_title: ai.proposed_title,
           new_thumbnail_outline: ai.new_thumbnail_outline,
