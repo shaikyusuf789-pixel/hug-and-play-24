@@ -62,18 +62,20 @@ function Dashboard() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 md:space-y-8 p-4 md:p-6">
-      <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-        <div className="space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold tracking-wider text-primary uppercase">
-            <Sparkles className="h-3 w-3" />
-            System Core v4.2
+      <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center bg-card p-6 md:p-8 rounded-3xl border border-border/50 shadow-sm">
+        <div className="space-y-4">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-primary uppercase border border-primary/20">
+            <Activity className="h-3 w-3 animate-pulse" />
+            System Live — Production v4.2
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground xs:text-4xl sm:text-5xl">
-            Sky Studio
-          </h1>
-          <p className="max-w-xl text-base md:text-lg font-medium text-muted-foreground">
-            Professional AI Content Production Pipeline.
-          </p>
+          <div>
+            <h1 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+              Sky Studio
+            </h1>
+            <p className="mt-2 text-base md:text-lg font-medium text-muted-foreground/80">
+              Your AI-driven content command center.
+            </p>
+          </div>
         </div>
         
         <div className="flex flex-wrap gap-3">
