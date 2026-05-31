@@ -67,6 +67,32 @@ function RawContentPage() {
     },
   });
 
+  // Realtime subscription for live updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('raw_content_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'raw_content'
+        },
+        (payload) => {
+          console.log('Change received!', payload);
+          // Simply invalidate queries to refetch fresh data
+          // This ensures the counts and the list stay in sync
+          qc.invalidateQueries({ queryKey: ["ideas"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
+
   // Also fetch Priority ideas for Script Generator context if needed
   const { data: priorityIdeasData } = useQuery({
     queryKey: ["priority-ideas"],
