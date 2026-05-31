@@ -1,14 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { runIdeaEngine, updateLastRunTimestamp, getDashboardStats } from "@/lib/engine.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Play, Radio, ListVideo, CheckCircle2, Github, Table as TableIcon, Sparkles, BrainCircuit, Rocket } from "lucide-react";
+import { Loader2, Play, Radio, ListVideo, CheckCircle2, Github, Table as TableIcon, Sparkles, BrainCircuit } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { WatchdogControl } from "@/components/WatchdogControl";
 import { useEffect } from "react";
 
 export const Route = createFileRoute("/_dashboard/dashboard")({
@@ -54,20 +51,6 @@ function Dashboard() {
     refetchInterval: 5000,
   });
 
-  const runIdeaEngineFn = useServerFn(runIdeaEngine);
-  const setLastRun = useServerFn(updateLastRunTimestamp);
-  
-  const run = useMutation({
-    mutationFn: () => runIdeaEngineFn(),
-    onSuccess: (res) => {
-      const message = res.message || `Processed ${res.processed} new ideas.`;
-      (res.failed ? toast.warning : toast.success)(message);
-      qc.invalidateQueries({ queryKey: ["stats"] });
-      qc.invalidateQueries({ queryKey: ["ideas"] });
-      setLastRun();
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
 
   const cards = [
     { label: "Total Ideas", value: stats.data?.total, icon: ListVideo, color: "text-blue-600" },
