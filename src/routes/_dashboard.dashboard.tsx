@@ -78,7 +78,10 @@ function Dashboard() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8 p-4 sm:p-8">
+    <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8 p-4 sm:p-8 relative">
+      <div className="absolute -top-20 -left-20 w-96 h-96 bg-indigo-500/5 blur-[120px] pointer-events-none rounded-full" />
+      <div className="absolute top-1/2 -right-20 w-80 h-80 bg-blue-500/5 blur-[100px] pointer-events-none rounded-full" />
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -128,7 +131,7 @@ function Dashboard() {
         {cards.map((c) => {
           const Icon = c.icon;
           return (
-            <Card key={c.label} className={cn("rounded-3xl border border-white/10 shadow-2xl shadow-black/40 overflow-hidden bg-slate-950/40 backdrop-blur-md transition-all hover:scale-[1.02] duration-300 group hover:border-white/20")}>
+            <Card key={c.label} className={cn("rounded-3xl border border-white/5 shadow-2xl shadow-black/50 overflow-hidden bg-slate-900/40 backdrop-blur-xl transition-all hover:scale-[1.02] duration-300 group hover:border-indigo-500/30")}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-transparent relative z-10">
                 <div className={cn("absolute inset-0 opacity-10 bg-linear-to-br transition-opacity group-hover:opacity-20", c.gradient)} />
                 <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-slate-400/90 group-hover:text-white transition-colors relative z-10">{c.label}</CardTitle>
