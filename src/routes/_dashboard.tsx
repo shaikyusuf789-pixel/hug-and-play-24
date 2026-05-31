@@ -84,7 +84,8 @@ function DashboardLayout() {
   ];
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full sidebar-gradient">
+
       <div className="px-6 py-6 flex items-center gap-3 border-b mb-4">
         <div className="w-10 h-10 rounded-2xl gradient-primary flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-200">SKY</div>
         <div>
@@ -101,8 +102,9 @@ function DashboardLayout() {
             className={cn(
               "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm transition-all duration-200 group relative",
               path === "/dashboard"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" 
-                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-slate-100"
+                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" 
+                : "text-slate-400 hover:bg-white/5 hover:text-white border border-white/5"
+
             )}
           >
             <LayoutDashboard className={cn("h-4 w-4", path === "/dashboard" ? "text-white" : "text-slate-400 group-hover:text-slate-600")} />
@@ -116,8 +118,9 @@ function DashboardLayout() {
             className={cn(
               "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm transition-all duration-200 group relative",
               path === "/tables"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" 
-                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-slate-100"
+                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" 
+                : "text-slate-400 hover:bg-white/5 hover:text-white border border-white/5"
+
             )}
           >
             <Database className={cn("h-4 w-4", path === "/tables" ? "text-white" : "text-slate-400 group-hover:text-slate-600")} />
@@ -151,8 +154,9 @@ function DashboardLayout() {
                   className={cn(
                     "flex items-center justify-between rounded-xl px-4 py-2.5 text-sm transition-all duration-200 group relative",
                     active 
-                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" 
-                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" 
+                      : "text-slate-400 hover:bg-white/5 hover:text-white"
+
                   )}
                 >
                   <div className="flex items-center gap-3">
@@ -181,7 +185,7 @@ function DashboardLayout() {
       </div>
 
       <div className="p-4 mt-auto">
-        <div className="bg-indigo-50/50 rounded-2xl p-4 border border-indigo-100/50">
+        <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">TELUGU · POE · DNA</span>
             <span className="text-[9px] font-bold text-slate-400">V4.2</span>
@@ -196,11 +200,11 @@ function DashboardLayout() {
 
   return (
     <div className="flex min-h-screen bg-linear-to-br from-indigo-50/50 via-white to-purple-50/30">
-      <aside className="hidden w-64 shrink-0 border-r bg-white md:flex md:flex-col shadow-sm">
+      <aside className="hidden w-64 shrink-0 border-r border-white/5 bg-sidebar md:flex md:flex-col shadow-2xl">
         <SidebarContent />
       </aside>
       <main className="flex-1 overflow-x-hidden overflow-y-auto">
-        <header className="h-16 border-b bg-white/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between">
+        <header className="h-16 border-b border-white/5 bg-background/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between">
           <div className="flex items-center gap-3 flex-1 max-w-xl">
              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                <SheetTrigger asChild>
@@ -216,8 +220,9 @@ function DashboardLayout() {
              <div className="relative w-full group">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
                 <Input 
-                  placeholder="Search..." 
-                  className="pl-10 h-10 bg-slate-50 border-transparent focus-visible:ring-indigo-500 rounded-xl w-full text-sm"
+                  placeholder="Search project..." 
+                  className="pl-10 h-10 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-indigo-500 rounded-xl w-full text-sm"
+
                 />
              </div>
           </div>

@@ -68,12 +68,13 @@ function Dashboard() {
   });
 
   const cards = [
-    { label: "Total Ideas", value: stats.data?.total, icon: ListVideo, color: "text-slate-400", gradient: "from-slate-50 to-slate-100/50" },
-    { label: "Pending Approval", value: stats.data?.pending, icon: Radio, color: "text-amber-500", gradient: "from-amber-50 to-orange-100/50" },
-    { label: "Pending Priority", value: stats.data?.approved, icon: CheckCircle2, color: "text-blue-500", gradient: "from-blue-50 to-indigo-100/50" },
-    { label: "Pending Scripting", value: stats.data?.priority, icon: Play, color: "text-indigo-500", gradient: "from-indigo-50 to-violet-100/50" },
-    { label: "Pending Audio", value: stats.data?.scriptDone, icon: Radio, color: "text-purple-500", gradient: "from-purple-50 to-fuchsia-100/50" },
-    { label: "Pending Slides", value: stats.data?.audioDone, icon: ListVideo, color: "text-emerald-500", gradient: "from-emerald-50 to-teal-100/50" },
+    { label: "Total Ideas", value: stats.data?.total, icon: ListVideo, color: "text-indigo-400", gradient: "from-indigo-500/10 to-transparent" },
+    { label: "Pending Approval", value: stats.data?.pending, icon: Radio, color: "text-amber-400", gradient: "from-amber-500/10 to-transparent" },
+    { label: "Pending Priority", value: stats.data?.approved, icon: CheckCircle2, color: "text-cyan-400", gradient: "from-cyan-500/10 to-transparent" },
+    { label: "Pending Scripting", value: stats.data?.priority, icon: Play, color: "text-violet-400", gradient: "from-violet-500/10 to-transparent" },
+    { label: "Pending Audio", value: stats.data?.scriptDone, icon: Radio, color: "text-fuchsia-400", gradient: "from-fuchsia-500/10 to-transparent" },
+    { label: "Pending Slides", value: stats.data?.audioDone, icon: ListVideo, color: "text-emerald-400", gradient: "from-emerald-500/10 to-transparent" },
+
   ];
 
   return (
@@ -84,13 +85,14 @@ function Dashboard() {
             <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Phase 1</span>
             <span className="text-[10px] text-slate-400 font-medium tracking-wider">• COMPETITOR SCRAPER</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Idea Engine</h1>
-          <p className="text-sm text-slate-500 mt-1">Scrape competitor YouTube channels and generate fresh video ideas.</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Idea Engine</h1>
+          <p className="text-sm text-slate-400 mt-1 font-medium italic">Scrape competitor YouTube channels and generate fresh video ideas.</p>
+
         </div>
         
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <WatchdogControl />
-          <Button onClick={() => run.mutate()} disabled={run.isPending} className="bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100 h-11 px-6 gap-2 rounded-2xl w-full sm:w-auto">
+          <Button onClick={() => run.mutate()} disabled={run.isPending} className="bg-indigo-600 hover:bg-indigo-500 shadow-xl shadow-indigo-500/20 h-11 px-8 gap-2 rounded-2xl w-full sm:w-auto font-bold uppercase tracking-widest text-[10px]">
             {run.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4 fill-current" />}
             Run manually
           </Button>
@@ -113,8 +115,9 @@ function Dashboard() {
                 toast.error("Failed to trigger backup: " + e.message);
               }
             }}
-            className="border-slate-200 hover:bg-slate-50 h-11 px-6 gap-2 rounded-2xl w-full sm:w-auto"
+            className="border-white/10 hover:bg-white/5 text-white h-11 px-6 gap-2 rounded-2xl w-full sm:w-auto font-bold uppercase tracking-widest text-[10px]"
           >
+
             <Github className="h-4 w-4" />
             Backup to GitHub
           </Button>
@@ -125,13 +128,14 @@ function Dashboard() {
         {cards.map((c) => {
           const Icon = c.icon;
           return (
-            <Card key={c.label} className={cn("rounded-3xl border-none shadow-lg shadow-indigo-100/20 overflow-hidden bg-linear-to-br", c.gradient)}>
+            <Card key={c.label} className={cn("rounded-3xl border border-white/5 shadow-2xl shadow-black/20 overflow-hidden bg-linear-to-br transition-all hover:scale-[1.02] duration-300 group", c.gradient)}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-transparent">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-slate-500/70">{c.label}</CardTitle>
+                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-slate-400/70 group-hover:text-white transition-colors">{c.label}</CardTitle>
+
                 <Icon className={cn("h-4 w-4", c.color)} />
               </CardHeader>
               <CardContent className="pt-4 pb-6">
-                <div className="text-4xl font-black text-slate-900">{c.value ?? "0"}</div>
+                <div className="text-4xl font-black text-white group-hover:scale-110 transition-transform origin-left">{c.value ?? "0"}</div>
               </CardContent>
             </Card>
           );
@@ -140,41 +144,47 @@ function Dashboard() {
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {DASHBOARD_TABLES.map((table) => (
-          <Card key={table} className="rounded-2xl border-slate-100 shadow-sm border p-4 bg-white hover:bg-slate-50 transition-colors cursor-pointer">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 truncate">
+          <Card key={table} className="rounded-2xl border-white/5 shadow-sm border p-4 bg-white/5 hover:bg-white/10 transition-all hover:-translate-y-1 cursor-pointer">
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 truncate">
               {table.replace(/_/g, " ")}
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-indigo-600">Active</span>
+              <span className="text-xs font-semibold text-indigo-400">Active</span>
               <TableIcon className="h-3 w-3 text-slate-300" />
             </div>
           </Card>
         ))}
       </div>
 
-      <Card className="rounded-[2.5rem] border-slate-100 shadow-sm overflow-hidden border">
-        <CardHeader className="p-8 border-b bg-slate-50/30">
-          <CardTitle className="text-lg font-bold text-slate-900">Workflow Summary</CardTitle>
+      <Card className="rounded-[2.5rem] border-white/5 shadow-2xl shadow-black/40 overflow-hidden border bg-white/5 backdrop-blur-xl relative">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 blur-[100px] pointer-events-none" />
+        <CardHeader className="p-8 border-b border-white/5 bg-white/5">
+          <CardTitle className="text-xl font-black text-white tracking-tight">Workflow Summary</CardTitle>
         </CardHeader>
-        <CardContent className="p-8 grid md:grid-cols-2 gap-8 text-sm text-slate-500">
+        <CardContent className="p-8 grid md:grid-cols-2 gap-8 text-sm text-slate-400 relative z-10">
+
            <div className="space-y-4">
               <div className="flex gap-4">
-                 <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 font-bold">1</div>
-                 <p className="leading-relaxed"><strong className="text-slate-900 block">Configure Sources</strong>Add YouTube channels or keyword search terms to monitor for new content.</p>
+                 <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center shrink-0 font-black shadow-lg shadow-indigo-500/10 border border-indigo-500/20">1</div>
+                 <p className="leading-relaxed"><strong className="text-white block font-bold mb-1">Configure Sources</strong>Add YouTube channels or keyword search terms to monitor for new content.</p>
+
               </div>
               <div className="flex gap-4">
-                 <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 font-bold">2</div>
-                 <p className="leading-relaxed"><strong className="text-slate-900 block">Automated Scraping</strong>The engine pulls transcripts and metadata from recent high-performing videos.</p>
+                 <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center shrink-0 font-black shadow-lg shadow-indigo-500/10 border border-indigo-500/20">2</div>
+                 <p className="leading-relaxed"><strong className="text-white block font-bold mb-1">Automated Scraping</strong>The engine pulls transcripts and metadata from recent high-performing videos.</p>
+
               </div>
            </div>
            <div className="space-y-4">
               <div className="flex gap-4">
-                 <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 font-bold">3</div>
-                 <p className="leading-relaxed"><strong className="text-slate-900 block">AI Idea Generation</strong>Claude analyzes transcripts to propose new titles, hooks, and outlines tailored to your style.</p>
+                 <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center shrink-0 font-black shadow-lg shadow-indigo-500/10 border border-indigo-500/20">3</div>
+                 <p className="leading-relaxed"><strong className="text-white block font-bold mb-1">AI Idea Generation</strong>Claude analyzes transcripts to propose new titles, hooks, and outlines tailored to your style.</p>
+
               </div>
               <div className="flex gap-4">
-                 <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 font-bold">4</div>
-                 <p className="leading-relaxed"><strong className="text-slate-900 block">One-Click Approval</strong>Move generated ideas to the Scripting phase with a single click from the Idea Cards view.</p>
+                 <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center shrink-0 font-black shadow-lg shadow-indigo-500/10 border border-indigo-500/20">4</div>
+                 <p className="leading-relaxed"><strong className="text-white block font-bold mb-1">One-Click Approval</strong>Move generated ideas to the Scripting phase with a single click from the Idea Cards view.</p>
+
               </div>
            </div>
         </CardContent>
