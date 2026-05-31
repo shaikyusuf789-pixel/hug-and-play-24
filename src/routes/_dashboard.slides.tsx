@@ -223,25 +223,33 @@ function SlideMaker() {
               <Button 
                 variant="outline" 
                 className="h-9 text-[10px] font-bold gap-2 border-purple-200 text-purple-600 hover:bg-purple-50"
+                disabled={isProcessingAll || !!processingId}
                 onClick={async () => {
                   if (chunks.length === 0) return;
+                  setIsProcessingAll(true);
                   toast.info("Queueing outlines...");
                   for (const chunk of chunks) await generateSlidePrompt(chunk.id);
                   toast.success("All outlines generated!");
+                  setIsProcessingAll(false);
                 }}
               >
-                <Type className="h-3.5 w-3.5" /> All Outlines
+                {isProcessingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Type className="h-3.5 w-3.5" />}
+                All Outlines
               </Button>
               <Button 
                 className="h-9 text-[10px] font-bold gap-2 bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-100"
+                disabled={isProcessingAll || !!processingId}
                 onClick={async () => {
                   if (chunks.length === 0) return;
+                  setIsProcessingAll(true);
                   toast.info("Queueing slides...");
                   for (const chunk of chunks) if (chunk.slide_prompt) await generateGammaSlide(chunk.id);
                   toast.success("All slides generated!");
+                  setIsProcessingAll(false);
                 }}
               >
-                <Layout className="h-3.5 w-3.5" /> Generate All Slides
+                {isProcessingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Layout className="h-3.5 w-3.5" />}
+                Generate All Slides
               </Button>
             </div>
           </div>
