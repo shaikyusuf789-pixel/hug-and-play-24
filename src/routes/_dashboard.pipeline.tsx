@@ -81,7 +81,7 @@ function PipelinePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-6">
-          <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
+          <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 shadow-sm overflow-hidden">
             <div className="p-6 border-b flex justify-between items-center">
               <h3 className="font-bold text-white flex items-center gap-2">
                 <Activity className="h-4 w-4 text-indigo-500" />
@@ -103,15 +103,15 @@ function PipelinePage() {
             <div className="p-0">
               {stages.map((stage, idx) => (
                 <div key={stage.id} className={cn(
-                  "flex items-center justify-between p-4 hover:bg-slate-50/50 transition-colors border-b last:border-0",
-                  stage.status === "active" && "bg-indigo-50/30"
+                  "flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0",
+                  stage.status === "active" && "bg-indigo-500/10"
                 )}>
                   <div className="flex items-center gap-4">
                     <div className={cn(
                       "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold",
-                      stage.status === "completed" ? "bg-emerald-100 text-emerald-600" :
+                      stage.status === "completed" ? "bg-emerald-500/20 text-emerald-400" :
                       stage.status === "active" ? "bg-indigo-600 text-white animate-pulse" :
-                      "bg-slate-100 text-slate-400"
+                      "bg-white/5 text-slate-500"
                     )}>
                       {stage.status === "completed" ? <CheckCircle2 className="h-4 w-4" /> : stage.id}
                     </div>
@@ -157,7 +157,7 @@ function PipelinePage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl border shadow-sm p-6">
+          <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 shadow-sm p-6">
             <h3 className="font-bold text-white mb-4">Quick Stats</h3>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
