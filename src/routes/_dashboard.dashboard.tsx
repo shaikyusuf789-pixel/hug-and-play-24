@@ -29,27 +29,11 @@ const DASHBOARD_TABLES = [
 
 function Dashboard() {
   const qc = useQueryClient();
+  const fetchStatsFn = useServerFn(getDashboardStats);
   
   const stats = useQuery({
     queryKey: ["stats"],
-    queryFn: async () => {
-      const [total, pending, approved, priority, scriptDone, audioDone] = await Promise.all([
-        supabase.from("raw_content").select("*", { count: "exact" }).limit(1),
-        supabase.from("raw_content").select("*", { count: "exact" }).eq("status", "Pending").limit(1),
-        supabase.from("raw_content").select("*", { count: "exact" }).eq("status", "Approved").limit(1),
-        supabase.from("raw_content").select("*", { count: "exact" }).eq("status", "Priority").limit(1),
-        supabase.from("raw_content").select("*", { count: "exact" }).eq("status", "Script Done").limit(1),
-        supabase.from("raw_content").select("*", { count: "exact" }).eq("status", "Audio Done").limit(1),
-      ]);
-      return { 
-        total: total.count ?? 0, 
-        pending: pending.count ?? 0,
-        approved: approved.count ?? 0,
-        priority: priority.count ?? 0,
-        scriptDone: scriptDone.count ?? 0,
-        audioDone: audioDone.count ?? 0,
-      };
-    },
+    queryFn: () => fetchStatsFn(),
   });
 
   const runFn = useServerFn(runIdeaEngine);
