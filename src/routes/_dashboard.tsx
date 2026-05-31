@@ -88,65 +88,63 @@ function DashboardLayout() {
   ];
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full sidebar-gradient backdrop-blur-3xl bg-black/20">
+    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
 
-      <div className="px-6 py-6 flex items-center gap-3 border-b mb-4">
-        <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-black shadow-lg shadow-indigo-500/40 border border-white/10 italic tracking-tighter">SKY</div>
+      <div className="mb-3 flex items-center gap-3 border-b border-sidebar-border px-5 py-5">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-primary text-sm font-black text-sidebar-primary-foreground shadow-sm">SKY</div>
         <div>
-          <h1 className="text-sm font-bold text-white leading-tight">SKY Studio</h1>
-          <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">AI Video Bot v4.2</p>
+          <h1 className="text-sm font-bold leading-tight text-foreground">SKY Studio</h1>
+          <p className="text-[10px] font-semibold uppercase text-muted-foreground">AI Video Bot v4.2</p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-6">
-        <div className="px-3 mb-4 space-y-2">
+      <div className="flex-1 space-y-5 overflow-y-auto px-3 py-2">
+        <div className="mb-4 space-y-2 px-2">
           <Link
             to="/dashboard"
             onClick={() => setIsMobileMenuOpen(false)}
             className={cn(
-              "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm transition-all duration-200 group relative",
+              "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
               path === "/dashboard"
-                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" 
-                : "text-slate-400 hover:bg-white/5 hover:text-white border border-white/5"
+                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" 
+                : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
 
             )}
           >
-            <LayoutDashboard className={cn("h-4 w-4", path === "/dashboard" ? "text-white" : "text-slate-400 group-hover:text-slate-600")} />
-            <span className="font-semibold text-white">Dashboard</span>
-            {path === "/dashboard" && <div className="absolute left-0 w-1 h-6 bg-white rounded-r-full my-auto inset-y-0" />}
+            <LayoutDashboard className="h-4 w-4" />
+            <span>Dashboard</span>
           </Link>
 
           <Link
             to="/tables"
             onClick={() => setIsMobileMenuOpen(false)}
             className={cn(
-              "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm transition-all duration-200 group relative",
+              "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
               path === "/tables"
-                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" 
-                : "text-slate-400 hover:bg-white/5 hover:text-white border border-white/5"
+                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" 
+                : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
 
             )}
           >
-            <Database className={cn("h-4 w-4", path === "/tables" ? "text-white" : "text-slate-400 group-hover:text-slate-600")} />
-            <span className="font-semibold text-white">Database Tables</span>
-            {path === "/tables" && <div className="absolute left-0 w-1 h-6 bg-white rounded-r-full my-auto inset-y-0" />}
+            <Database className="h-4 w-4" />
+            <span>Database Tables</span>
           </Link>
 
-          <Button variant="outline" className="w-full justify-between text-rose-500 border-rose-100 bg-rose-50/50 hover:bg-rose-50 hover:text-rose-600 group">
+          <Button variant="outline" className="group w-full justify-between border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/10 hover:text-destructive">
             <div className="flex items-center gap-2">
               <Trash2 className="h-4 w-4" />
               <div className="text-left">
                 <div className="text-[10px] font-bold uppercase">A. Delete All</div>
-                <div className="text-[9px] text-slate-400 group-hover:text-rose-400 font-normal">Audio · Slides · Clips</div>
+                <div className="text-[9px] font-normal text-muted-foreground">Audio · Slides · Clips</div>
               </div>
             </div>
-            <span className="text-[10px] bg-rose-100 px-1 rounded font-bold">DEL</span>
+            <span className="rounded bg-destructive/10 px-1 text-[10px] font-bold">DEL</span>
           </Button>
         </div>
 
         {navGroups.map((group) => (
           <div key={group.label} className="space-y-1">
-            <h3 className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{group.label}</h3>
+            <h3 className="mb-2 px-3 text-[10px] font-bold uppercase text-muted-foreground">{group.label}</h3>
             {group.items.map((item) => {
               const Icon = item.icon;
               const active = path === item.to;
@@ -156,10 +154,10 @@ function DashboardLayout() {
                   to={item.to}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={cn(
-                    "flex items-center justify-between rounded-xl px-4 py-2.5 text-sm transition-all duration-200 group relative",
+                    "group relative flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                     active 
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" 
-                      : "text-slate-400 hover:bg-white/5 hover:text-white"
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" 
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
 
                   )}
                 >
@@ -167,20 +165,19 @@ function DashboardLayout() {
                     {item.number && (
                       <span className={cn(
                         "text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border",
-                        active ? "border-white/30" : "border-white/10 text-slate-400"
+                        active ? "border-primary-foreground/40" : "border-border text-muted-foreground"
                       )}>
                         {item.number}
                       </span>
                     )}
-                    {!item.number && <Icon className={cn("h-4 w-4", active ? "text-white" : "text-slate-400 group-hover:text-slate-600")} />}
+                    {!item.number && <Icon className="h-4 w-4" />}
                     <span className="font-medium">{item.label}</span>
                   </div>
                   {item.badge && (
-                    <span className="text-[9px] font-bold bg-rose-50 text-rose-500 px-1.5 py-0.5 rounded uppercase">
+                    <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-accent">
                       {item.badge}
                     </span>
                   )}
-                  {active && <div className="absolute left-0 w-1 h-6 bg-white rounded-r-full my-auto inset-y-0" />}
                 </Link>
               );
             })}
@@ -189,13 +186,13 @@ function DashboardLayout() {
       </div>
 
       <div className="p-4 mt-auto">
-        <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+        <div className="rounded-lg border border-sidebar-border bg-secondary p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">TELUGU · POE · DNA</span>
-            <span className="text-[9px] font-bold text-slate-400">V4.2</span>
+            <span className="text-[10px] font-black uppercase text-primary">TELUGU · POE · DNA</span>
+            <span className="text-[9px] font-bold text-muted-foreground">V4.2</span>
           </div>
-          <div className="w-full bg-black/20 rounded-full h-1">
-            <div className="bg-indigo-500 h-1 rounded-full w-2/3"></div>
+          <div className="h-1 w-full rounded-full bg-border">
+            <div className="h-1 w-2/3 rounded-full bg-primary"></div>
           </div>
         </div>
       </div>
@@ -203,52 +200,52 @@ function DashboardLayout() {
   );
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground selection:bg-primary/30">
-      <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-sidebar/80 md:flex md:flex-col shadow-2xl backdrop-blur-3xl">
+    <div className="flex min-h-screen bg-background text-foreground selection:bg-primary/20">
+      <aside className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar md:flex md:flex-col">
         <SidebarContent />
       </aside>
 
       <main className="flex-1 overflow-x-hidden overflow-y-auto">
-        <header className="h-16 border-b border-white/10 bg-background/60 backdrop-blur-2xl sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between shadow-sm shadow-white/[0.02]">
+        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background/95 px-4 shadow-sm backdrop-blur md:px-6">
           <div className="flex items-center gap-3 flex-1 max-w-xl">
              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                <SheetTrigger asChild>
-                 <Button variant="ghost" size="icon" className="md:hidden shrink-0">
-                   <Menu className="h-5 w-5 text-slate-400" />
+                  <Button variant="outline" size="icon" className="shrink-0 md:hidden">
+                    <Menu className="h-5 w-5" />
                  </Button>
                </SheetTrigger>
-               <SheetContent side="left" className="p-0 w-64">
+                <SheetContent side="left" className="w-64 p-0">
                  <SidebarContent />
                </SheetContent>
              </Sheet>
 
              <div className="relative w-full group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                 <Input 
                   placeholder="Search project..." 
-                  className="pl-10 h-10 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-indigo-500 rounded-xl w-full text-sm"
+                   className="h-10 w-full rounded-lg bg-card pl-10 text-sm"
 
                 />
              </div>
           </div>
           
           <div className="flex items-center gap-2 md:gap-3 ml-2">
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 rounded-full border border-emerald-500/20">
-               <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-               <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Live</span>
+            <div className="hidden items-center gap-1.5 rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5 sm:flex">
+               <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
+               <span className="text-[10px] font-bold uppercase text-accent">Live</span>
             </div>
             
-            <div className="hidden sm:block h-8 w-px bg-white/5 mx-1" />
+            <div className="mx-1 hidden h-8 w-px bg-border sm:block" />
             
             <NotificationDrawer />
             
-            <Button variant="ghost" size="icon" className="hover:bg-white/5 rounded-full h-9 w-9 shrink-0">
-              <Settings className="h-5 w-5 text-slate-400" />
+            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 rounded-full">
+              <Settings className="h-5 w-5" />
             </Button>
           </div>
         </header>
 
-        <div className="max-w-[1600px] mx-auto min-h-[calc(100vh-64px)] p-4 md:p-6">
+        <div className="mx-auto min-h-[calc(100vh-64px)] max-w-[1600px] p-4 md:p-6">
           <Outlet />
         </div>
       </main>
