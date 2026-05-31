@@ -112,11 +112,11 @@ export function WatchdogControl({ className, variant = "full" }: Props) {
   }
 
   return (
-    <div className={cn("flex items-center gap-4 sm:gap-6 bg-white p-3 sm:p-4 rounded-2xl border shadow-sm", className)}>
+    <div className={cn("flex items-center gap-4 sm:gap-6 bg-white/5 p-3 sm:p-4 rounded-2xl border border-white/5 shadow-2xl shadow-black/20", className)}>
       <div className="flex flex-col gap-2 min-w-[100px] sm:min-w-[120px]">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Interval</span>
-          <span className="text-[10px] font-bold text-indigo-600">{localInterval[0]} hrs</span>
+          <span className="text-[10px] font-bold text-indigo-400">{localInterval[0]} hrs</span>
         </div>
         <Slider
           value={localInterval}
@@ -129,7 +129,7 @@ export function WatchdogControl({ className, variant = "full" }: Props) {
         />
       </div>
 
-      <div className="h-8 w-px bg-slate-100" />
+      <div className="h-8 w-px bg-white/5" />
 
       <div className="flex flex-col gap-1.5">
         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Auto Run</span>
