@@ -1,5 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Meta, Scripts, ScrollRestoration, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Scripts, ScrollRestoration, Outlet } from "@tanstack/react-router";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
