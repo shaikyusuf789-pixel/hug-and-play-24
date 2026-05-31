@@ -21,7 +21,6 @@ export interface IdeaCard {
   status: string;
   processing_step?: string | null;
   sources_master?: {
-
     channel_name: string;
   };
 }
@@ -49,37 +48,37 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
 
   return (
     <article className={cn(
-      "rounded-[2rem] sm:rounded-3xl bg-secondary backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/40 overflow-hidden flex flex-col animate-fade-in relative group transition-all duration-300 hover:shadow-white-lg hover:-translate-y-1",
+      "rounded-[2.5rem] bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/40 overflow-hidden flex flex-col animate-fade-in relative group transition-all duration-500 hover:shadow-white-lg hover:-translate-y-1 hover:border-white/20",
       isProcessing && "opacity-70 grayscale-[0.5]"
     )}>
 
       {isProcessing && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/20 backdrop-blur-[2px]">
-          <Loader2 className="size-8 animate-spin text-primary mb-2 shadow-white-lg" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white bg-indigo-600 px-3 py-1 rounded-full shadow-white-lg">
-            AI Engine Running...
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]">
+          <Loader2 className="size-10 animate-spin text-indigo-400 mb-4 shadow-white-lg" />
+          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white bg-indigo-600 px-4 py-1.5 rounded-full shadow-white-lg">
+            AI Engine Running
           </span>
         </div>
       )}
       {/* Thumbnail */}
-      <div className="relative w-full aspect-video bg-muted overflow-hidden">
+      <div className="relative w-full aspect-video bg-black/40 overflow-hidden">
         {idea.thumbnail_url ? (
           <img
             src={idea.thumbnail_url}
             alt={idea.original_title || idea.proposed_title || "thumbnail"}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             loading="lazy"
             decoding="async"
             draggable={false}
           />
         ) : (
-          <div className="w-full h-full grid place-items-center text-xs text-muted-foreground">
-            No thumbnail
+          <div className="w-full h-full grid place-items-center text-[10px] font-black uppercase tracking-widest text-slate-700">
+            No Preview
           </div>
         )}
-        <div className="absolute inset-0 bg-linear-to-t from-card/90 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
         {idea.duration && (
-          <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-black/70 text-white">
+          <span className="absolute bottom-3 right-3 px-2 py-0.5 rounded-md text-[10px] font-black bg-black/80 text-white border border-white/10">
             {idea.duration}
           </span>
         )}
@@ -88,28 +87,29 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
             href={idea.video_url}
             target="_blank"
             rel="noreferrer"
-            className="absolute top-2 right-2 glass rounded-full p-2 text-foreground/90 hover:text-primary transition"
+            className="absolute top-3 right-3 h-9 w-9 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-indigo-600 hover:scale-110 transition-all border border-white/10"
           >
             <ExternalLink className="size-4" />
           </a>
         )}
         <StatusBadge
           status={idea.status}
-          className="absolute top-2 left-2"
+          className="absolute top-3 left-3"
         />
       </div>
 
       {/* Body */}
-      <div className="px-4 sm:px-5 pt-3 pb-4 space-y-3 sm:space-y-4">
-        <div>
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
-            Original Title
+      <div className="px-6 py-6 space-y-5">
+        <div className="space-y-1">
+          <div className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-black flex items-center gap-2">
+            <div className="h-1 w-1 rounded-full bg-slate-700" />
+            Original Intelligence
           </div>
-          <p className="text-sm text-foreground/90 leading-snug line-clamp-2">
+          <p className="text-sm font-medium text-slate-300 leading-snug line-clamp-2 italic">
             {idea.original_title ? (
               <>
                 "{idea.original_title}" {idea.sources_master?.channel_name && (
-                  <span className="text-primary font-medium px-2 py-0.5 rounded-full bg-primary/10 ml-1">
+                  <span className="text-indigo-400 font-black px-2 py-0.5 rounded-lg bg-indigo-500/10 ml-1 border border-indigo-500/10 uppercase text-[9px] tracking-widest">
                     {idea.sources_master.channel_name}
                   </span>
                 )}
@@ -118,34 +118,33 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
           </p>
         </div>
 
-
-        <div>
-          <div className="text-[10px] uppercase tracking-widest text-primary font-semibold mb-1">
-            Proposed Title
+        <div className="space-y-1">
+          <div className="text-[9px] uppercase tracking-[0.2em] text-indigo-400 font-black flex items-center gap-2">
+            <div className="h-1 w-1 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+            Proposed Direction
           </div>
-          <h2 className="text-sm sm:text-base font-bold leading-snug text-foreground group-hover:text-primary transition-colors">
+          <h2 className="text-base sm:text-lg font-black leading-tight text-white group-hover:text-indigo-300 transition-colors tracking-tight">
             {idea.proposed_title || "—"}
           </h2>
         </div>
 
-
         {/* Meta */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
           {idea.views && (
-            <span className="inline-flex items-center gap-1">
-              <Eye className="size-3.5" />
-              <span className="font-medium text-foreground">{idea.views.toLocaleString()}</span>
+            <span className="inline-flex items-center gap-1.5 bg-white/5 px-2 py-0.5 rounded border border-white/5">
+              <Eye className="size-3" />
+              <span className="text-slate-300">{idea.views.toLocaleString()}</span>
             </span>
           )}
           {idea.published_date && (
-            <span className="inline-flex items-center gap-1">
-              <Calendar className="size-3.5" />
+            <span className="inline-flex items-center gap-1.5">
+              <Calendar className="size-3" />
               {new Date(idea.published_date).toLocaleDateString()}
             </span>
           )}
           {idea.duration && (
-            <span className="inline-flex items-center gap-1">
-              <Clock className="size-3.5" />
+            <span className="inline-flex items-center gap-1.5">
+              <Clock className="size-3" />
               {idea.duration}
             </span>
           )}
@@ -153,46 +152,47 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
 
         {/* summary points */}
         {summary.length > 0 && (
-          <div className="bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-2xl p-3 border border-indigo-500/10">
-            <div className="text-[10px] uppercase tracking-widest text-indigo-600 dark:text-indigo-400 font-black mb-2 flex items-center gap-1.5">
-              <div className="size-1.5 bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
-              Summary Points
+          <div className="bg-indigo-500/[0.03] rounded-3xl p-5 border border-indigo-500/10 relative overflow-hidden group/summary">
+            <div className="absolute inset-0 bg-linear-to-br from-indigo-500/5 to-transparent opacity-0 group-hover/summary:opacity-100 transition-opacity" />
+            <div className="text-[9px] uppercase tracking-[0.25em] text-indigo-400 font-black mb-4 flex items-center gap-2 relative z-10">
+              <div className="size-1.5 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.8)] animate-pulse" />
+              Strategy Intelligence
             </div>
 
-            <div className="relative min-h-[50px]">
-              <ul className="space-y-0.5 transition-all">
+            <div className="relative min-h-[50px] z-10">
+              <ul className="space-y-3 transition-all">
                 {visible.length > 0 ? (
                   visible.map((s: string, i: number) => (
                     <li
                       key={i}
-                      className="text-[13px] text-foreground/85 leading-[1.35] flex gap-1.5"
+                      className="text-[13px] text-slate-400 leading-relaxed flex gap-3 group/item"
                     >
-                      <span className="text-primary mt-[5px] shrink-0 text-[10px]">●</span>
-                      <span>{s}</span>
+                      <span className="text-indigo-500 mt-[6px] shrink-0 text-[10px] font-black group-hover/item:scale-150 transition-transform">0{i+1}</span>
+                      <span className="group-hover/item:text-slate-200 transition-colors font-medium">{s}</span>
                     </li>
                   ))
                 ) : (
-                  <li className="text-[13px] text-muted-foreground italic py-2">
-                    Click "Approve" to generate AI summary and strategy...
+                  <li className="text-xs text-slate-600 italic py-2 font-medium uppercase tracking-widest text-center">
+                    Awaiting AI content generation pipeline
                   </li>
                 )}
               </ul>
               {!expanded && hasMore && (
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-linear-to-t from-background to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-linear-to-t from-black/20 to-transparent" />
               )}
             </div>
             {hasMore && (
               <button
                 onClick={() => setExpanded((v) => !v)}
-                className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-primary hover:text-primary/80 transition"
+                className="mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 hover:text-white transition-all relative z-10"
               >
                 {expanded ? (
                   <>
-                    Show Less <ChevronUp className="size-3" />
+                    Collapse <ChevronUp className="size-3" />
                   </>
                 ) : (
                   <>
-                    Read More <ChevronDown className="size-3" />
+                    Reveal Strategy <ChevronDown className="size-3" />
                   </>
                 )}
               </button>
@@ -204,7 +204,7 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
         {actions.length > 0 && (
           <div
             className={cn(
-              "grid gap-2 pt-1",
+              "grid gap-3 pt-2",
               actions.length === 1 && "grid-cols-1",
               actions.length === 2 && "grid-cols-2",
               actions.length === 3 && "grid-cols-3"
@@ -231,11 +231,11 @@ const ACTION_META: Record<
   ActionKey,
   { label: string; className: string }
 > = {
-  approve: { label: "Approve", className: "gradient-accept text-white" },
-  reject: { label: "Reject", className: "gradient-reject text-white" },
-  priority: { label: "Priority", className: "gradient-orange text-white" },
-  done: { label: "Done", className: "gradient-primary text-primary-foreground" },
-  generate: { label: "Generate", className: "gradient-blue text-white" },
+  approve: { label: "Approve", className: "bg-emerald-600 hover:bg-emerald-500 text-white" },
+  reject: { label: "Reject", className: "bg-white/5 border border-white/10 hover:bg-rose-600 hover:border-transparent text-slate-400 hover:text-white" },
+  priority: { label: "Priority", className: "bg-amber-600 hover:bg-amber-500 text-white" },
+  done: { label: "Done", className: "bg-indigo-600 hover:bg-indigo-500 text-white" },
+  generate: { label: "Generate", className: "bg-indigo-600 hover:bg-indigo-500 text-white shadow-button" },
 };
 
 function ActionButton({
@@ -253,10 +253,9 @@ function ActionButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "py-2 sm:py-2.5 rounded-xl font-bold text-[10px] sm:text-xs uppercase tracking-widest shadow-button active:scale-95 transition-all duration-300 disabled:opacity-50 hover:shadow-white-lg hover:brightness-110",
+        "py-3 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] active:scale-95 transition-all duration-300 disabled:opacity-50 hover:shadow-white-lg",
         meta.className
       )}
-
     >
       {meta.label}
     </button>
@@ -271,25 +270,24 @@ function StatusBadge({
   className?: string;
 }) {
   const map: Record<string, string> = {
-    Pending: "bg-muted text-muted-foreground",
-    Processing: "bg-primary/20 text-primary border border-primary/20",
-    Approved: "gradient-accept text-white",
-    Rejected: "gradient-reject text-white",
-    Priority: "gradient-orange text-white",
-    Done: "gradient-primary text-primary-foreground",
+    Pending: "bg-white/5 text-slate-500 border-white/5",
+    Processing: "bg-indigo-600 text-white border-transparent animate-pulse shadow-glow",
+    Approved: "bg-emerald-600 text-white border-transparent",
+    Rejected: "bg-rose-600 text-white border-transparent",
+    Priority: "bg-amber-600 text-white border-transparent",
+    Done: "bg-indigo-600 text-white border-transparent",
   };
 
   if (status === "Pending") return null;
   return (
     <span
       className={cn(
-        "px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm backdrop-blur-md border border-white/20",
+        "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] shadow-2xl backdrop-blur-md border",
         map[status] || map["Pending"],
         className
       )}
     >
       {status}
     </span>
-
   );
 }
