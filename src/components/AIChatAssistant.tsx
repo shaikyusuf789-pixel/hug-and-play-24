@@ -83,47 +83,47 @@ export function AIChatAssistant() {
     <>
       <Button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl z-50 gradient-primary hover:scale-105 transition-transform duration-200"
+        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-primary shadow-lg transition-transform duration-200 hover:scale-105"
       >
         {isOpen ? <X className="h-6 w-6" /> : <MessageSquare className="h-6 w-6" />}
       </Button>
 
       {isOpen && (
-        <Card className="fixed bottom-24 right-4 sm:right-6 w-[calc(100vw-32px)] sm:w-[400px] h-[calc(100vh-120px)] sm:h-[600px] flex flex-col shadow-2xl z-50 border-indigo-100 animate-in slide-in-from-bottom-5">
-          <CardHeader className="p-4 border-b bg-indigo-50/30">
+        <Card className="fixed bottom-24 right-4 z-50 flex h-[calc(100vh-120px)] w-[calc(100vw-32px)] flex-col border shadow-xl animate-in slide-in-from-bottom-5 sm:right-6 sm:h-[600px] sm:w-[400px]">
+          <CardHeader className="border-b bg-card p-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
                 <Bot className="h-6 w-6" />
               </div>
               <div>
-                <CardTitle className="text-sm font-bold text-white">SKY AI Assistant</CardTitle>
+                <CardTitle className="text-sm font-bold text-foreground">SKY AI Assistant</CardTitle>
                 <div className="flex items-center gap-1.5">
-                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Memory Active & Ready</span>
+                  <div className="h-1.5 w-1.5 rounded-full bg-accent" />
+                  <span className="text-[10px] font-medium uppercase text-muted-foreground">Memory Active & Ready</span>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-1 mt-2">
-              <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold">Second Brain Enabled</span>
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">Second Brain Enabled</span>
             </div>
           </CardHeader>
 
-          <CardContent className="flex-1 p-0 bg-white">
+          <CardContent className="flex-1 bg-background p-0">
             <ScrollArea ref={scrollRef} className="h-full p-4">
               <div className="space-y-4">
                 {messages.length === 0 && (
                   <div className="text-center py-8">
-                    <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center mx-auto mb-4">
-                      <Bot className="h-8 w-8 text-indigo-500" />
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
+                      <Bot className="h-8 w-8 text-primary" />
                     </div>
-                    <p className="text-sm text-slate-500 font-medium">Hello! How can I help you today?</p>
-                    <p className="text-[11px] text-slate-400 mt-1 max-w-[200px] mx-auto">I can search for ideas, edit content, and check channel performance.</p>
+                    <p className="text-sm font-medium text-foreground">Hello! How can I help you today?</p>
+                    <p className="mx-auto mt-1 max-w-[200px] text-[11px] text-muted-foreground">I can search for ideas, edit content, and check channel performance.</p>
                     
                     <div className="mt-6 grid grid-cols-1 gap-2">
                        <Button 
                          variant="outline" 
                          size="sm" 
-                         className="text-[10px] h-8 justify-start border-slate-100 hover:bg-slate-50"
+                         className="h-8 justify-start text-[10px]"
                          onClick={() => setInput("What are the ssc related new ideas in our pending list?")}
                        >
                          "Show me SSC related pending ideas"
@@ -131,7 +131,7 @@ export function AIChatAssistant() {
                        <Button 
                          variant="outline" 
                          size="sm" 
-                         className="text-[10px] h-8 justify-start border-slate-100 hover:bg-slate-50"
+                         className="h-8 justify-start text-[10px]"
                          onClick={() => setInput("Which channels have high rejection rates?")}
                        >
                          "Check channel performance"
@@ -149,15 +149,15 @@ export function AIChatAssistant() {
                   >
                     <div className={cn(
                       "h-8 w-8 rounded-lg shrink-0 flex items-center justify-center shadow-sm",
-                      msg.role === "user" ? "bg-slate-100 text-slate-600" : "bg-indigo-600 text-white"
+                      msg.role === "user" ? "bg-secondary text-secondary-foreground" : "bg-primary text-primary-foreground"
                     )}>
                       {msg.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
                     </div>
                     <div className={cn(
                       "rounded-2xl px-4 py-2.5 text-sm shadow-sm",
                       msg.role === "user" 
-                        ? "bg-slate-800 text-slate-100 rounded-tr-none border border-slate-700" 
-                        : "bg-indigo-900/50 text-slate-100 rounded-tl-none border border-indigo-500/30"
+                        ? "rounded-tr-none border bg-secondary text-secondary-foreground" 
+                        : "rounded-tl-none border bg-card text-card-foreground"
                     )}>
                       {msg.content}
                     </div>
@@ -165,11 +165,11 @@ export function AIChatAssistant() {
                 ))}
                 {isLoading && (
                   <div className="flex gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                       <Bot className="h-4 w-4" />
                     </div>
-                    <div className="bg-slate-50 rounded-2xl px-4 py-2 text-sm border border-slate-100">
-                      <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                    <div className="rounded-lg border bg-card px-4 py-2 text-sm">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
                     </div>
                   </div>
                 )}
@@ -177,7 +177,7 @@ export function AIChatAssistant() {
             </ScrollArea>
           </CardContent>
 
-          <CardFooter className="p-4 border-t bg-slate-50/50">
+          <CardFooter className="border-t bg-card p-4">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -189,13 +189,13 @@ export function AIChatAssistant() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask anything..."
-                className="bg-white border-slate-200 focus-visible:ring-indigo-500 rounded-xl"
+                className="rounded-lg bg-background"
               />
               <Button 
                 type="submit" 
                 size="icon" 
                 disabled={isLoading || !input.trim()}
-                className="rounded-xl gradient-primary shadow-lg shadow-indigo-100 h-10 w-10 shrink-0"
+                className="h-10 w-10 shrink-0 rounded-lg bg-primary"
               >
                 <Send className="h-4 w-4" />
               </Button>
