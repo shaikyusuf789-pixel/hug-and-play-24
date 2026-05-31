@@ -48,13 +48,17 @@ function DashboardLayout() {
   useEffect(() => {
     // Daily channel performance check
     const checkPerformance = async () => {
+      // NOTE: check_channel_performance RPC is not implemented in the current DB schema.
+      // commenting out to avoid 404 errors in logs.
+      /*
       try {
-        // @ts-ignore - function exists in DB but might not be in types yet
         await supabase.rpc('check_channel_performance');
       } catch (error) {
         console.error("Failed to check channel performance:", error);
       }
+      */
     };
+
     checkPerformance();
   }, []);
 
