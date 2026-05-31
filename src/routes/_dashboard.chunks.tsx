@@ -214,11 +214,11 @@ function ChunksPage() {
                   </span>
                 </div>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 md:p-6">
                 <Textarea 
                   value={chunk.content}
                   onChange={(e) => handleUpdateChunkContent(index, e.target.value)}
-                  className="min-h-[140px] text-white leading-relaxed resize-none focus-visible:ring-indigo-500 border-none p-0 focus-visible:ring-0 shadow-none text-base font-telugu"
+                  className="min-h-[120px] md:min-h-[140px] text-slate-800 leading-relaxed resize-none focus-visible:ring-indigo-500 border-none p-0 focus-visible:ring-0 shadow-none text-sm md:text-base font-telugu bg-transparent"
                   placeholder="Chunk content..."
                 />
               </CardContent>
