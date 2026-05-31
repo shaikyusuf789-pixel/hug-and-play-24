@@ -52,49 +52,44 @@ function Dashboard() {
   });
 
   const cards = [
-    { label: "Total Ideas", value: stats.data?.total, icon: ListVideo, color: "text-indigo-400", gradient: "from-indigo-500/20 to-transparent" },
-    { label: "Pending Approval", value: stats.data?.pending, icon: Radio, color: "text-amber-400", gradient: "from-amber-500/20 to-transparent" },
-    { label: "Pending Priority", value: stats.data?.approved, icon: CheckCircle2, color: "text-cyan-400", gradient: "from-cyan-500/20 to-transparent" },
-    { label: "Pending Scripting", value: stats.data?.priority, icon: Play, color: "text-violet-400", gradient: "from-violet-500/20 to-transparent" },
-    { label: "Pending Audio", value: stats.data?.scriptDone, icon: Radio, color: "text-fuchsia-400", gradient: "from-fuchsia-500/20 to-transparent" },
-    { label: "Pending Slides", value: stats.data?.audioDone, icon: ListVideo, color: "text-emerald-400", gradient: "from-emerald-500/20 to-transparent" },
+    { label: "Total Ideas", value: stats.data?.total, icon: ListVideo },
+    { label: "Pending Approval", value: stats.data?.pending, icon: Radio },
+    { label: "Pending Priority", value: stats.data?.approved, icon: CheckCircle2 },
+    { label: "Pending Scripting", value: stats.data?.priority, icon: Play },
+    { label: "Pending Audio", value: stats.data?.scriptDone, icon: Radio },
+    { label: "Pending Slides", value: stats.data?.audioDone, icon: ListVideo },
   ];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 sm:space-y-10 p-4 sm:p-8 relative min-h-full">
-      {/* Dynamic Background Elements */}
-      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-indigo-600/[0.03] blur-[140px] pointer-events-none rounded-full" />
-      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-600/[0.03] blur-[120px] pointer-events-none rounded-full" />
-
-      {/* Header Section */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
+    <div className="relative mx-auto min-h-full max-w-6xl space-y-6 p-1 sm:space-y-8 sm:p-4">
+      <div className="relative z-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
         <div className="space-y-2">
           <div className="flex items-center gap-3 mb-2">
-            <span className="text-[10px] font-black bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full uppercase tracking-[0.2em] border border-white/5 backdrop-blur-md">
+            <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-black uppercase text-primary">
               System Core v4.2
             </span>
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
-              <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest">Active</span>
+            <div className="flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent/10 px-2 py-1">
+              <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
+              <span className="text-[9px] font-bold uppercase text-accent">Active</span>
             </div>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-none">
-            Sky <span className="text-indigo-500 italic">Studio</span>
+          <h1 className="text-3xl font-black leading-tight text-foreground sm:text-5xl">
+            Sky <span className="text-primary">Studio</span>
           </h1>
-          <p className="text-sm sm:text-base text-slate-400 font-medium max-w-xl">
-            Autonomous AI Video Production Pipeline. <span className="text-indigo-400/80">Fueling SKY Academy's content engine.</span>
+          <p className="max-w-xl text-sm font-medium text-muted-foreground sm:text-base">
+            Autonomous AI Video Production Pipeline. <span className="text-primary">Fueling SKY Academy's content engine.</span>
           </p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-4 bg-white/[0.03] p-2 rounded-[2rem] border border-white/10 backdrop-blur-3xl shadow-white-lg">
-          <WatchdogControl className="bg-transparent border-none shadow-none p-2" />
-          <div className="flex gap-2">
+        <div className="flex flex-col gap-3 rounded-xl border bg-card p-3 shadow-sm sm:flex-row sm:items-center">
+          <WatchdogControl className="border-0 bg-transparent p-0 shadow-none" />
+          <div className="grid grid-cols-2 gap-2 sm:flex">
             <Button 
               onClick={() => run.mutate()} 
               disabled={run.isPending} 
-              className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-button hover:shadow-white-lg h-12 px-8 gap-3 rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all hover:scale-105 active:scale-95"
+              className="h-11 gap-2 rounded-lg px-4 text-[11px] font-black uppercase"
             >
-              {run.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4 fill-white/20" />}
+              {run.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
               Initialize Scraper
             </Button>
             <Button 
@@ -111,7 +106,7 @@ function Dashboard() {
                   toast.error("Failed to trigger backup: " + e.message);
                 }
               }}
-              className="border-white/20 bg-white/5 hover:bg-white/10 hover:shadow-white-lg text-white h-12 px-6 gap-3 rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all"
+              className="h-11 gap-2 rounded-lg px-4 text-[11px] font-black uppercase"
             >
               <Github className="h-4 w-4" />
               Backup
