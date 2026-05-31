@@ -84,7 +84,7 @@ function DashboardLayout() {
   ];
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full sidebar-gradient">
+    <div className="flex flex-col h-full sidebar-gradient backdrop-blur-3xl bg-white/[0.02]">
 
       <div className="px-6 py-6 flex items-center gap-3 border-b mb-4">
         <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-black shadow-lg shadow-indigo-500/40 border border-white/10 italic tracking-tighter">SKY</div>
