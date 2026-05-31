@@ -188,15 +188,28 @@ function RawContentPage() {
     }
     
     if (action === "approve") {
-      toast.info("Processing idea transcript and AI analysis...");
+      toast.info("Moving to Approved section and starting AI pipeline...");
+      
+      // Optimistic update
+      qc.setQueryData(["ideas"], (old: any) => ({
+        ideas: old.ideas.map((i: any) =>
+          i.id === idea.id ? { ...i, status: "Processing", processing_step: "Initializing..." } : i
+        ),
+      }));
+
       try {
         await approveFn({ data: { id: idea.id } });
+        // Realtime will handle the final "Approved" state update, 
+        // but we invalidate just in case
         qc.invalidateQueries({ queryKey: ["ideas"] });
       } catch (err: any) {
         toast.error("Failed to process idea: " + err.message);
+        // Rollback
+        qc.invalidateQueries({ queryKey: ["ideas"] });
       }
       return;
     }
+
 
     const status = ACTION_TO_STATUS[action];
     mutate.mutate({ idea, status });
