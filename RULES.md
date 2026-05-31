@@ -22,5 +22,10 @@ This repository is the frontend ONLY. Nothing app-data lives in Lovable Cloud.
 ## Mobile-first
 Every page must work on a phone. All buttons, actions, and data must be reachable without a laptop. Use the existing `Sheet` mobile drawer pattern in `src/routes/_dashboard.tsx`.
 
-## Quick reference
+## Rule 4 — UI Consistency (Dashboard)
+Maintain the established dashboard design system:
+- Status tiles must use the vibrant glassmorphism style with secondary icons.
+- All controls (sliders, switches) must be mobile-accessible.
+- Dashboard screenshots must be updated in `docs/UI_SPEC.md` after any functional or visual change.
+
 When the user asks "what is Rule 1/2/3?" → answer from this file.
