@@ -18,7 +18,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch App Metadata
+    // Fetch App Metadata for context
     const { data: metadata } = await supabase
       .from("app_metadata")
       .select("key, value");
@@ -38,10 +38,10 @@ ${JSON.stringify(neuralScheme, null, 2)}
 YOUR MISSION:
 1. Act as a second brain. You know every button, every page, and every table.
 2. Provide answers based on the current state of the app.
-3. You can read and write data using the tools provided.
-4. When a user asks to add a source, use 'add_source'.
-5. When they ask about ideas, use 'get_recent_ideas'.
-6. When they ask about scripts, use 'get_script_by_title'.
+3. You have READ and WRITE access to the database using the tools provided.
+4. Help the user manage their pipeline by approving ideas, adding sources, and cleaning up scripts.
+5. If a user asks to "store" something, use 'save_app_note'.
+6. If they ask to clear history, use 'clear_chat_memory'.
 
 Always be professional, concise, and incredibly helpful.`;
 
@@ -49,6 +49,8 @@ Always be professional, concise, and incredibly helpful.`;
       const { name, arguments: argsJson } = call.function;
       const args = JSON.parse(argsJson);
       
+      console.log(`Executing tool: ${name}`, args);
+
       if (name === "get_sources") {
         const { data } = await supabase.from("sources_master").select("*");
         return JSON.stringify(data);
@@ -61,13 +63,42 @@ Always be professional, concise, and incredibly helpful.`;
         return JSON.stringify({ success: true, data });
       }
       if (name === "get_recent_ideas") {
-        const { data } = await supabase.from("raw_content").select("*").order("created_at", { ascending: false }).limit(5);
+        const { data } = await supabase.from("raw_content").select("*").order("created_at", { ascending: false }).limit(10);
         return JSON.stringify(data);
       }
-      if (name === "get_script_by_title") {
-        const { data } = await supabase.from("scripts").select("*").ilike("title", `%${args.title}%`).limit(1);
+      if (name === "approve_idea") {
+        const { data, error } = await supabase.from("raw_content")
+          .update({ status: 'approved' })
+          .eq("id", args.id)
+          .select();
+        if (error) return JSON.stringify({ error: error.message });
+        return JSON.stringify({ success: true, message: "Idea approved and moved to production pipeline.", data });
+      }
+      if (name === "reject_idea") {
+        const { data, error } = await supabase.from("raw_content")
+          .update({ status: 'rejected' })
+          .eq("id", args.id)
+          .select();
+        if (error) return JSON.stringify({ error: error.message });
+        return JSON.stringify({ success: true, message: "Idea rejected.", data });
+      }
+      if (name === "get_scripts") {
+        const { data } = await supabase.from("scripts").select("id, title, created_at").order("created_at", { ascending: false });
         return JSON.stringify(data);
       }
+      if (name === "save_app_note") {
+        const { data, error } = await supabase.from("ai_chat_memory").insert([
+          { role: "system", content: args.content, category: "note", metadata: { title: args.title } }
+        ]).select();
+        if (error) return JSON.stringify({ error: error.message });
+        return JSON.stringify({ success: true, message: "Note saved to your history/storage.", data });
+      }
+      if (name === "clear_chat_memory") {
+        const { error } = await supabase.from("ai_chat_memory").delete().neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all
+        if (error) return JSON.stringify({ error: error.message });
+        return JSON.stringify({ success: true, message: "Chat memory cleared." });
+      }
+
       return "Tool not found";
     };
 
@@ -115,15 +146,60 @@ Always be professional, concise, and incredibly helpful.`;
         {
           type: "function",
           function: {
-            name: "get_script_by_title",
-            description: "Search for an existing script by its title.",
+            name: "approve_idea",
+            description: "Approve a video idea to move it into the production script phase.",
             parameters: {
               type: "object",
               properties: {
-                title: { type: "string", description: "The title or keyword of the script" }
+                id: { type: "string", description: "The UUID of the idea to approve" }
               },
-              required: ["title"]
+              required: ["id"]
             }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "reject_idea",
+            description: "Reject a video idea to remove it from the active pipeline.",
+            parameters: {
+              type: "object",
+              properties: {
+                id: { type: "string", description: "The UUID of the idea to reject" }
+              },
+              required: ["id"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "get_scripts",
+            description: "Get a list of all generated scripts.",
+            parameters: { type: "object", properties: {} }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "save_app_note",
+            description: "Save a permanent note or data point to the app's neural storage/history.",
+            parameters: {
+              type: "object",
+              properties: {
+                title: { type: "string", description: "Short title for the note" },
+                content: { type: "string", description: "The full content of the note" }
+              },
+              required: ["title", "content"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "clear_chat_memory",
+            description: "Wipe the entire chat history and memory.",
+            parameters: { type: "object", properties: {} }
           }
         }
       ]
@@ -138,8 +214,10 @@ Always be professional, concise, and incredibly helpful.`;
       body: JSON.stringify(requestBody),
     });
 
-    let data = await response.json();
-    let message = data.choices[0].message;
+    let responseData = await response.json();
+    if (responseData.error) throw new Error(responseData.error.message);
+    
+    let message = responseData.choices[0].message;
 
     while (message.tool_calls) {
       const toolResults = [];
@@ -171,15 +249,18 @@ Always be professional, concise, and incredibly helpful.`;
       });
 
       const nextData = await nextResponse.json();
+      if (nextData.error) throw new Error(nextData.error.message);
       message = nextData.choices[0].message;
     }
 
-    // Save history
+    // Save history to memory table
     const lastUserMsg = messages[messages.length - 1];
-    await supabase.from("ai_chat_memory").insert([
-      { role: "user", content: lastUserMsg.content },
-      { role: "assistant", content: message.content }
-    ]);
+    if (lastUserMsg && lastUserMsg.role === "user") {
+      await supabase.from("ai_chat_memory").insert([
+        { role: "user", content: lastUserMsg.content },
+        { role: "assistant", content: message.content }
+      ]);
+    }
 
     return new Response(JSON.stringify(message), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
