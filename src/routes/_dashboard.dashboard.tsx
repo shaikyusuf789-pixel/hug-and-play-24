@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { runIdeaEngine, updateLastRunTimestamp } from "@/lib/engine.functions";
+import { runIdeaEngine, updateLastRunTimestamp, getDashboardStats } from "@/lib/engine.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Play, Radio, ListVideo, CheckCircle2, Github, Table as TableIcon, Sparkles, BrainCircuit, Rocket } from "lucide-react";
@@ -29,28 +29,14 @@ const DASHBOARD_TABLES = [
 
 function Dashboard() {
   const qc = useQueryClient();
+  const fetchStatsFn = useServerFn(getDashboardStats);
   
   const stats = useQuery({
     queryKey: ["stats"],
-    queryFn: async () => {
-      const [total, pending, approved, priority, scriptDone, audioDone] = await Promise.all([
-        supabase.from("raw_content").select("*", { count: "exact", head: true }),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Pending"),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Approved"),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Priority"),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Script Done"),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Audio Done"),
-      ]);
-      return { 
-        total: total.count ?? 0, 
-        pending: pending.count ?? 0,
-        approved: approved.count ?? 0,
-        priority: priority.count ?? 0,
-        scriptDone: scriptDone.count ?? 0,
-        audioDone: audioDone.count ?? 0,
-      };
-    },
+    queryFn: () => fetchStatsFn(),
   });
+  
+  console.log("Dashboard Stats Data:", stats.data);
 
   const runFn = useServerFn(runIdeaEngine);
   const setLastRun = useServerFn(updateLastRunTimestamp);

@@ -3,7 +3,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { addSource, deleteSource, bulkAddSources } from "@/lib/engine.functions";
+import { addSource, deleteSource, bulkAddSources, getSources } from "@/lib/engine.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,17 +23,11 @@ function SourcesPage() {
   const [url, setUrl] = useState("");
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  const fetchSourcesFn = useServerFn(getSources);
+  
   const sources = useQuery({
     queryKey: ["sources"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sources_master")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchSourcesFn(),
   });
 
   const addFn = useServerFn(addSource);

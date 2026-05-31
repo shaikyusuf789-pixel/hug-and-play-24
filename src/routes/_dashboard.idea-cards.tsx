@@ -57,15 +57,10 @@ function RawContentPage() {
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["ideas"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("raw_content")
-        .select("*, sources_master(channel_name)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return { ideas: data };
-    },
+    queryFn: () => fetchFn({ data: {} }),
   });
+
+  console.log("IdeaCards Data:", data);
 
   // Realtime subscription for live updates
   useEffect(() => {
@@ -109,12 +104,16 @@ function RawContentPage() {
       Rejected: 0,
       Done: 0,
     };
-    for (const i of ideas) {
-      const status = i.status === "Processing" ? "Approved" : i.status;
-      if (c[status] !== undefined) c[status]++;
-    }
+    
+    ideas.forEach(i => {
+      let status = i.status;
+      if (status === "Processing") status = "Approved";
+      if (c[status] !== undefined) {
+        c[status]++;
+      }
+    });
+    
     return c;
-
   }, [ideas]);
 
   const filtered = useMemo(
