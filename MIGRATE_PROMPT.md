@@ -15,7 +15,7 @@ You are taking over the **VibeCoder** frontend. Before doing anything, read and 
 
 - **Rule 1**: After any page UI change → screenshot + update `docs/UI_SPEC.md`.
 - **Rule 2**: Run security checks (Supabase linter) after every change.
-- **Rule 3**: Frontend ONLY. Backend = direct Supabase project `klhcrdacefntzqwqwiiu` at `https://klhcrdacefntzqwqwiiu.supabase.co`. **Do NOT** use Lovable Cloud, do NOT create new tables/secrets/edge functions anywhere else.
+- **Rule 3**: Frontend ONLY. Backend = direct Supabase project `klhcrdacefntzqwqwiiu` at `https://klhcrdacefntzqwqwiiu.supabase.co`. **Do NOT** use internal managed services, do NOT create new tables/secrets/edge functions anywhere else.
 
 ## Mobile-first
 Every page must be fully usable on a phone (390px). All buttons/actions visible without horizontal scroll.

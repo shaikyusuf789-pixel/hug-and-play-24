@@ -5,8 +5,8 @@ import type { Database } from './types';
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL = "https://eozteueesaemhcmbqcxt.supabase.co";
-  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_8_LFpheRbnwNiecH1oHujQ_6HHrydgh";
+  const SUPABASE_URL = "https://klhcrdacefntzqwqwiiu.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_aITpoyEkEtU60jzenvS3ig_wCGXYVGz";
 
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
@@ -14,7 +14,7 @@ function createSupabaseClient() {
       ...(!SUPABASE_URL ? ['SUPABASE_URL'] : []),
       ...(!SUPABASE_PUBLISHABLE_KEY ? ['SUPABASE_PUBLISHABLE_KEY'] : []),
     ];
-    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Connect Supabase in Lovable Cloud.`;
+    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Connect Supabase in your project settings.`;
     console.error(`[Supabase] ${message}`);
     throw new Error(message);
   }

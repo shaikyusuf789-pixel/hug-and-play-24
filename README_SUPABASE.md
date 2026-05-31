@@ -1,9 +1,9 @@
 # VibeCoder - Project Status & Handover Documentation
 **Date:** May 31, 2026
-**Status:** Successfully decoupled from Lovable Cloud Managed Database. Fully integrated with Direct Supabase Instance.
+**Status:** Successfully decoupled from managed backend services. Fully integrated with Direct Supabase Instance.
 
 ## 🔗 Core Backend Integration
-The project is strictly wired to a specific Supabase instance. **Do not use Lovable Cloud's managed database.**
+The project is strictly wired to a specific Supabase instance. **Do not use the project's default managed database.**
 
 - **Project URL:** `https://klhcrdacefntzqwqwiiu.supabase.co`
 - **Publishable Key:** `sb_publishable_aITpoyEkEtU60jzenvS3ig_wCGXYVGz`
@@ -32,7 +32,7 @@ Every component in the UI is mapped directly to these tables in your Supabase pr
 
 ## 🛠️ Key Technical Fixes & Features
 1. **Dynamic Database Browser**: The "Database Tables" page uses a custom RPC function `get_public_tables()` to list **all** available tables in your Supabase project dynamically.
-2. **Hardcoded Decoupling**: Credentials have been hardcoded in the Supabase clients to prevent the "Lovable Wrapped Supabase" from interfering.
+2. **Hardcoded Decoupling**: Credentials have been hardcoded in the Supabase clients to prevent the internal backend from interfering.
 3. **Admin Client (Bypassing RLS)**: Server functions use `supabaseAdmin` with the Service Role Key to manage complex workflows like the Idea Engine.
 4. **Dashboard Wiring**: The Dashboard now visualizes status indicators for all 10 core tables to confirm active connectivity.
 

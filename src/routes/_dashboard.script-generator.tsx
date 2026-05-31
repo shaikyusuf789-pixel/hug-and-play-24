@@ -412,7 +412,7 @@ function ScriptGenerator() {
                         }
                       }}
                     >
-                      <option value="lovable-gemini">Lovable Built-in Gemini</option>
+                      <option value="lovable-gemini">Sky Studio Gemini</option>
                       <option value="poe">Poe.com (Multi-Model)</option>
                       <option value="anthropic">Claude (Anthropic)</option>
                       <option value="openai">OpenAI (GPT)</option>
