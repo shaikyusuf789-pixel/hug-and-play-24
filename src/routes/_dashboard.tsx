@@ -139,16 +139,16 @@ function DashboardLayout() {
 
   return (
     <div className="flex min-h-screen bg-slate-50 selection:bg-primary/10">
-      <aside className="hidden w-64 shrink-0 md:flex md:flex-col">
+      <aside className="hidden w-64 shrink-0 lg:flex lg:flex-col">
         <SidebarContent />
       </aside>
 
-      <main className="flex-1">
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-6 backdrop-blur-md">
-          <div className="flex items-center gap-4 flex-1">
+      <main className="flex-1 min-w-0">
+        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-4 md:px-6 backdrop-blur-md">
+          <div className="flex items-center gap-2 md:gap-4 flex-1">
              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden">
+                  <Button variant="ghost" size="icon" className="lg:hidden">
                     <Menu className="h-5 w-5" />
                  </Button>
                </SheetTrigger>
@@ -157,24 +157,24 @@ function DashboardLayout() {
                </SheetContent>
              </Sheet>
 
-             <div className="relative w-full max-w-md">
+             <div className="relative w-full max-w-[200px] md:max-w-md">
                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <Input 
-                  placeholder="Quick search..." 
-                  className="h-10 w-full rounded-xl border-slate-200 bg-slate-50 pl-10 text-sm focus:bg-white transition-all"
+                  placeholder="Search..." 
+                  className="h-10 w-full rounded-xl border-slate-200 bg-slate-50 pl-10 text-xs md:text-sm focus:bg-white transition-all"
                 />
              </div>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 md:gap-3">
             <NotificationDrawer />
-            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-slate-900">
+            <Button variant="ghost" size="icon" className="h-9 w-9 md:h-10 md:w-10 rounded-xl text-slate-400 hover:text-slate-900 hidden xs:flex">
               <Settings className="h-5 w-5" />
             </Button>
           </div>
         </header>
 
-        <div className="min-h-[calc(100vh-64px)] overflow-x-hidden">
+        <div className="min-h-[calc(100vh-64px)] overflow-x-hidden p-0">
           <Outlet />
         </div>
       </main>
