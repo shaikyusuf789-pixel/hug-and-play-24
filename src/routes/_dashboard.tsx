@@ -210,7 +210,7 @@ function DashboardLayout() {
              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                <SheetTrigger asChild>
                  <Button variant="ghost" size="icon" className="md:hidden shrink-0">
-                   <Menu className="h-5 w-5 text-slate-600" />
+                   <Menu className="h-5 w-5 text-slate-400" />
                  </Button>
                </SheetTrigger>
                <SheetContent side="left" className="p-0 w-64">
@@ -229,17 +229,17 @@ function DashboardLayout() {
           </div>
           
           <div className="flex items-center gap-2 md:gap-3 ml-2">
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 rounded-full border border-emerald-100">
-               <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-               <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Live</span>
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+               <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+               <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Live</span>
             </div>
             
-            <div className="hidden sm:block h-8 w-px bg-slate-100 mx-1" />
+            <div className="hidden sm:block h-8 w-px bg-white/5 mx-1" />
             
             <NotificationDrawer />
             
-            <Button variant="ghost" size="icon" className="hover:bg-slate-100 rounded-full h-9 w-9 shrink-0">
-              <Settings className="h-5 w-5 text-slate-600" />
+            <Button variant="ghost" size="icon" className="hover:bg-white/5 rounded-full h-9 w-9 shrink-0">
+              <Settings className="h-5 w-5 text-slate-400" />
             </Button>
           </div>
         </header>
