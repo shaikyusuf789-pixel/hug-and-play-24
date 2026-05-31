@@ -135,20 +135,20 @@ function ChunksPage() {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8">
-      <div className="flex justify-between items-end flex-wrap gap-6">
-        <div>
+    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 md:space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+        <div className="space-y-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Phase 2</span>
-            <span className="text-[10px] text-slate-400 font-medium tracking-wider">• SEGMENTATION ENGINE</span>
+            <span className="text-[9px] md:text-[10px] font-bold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Phase 2</span>
+            <span className="text-[9px] md:text-[10px] text-slate-400 font-medium tracking-wider">• SEGMENTATION ENGINE</span>
           </div>
-          <h1 className="text-3xl font-bold text-white">Chunking Engine</h1>
-          <p className="text-slate-500 mt-1">Smart script segmentation for optimized visual matching.</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Chunking Engine</h1>
+          <p className="text-sm md:text-base text-slate-500">Smart script segmentation for optimized visual matching.</p>
         </div>
         
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4 w-full md:w-auto">
           <Select value={selectedScriptId} onValueChange={setSelectedScriptId}>
-            <SelectTrigger className="w-[320px] bg-white border-slate-200">
+            <SelectTrigger className="w-full sm:w-[280px] md:w-[320px] bg-white border-slate-200 h-10 md:h-11">
               <SelectValue placeholder="Select a script to chunk" />
             </SelectTrigger>
             <SelectContent>
@@ -167,10 +167,10 @@ function ChunksPage() {
           <Button 
             onClick={handleGenerateChunks} 
             disabled={generating || !selectedScriptId}
-            className="bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100 px-6 gap-2"
+            className="bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100 px-6 gap-2 h-10 md:h-11 font-bold text-sm"
           >
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Scissors className="h-4 w-4" />}
-            Auto Chunk Script
+            Auto Chunk
           </Button>
         </div>
       </div>
@@ -214,11 +214,11 @@ function ChunksPage() {
                   </span>
                 </div>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 md:p-6">
                 <Textarea 
                   value={chunk.content}
                   onChange={(e) => handleUpdateChunkContent(index, e.target.value)}
-                  className="min-h-[140px] text-white leading-relaxed resize-none focus-visible:ring-indigo-500 border-none p-0 focus-visible:ring-0 shadow-none text-base font-telugu"
+                  className="min-h-[120px] md:min-h-[140px] text-slate-800 leading-relaxed resize-none focus-visible:ring-indigo-500 border-none p-0 focus-visible:ring-0 shadow-none text-sm md:text-base font-telugu bg-transparent"
                   placeholder="Chunk content..."
                 />
               </CardContent>
