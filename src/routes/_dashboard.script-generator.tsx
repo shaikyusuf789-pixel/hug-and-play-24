@@ -110,6 +110,7 @@ function ScriptGenerator() {
         // Ensure pdfjsLib is loaded
         if (!pdfjsLib && typeof window !== 'undefined') {
           try {
+            // @ts-ignore - dynamic import of pdfjs-dist
             const mod = await import("pdfjs-dist");
             pdfjsLib = mod;
             pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
