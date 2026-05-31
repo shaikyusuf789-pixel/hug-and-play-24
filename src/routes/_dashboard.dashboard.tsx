@@ -78,9 +78,10 @@ function Dashboard() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8 p-4 sm:p-8 relative">
-      <div className="absolute -top-20 -left-20 w-96 h-96 bg-indigo-500/5 blur-[120px] pointer-events-none rounded-full" />
-      <div className="absolute top-1/2 -right-20 w-80 h-80 bg-blue-500/5 blur-[100px] pointer-events-none rounded-full" />
+    <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8 p-4 sm:p-8 relative min-h-full">
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-indigo-600/10 blur-[120px] pointer-events-none rounded-full" />
+      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-600/10 blur-[100px] pointer-events-none rounded-full" />
+
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
@@ -131,7 +132,7 @@ function Dashboard() {
         {cards.map((c) => {
           const Icon = c.icon;
           return (
-            <Card key={c.label} className={cn("rounded-3xl border border-white/5 shadow-2xl shadow-black/50 overflow-hidden bg-slate-900/40 backdrop-blur-xl transition-all hover:scale-[1.02] duration-300 group hover:border-indigo-500/30")}>
+            <Card key={c.label} className={cn("rounded-3xl border border-white/5 shadow-2xl shadow-black/50 overflow-hidden bg-[#151624]/60 backdrop-blur-xl transition-all hover:scale-[1.02] duration-300 group hover:border-indigo-500/30")}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-transparent relative z-10">
                 <div className={cn("absolute inset-0 opacity-10 bg-linear-to-br transition-opacity group-hover:opacity-20", c.gradient)} />
                 <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-slate-400/90 group-hover:text-white transition-colors relative z-10">{c.label}</CardTitle>
@@ -149,7 +150,7 @@ function Dashboard() {
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {DASHBOARD_TABLES.map((table) => (
-          <Card key={table} className="rounded-2xl border-white/5 shadow-sm border p-4 bg-white/5 hover:bg-white/10 transition-all hover:-translate-y-1 cursor-pointer">
+          <Card key={table} className="rounded-2xl border-white/5 shadow-sm border p-4 bg-[#151624]/40 hover:bg-[#1e1b4b]/40 transition-all hover:-translate-y-1 cursor-pointer">
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 truncate">
               {table.replace(/_/g, " ")}
             </div>
@@ -161,8 +162,9 @@ function Dashboard() {
         ))}
       </div>
 
-      <Card className="rounded-[2.5rem] border-white/5 shadow-2xl shadow-black/40 overflow-hidden border bg-white/5 backdrop-blur-xl relative">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 blur-[100px] pointer-events-none" />
+      <Card className="rounded-[2.5rem] border-white/5 shadow-2xl shadow-black/40 overflow-hidden border bg-[#151624]/40 backdrop-blur-xl relative">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[100px] pointer-events-none" />
+
         <CardHeader className="p-8 border-b border-white/5 bg-white/5">
           <CardTitle className="text-xl font-black text-white tracking-tight">Workflow Summary</CardTitle>
         </CardHeader>

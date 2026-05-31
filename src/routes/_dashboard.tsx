@@ -199,12 +199,13 @@ function DashboardLayout() {
   );
 
   return (
-    <div className="flex min-h-screen bg-linear-to-br from-indigo-50/50 via-white to-purple-50/30">
-      <aside className="hidden w-64 shrink-0 border-r border-white/5 bg-sidebar md:flex md:flex-col shadow-2xl">
+    <div className="flex min-h-screen bg-[#0a0b14] text-slate-200 selection:bg-indigo-500/30">
+      <aside className="hidden w-64 shrink-0 border-r border-white/5 bg-[#0f111a] md:flex md:flex-col shadow-2xl">
         <SidebarContent />
       </aside>
+
       <main className="flex-1 overflow-x-hidden overflow-y-auto">
-        <header className="h-16 border-b border-white/5 bg-background/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between">
+        <header className="h-16 border-b border-white/5 bg-[#0a0b14]/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between">
           <div className="flex items-center gap-3 flex-1 max-w-xl">
              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                <SheetTrigger asChild>
