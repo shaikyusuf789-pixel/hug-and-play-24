@@ -61,11 +61,10 @@ export function AIChatAssistant() {
       if (error) throw error;
       setSessions(data || []);
 
-      // If no session selected, select the most recent one or create a new one for today
       if (!currentSessionId && data && data.length > 0) {
         setCurrentSessionId(data[0].id);
-      } else if (!currentSessionId) {
-        handleNewChat();
+      } else if (!currentSessionId && (!data || data.length === 0)) {
+        await handleNewChat();
       }
     } catch (error) {
       console.error("Error loading sessions:", error);
@@ -93,7 +92,7 @@ export function AIChatAssistant() {
 
   const handleNewChat = async () => {
     try {
-      const title = `Session ${format(new Date(), "MMM d, yyyy HH:mm")}`;
+      const title = `Session ${format(new Date(), "MMM d, HH:mm")}`;
       const { data, error } = await supabase
         .from('chat_sessions')
         .insert([{ title }])
@@ -102,33 +101,33 @@ export function AIChatAssistant() {
 
       if (error) throw error;
       if (data) {
-        setSessions([data, ...sessions]);
+        setSessions(prev => [data, ...prev]);
         setCurrentSessionId(data.id);
         setMessages([]);
         setShowSessions(false);
+        return data.id;
       }
     } catch (error) {
       console.error("Error creating new session:", error);
       toast.error("Failed to start new chat");
+      return null;
     }
   };
 
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
-    // Ensure we have a session
     let sessionId = currentSessionId;
     if (!sessionId) {
-      await handleNewChat();
-      // Need to re-fetch sessionId as handleNewChat is async and updates state
-      // but we can't wait for state update here easily without complex logic
-      // So let's just return and hope the next click works, or better:
-      return; 
+      sessionId = await handleNewChat();
     }
+
+    if (!sessionId) return;
 
     const userMessage: Message = { role: "user", content: input };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
+    const currentInput = input;
     setInput("");
     setIsLoading(true);
 
@@ -145,6 +144,8 @@ export function AIChatAssistant() {
     } catch (error: any) {
       console.error("AI Assistant Error:", error);
       toast.error("Failed to get response from AI: " + error.message);
+      // Restore input if it failed
+      setInput(currentInput);
     } finally {
       setIsLoading(false);
     }
@@ -160,7 +161,7 @@ export function AIChatAssistant() {
 
       if (error) throw error;
       
-      setSessions(sessions.filter(s => s.id !== sessionId));
+      setSessions(prev => prev.filter(s => s.id !== sessionId));
       if (currentSessionId === sessionId) {
         setCurrentSessionId(null);
         setMessages([]);
@@ -221,7 +222,6 @@ export function AIChatAssistant() {
           </CardHeader>
 
           <CardContent className="flex-1 min-h-0 bg-background p-0 relative flex overflow-hidden">
-            {/* Session Sidebar */}
             {showSessions && (
               <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
                 <div className="h-full w-3/4 border-r bg-card shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
@@ -235,7 +235,7 @@ export function AIChatAssistant() {
                     <Button 
                       className="w-full justify-start gap-2 h-9 text-xs font-medium mb-2" 
                       variant="outline"
-                      onClick={handleNewChat}
+                      onClick={() => handleNewChat()}
                     >
                       <Plus className="h-3.5 w-3.5" />
                       New Chat
