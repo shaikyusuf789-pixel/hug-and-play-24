@@ -26,14 +26,14 @@ function SettingsPage() {
             <Zap className="h-4 w-4 text-indigo-500" />
             <h3 className="font-bold text-slate-900">API Credentials</h3>
           </div>
-          <div className="p-6 space-y-6">
-            <div className="grid gap-2">
-              <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Anthropic API Key</Label>
-              <Input type="password" placeholder="sk-ant-..." className="h-11 rounded-xl border-slate-200" />
+          <div className="p-6 space-y-4">
+            <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-amber-800 text-sm">
+              <p className="font-bold mb-1">Managed via Supabase Secrets</p>
+              <p>API keys for OpenAI, Apify, ElevenLabs, and Google are securely stored in your Supabase project's Edge Function secrets. You do not need to enter them here.</p>
             </div>
-            <div className="grid gap-2">
-              <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">OpenAI API Key</Label>
-              <Input type="password" placeholder="sk-..." className="h-11 rounded-xl border-slate-200" />
+            <div className="grid gap-2 opacity-50 pointer-events-none">
+              <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">OpenAI API Key (Stored in Supabase)</Label>
+              <Input type="password" value="••••••••••••••••" readOnly className="h-11 rounded-xl border-slate-200" />
             </div>
           </div>
         </div>
