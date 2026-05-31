@@ -322,7 +322,7 @@ function ScriptGenerator() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="mx-auto max-w-7xl p-4 md:p-6 space-y-6">
       <input
         type="file"
         ref={fileInputRef}
@@ -331,32 +331,32 @@ function ScriptGenerator() {
         className="hidden"
         id="pdf-upload-hidden"
       />
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-4">
-          <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-            <StickyNote className="h-6 w-6" />
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2 md:mb-6">
+        <div className="flex items-center gap-3 md:gap-4">
+          <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
+            <StickyNote className="h-5 w-5 md:h-6 md:w-6" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Phase 1</span>
-              <span className="text-[10px] text-slate-400 font-medium tracking-wider">• SKY Academy DNA v4.1 • Powered by Poe.com</span>
+            <div className="flex items-center flex-wrap gap-2">
+              <span className="text-[9px] md:text-[10px] font-bold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Phase 1</span>
+              <span className="text-[9px] md:text-[10px] text-slate-400 font-medium tracking-wider">• SKY Academy DNA v4.1</span>
             </div>
-            <h1 className="text-2xl font-bold text-white">Script Generation</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900">Script Generation</h1>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto">
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex items-center gap-2"
+            className="flex-1 md:flex-none flex items-center gap-2 text-[11px] md:text-xs h-9 md:h-10"
             onClick={() => setShowHistory(!showHistory)}
           >
             <History className="h-4 w-4" />
-            {showHistory ? "Hide History" : "View Generated script"}
+            {showHistory ? "Hide History" : "View History"}
           </Button>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-xs font-bold border border-emerald-100">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-[10px] md:text-xs font-bold border border-emerald-100 whitespace-nowrap">
             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-            Telugu Unicode · DNA Active
+            DNA Active
           </div>
         </div>
       </div>
