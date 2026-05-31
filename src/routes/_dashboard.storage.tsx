@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Database, Folder, HardDrive, Search, MoreVertical, FileIcon, Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const Route = createFileRoute("/_dashboard/storage")({
   component: StoragePage,
@@ -15,32 +16,32 @@ function StoragePage() {
   ];
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8">
-      <div className="flex justify-between items-start">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start gap-6">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Asset Management</span>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[10px] font-black bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded uppercase tracking-[0.2em] border border-white/5 backdrop-blur-md">Asset Management</span>
           </div>
-          <h1 className="text-3xl font-bold text-white">App Storage</h1>
-          <p className="text-slate-500 mt-1">Unified storage for all your generated content and raw assets.</p>
+          <h1 className="text-3xl font-black text-white tracking-tight">App Storage</h1>
+          <p className="text-slate-400 mt-1 font-medium">Unified storage for all your generated content and raw assets.</p>
         </div>
-        <div className="flex items-center gap-6 bg-white p-4 rounded-2xl border shadow-sm">
+        <div className="flex items-center gap-6 bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-2xl shadow-2xl">
            <div className="text-right">
-              <div className="text-[10px] font-bold text-slate-400 uppercase">Usage</div>
-              <div className="font-bold text-white text-sm">4.2 GB / 50 GB</div>
+              <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Usage</div>
+              <div className="font-black text-white text-lg">4.2 GB / 50 GB</div>
            </div>
-           <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-              <HardDrive className="h-6 w-6" />
+           <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-inner">
+              <HardDrive className="h-7 w-7" />
            </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="md:col-span-3 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input className="pl-11 h-12 bg-white border-slate-200 rounded-2xl" placeholder="Search files..." />
+        <div className="md:col-span-3 relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+          <Input className="pl-12 h-14 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus-visible:ring-indigo-500" placeholder="Search cloud assets..." />
         </div>
-        <Button className="h-12 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
+        <Button className="h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-widest text-[11px] gap-3 shadow-button hover:shadow-white-lg transition-all hover:scale-105 active:scale-95">
           <Folder className="h-4 w-4" />
           New Folder
         </Button>
@@ -48,31 +49,34 @@ function StoragePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {files.map((file) => (
-          <div key={file.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow group cursor-pointer">
-            <div className="flex justify-between items-start mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                <FileIcon className="h-6 w-6" />
+          <Card key={file.id} className="rounded-[2.5rem] border border-white/10 shadow-2xl shadow-black/40 overflow-hidden bg-white/5 backdrop-blur-2xl transition-all duration-500 group cursor-pointer hover:border-white/30 relative">
+            <div className="absolute inset-0 bg-linear-to-br from-white/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <CardContent className="p-8 relative z-10">
+              <div className="flex justify-between items-start mb-8">
+                <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500 shadow-inner">
+                  <FileIcon className="h-7 w-7" />
+                </div>
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-white/5 bg-white/5 hover:bg-white/10">
+                  <MoreVertical className="h-5 w-5 text-slate-400" />
+                </Button>
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </div>
-            <h3 className="font-bold text-white mb-1 truncate">{file.name}</h3>
-            <div className="flex items-center gap-3 text-xs text-slate-400 font-medium uppercase tracking-wider">
-               <span>{file.size}</span>
-               <span className="w-1 h-1 bg-slate-200 rounded-full" />
-               <span>{file.type}</span>
-            </div>
-            <div className="mt-6 flex gap-2">
-               <Button variant="outline" className="flex-1 h-10 rounded-xl border-slate-100 text-[11px] font-bold uppercase tracking-widest gap-2">
-                  <Download className="h-3.5 w-3.5" />
-                  Get
-               </Button>
-               <Button variant="ghost" className="h-10 w-10 rounded-xl text-rose-500 hover:bg-rose-50">
-                  <Trash2 className="h-4 w-4" />
-               </Button>
-            </div>
-          </div>
+              <h3 className="text-lg font-black text-white mb-2 truncate group-hover:text-indigo-300 transition-colors">{file.name}</h3>
+              <div className="flex items-center gap-4 text-[10px] text-slate-500 font-black uppercase tracking-widest">
+                 <span className="bg-white/5 px-2 py-0.5 rounded border border-white/5">{file.size}</span>
+                 <div className="h-1 w-1 bg-indigo-500 rounded-full animate-pulse" />
+                 <span className="text-indigo-400">{file.type}</span>
+              </div>
+              <div className="mt-8 flex gap-3">
+                 <Button variant="outline" className="flex-1 h-11 rounded-xl border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/10 transition-all gap-2">
+                    <Download className="h-4 w-4" />
+                    Download
+                 </Button>
+                 <Button variant="ghost" className="h-11 w-11 rounded-xl text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 border border-white/5">
+                    <Trash2 className="h-4 w-4" />
+                 </Button>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>
