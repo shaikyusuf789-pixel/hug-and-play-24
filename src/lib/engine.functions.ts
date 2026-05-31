@@ -381,14 +381,17 @@ export const saveYoutubeSeo = createServerFn({ method: "POST" })
 
 export const getDashboardStats = createServerFn({ method: "GET" })
   .handler(async () => {
+    console.log("[getDashboardStats] Fetching counts...");
     const [total, pending, approved, priority, scriptDone, audioDone] = await Promise.all([
-      supabaseAdmin.from("raw_content").select("*", { count: "exact", head: true }),
-      supabaseAdmin.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Pending"),
-      supabaseAdmin.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Approved"),
-      supabaseAdmin.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Priority"),
-      supabaseAdmin.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Script Done"),
-      supabaseAdmin.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Audio Done"),
+      supabaseAdmin.from("raw_content").select("*", { count: "exact" }).limit(1),
+      supabaseAdmin.from("raw_content").select("*", { count: "exact" }).eq("status", "Pending").limit(1),
+      supabaseAdmin.from("raw_content").select("*", { count: "exact" }).eq("status", "Approved").limit(1),
+      supabaseAdmin.from("raw_content").select("*", { count: "exact" }).eq("status", "Priority").limit(1),
+      supabaseAdmin.from("raw_content").select("*", { count: "exact" }).eq("status", "Script Done").limit(1),
+      supabaseAdmin.from("raw_content").select("*", { count: "exact" }).eq("status", "Audio Done").limit(1),
     ]);
+
+    console.log(`[getDashboardStats] Results - Total: ${total.count}, Pending: ${pending.count}`);
 
     return { 
       total: total.count ?? 0, 
