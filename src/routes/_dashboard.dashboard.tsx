@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Play, Radio, ListVideo, CheckCircle2, Github, Table as TableIcon, Sparkles, BrainCircuit } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useEffect } from "react";
 
 export const Route = createFileRoute("/_dashboard/dashboard")({
   component: Dashboard,
@@ -51,7 +50,6 @@ function Dashboard() {
     refetchInterval: 5000,
   });
 
-
   const cards = [
     { label: "Total Ideas", value: stats.data?.total, icon: ListVideo, color: "text-blue-600" },
     { label: "Pending Approval", value: stats.data?.pending, icon: Radio, color: "text-amber-600" },
@@ -78,15 +76,6 @@ function Dashboard() {
         </div>
         
         <div className="flex flex-wrap gap-3">
-          <WatchdogControl />
-          <Button 
-            onClick={() => run.mutate()} 
-            disabled={run.isPending} 
-            className="h-12 gap-2 rounded-xl px-6 font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105"
-          >
-            {run.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Rocket className="h-5 w-5" />}
-            Initialize Scraper
-          </Button>
           <Button 
             variant="outline"
             className="h-12 gap-2 rounded-xl px-6 font-bold transition-all hover:bg-secondary"
