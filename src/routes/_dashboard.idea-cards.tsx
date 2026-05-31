@@ -110,9 +110,11 @@ function RawContentPage() {
       Done: 0,
     };
     for (const i of ideas) {
-      if (c[i.status] !== undefined) c[i.status]++;
+      const status = i.status === "Processing" ? "Approved" : i.status;
+      if (c[status] !== undefined) c[status]++;
     }
     return c;
+
   }, [ideas]);
 
   const filtered = useMemo(
