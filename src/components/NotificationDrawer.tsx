@@ -30,7 +30,7 @@ export interface Notification {
   title: string;
   message: string;
   type: string;
-  read: boolean;
+  read: boolean | null;
   created_at: string;
 }
 
@@ -71,7 +71,7 @@ export function NotificationDrawer() {
       return;
     }
 
-    setNotifications(data || []);
+    setNotifications((data || []) as Notification[]);
     setUnreadCount(data?.filter((n) => !n.read).length || 0);
   };
 

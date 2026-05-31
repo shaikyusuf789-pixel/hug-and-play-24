@@ -88,7 +88,7 @@ function UploadsPage() {
     try {
       setUploading(true);
       const { error: dbError } = await supabase.from("user_uploads").insert({
-        file_name: pendingFile.file.name,
+        file_name: pendingFile.file.name as any,
         display_name: customName || pendingFile.file.name,
         file_path: pendingFile.filePath,
         file_type: pendingFile.file.type,
@@ -149,7 +149,7 @@ function UploadsPage() {
     try {
       const { error } = await supabase
         .from("user_uploads")
-        .update({ display_name: newName })
+        .update({ display_name: newName } as any)
         .eq("id", fileId);
 
       if (error) throw error;
