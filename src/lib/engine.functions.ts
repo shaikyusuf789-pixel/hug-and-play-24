@@ -8,6 +8,7 @@ const TRANSCRIPT_ACTOR = "lume~yt-transcripts-summary";
 type ScrapedVideo = {
   title: string;
   videoUrl: string;
+  videoId: string;
   publishedAt: string | null;
   thumbnailUrl: string | null;
 };
@@ -72,10 +73,11 @@ async function scrapeYoutubeRss(sourceUrl: string): Promise<ScrapedVideo[]> {
     return {
       title,
       videoUrl: decodeXml(link || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : sourceUrl)),
+      videoId: videoId || "",
       publishedAt,
       thumbnailUrl: thumbnailUrl ? decodeXml(thumbnailUrl) : null,
     };
-  }).filter((video) => video.videoUrl.includes("youtube.com/watch"));
+  }).filter((video) => video.videoUrl.includes("youtube.com/watch") && video.videoId);
 }
 
 async function apifyRun(actorId: string, input: unknown, token: string) {
@@ -175,21 +177,22 @@ export const runIdeaEngine = createServerFn({ method: "POST" })
         const videos = await scrapeYoutubeRss(source.source_url);
         if (!videos.length) continue;
 
-        const urls = videos.map((video) => video.videoUrl);
+        const videoIds = videos.map((video) => video.videoId).filter(Boolean);
         const { data: existing, error: existingError } = await supabaseAdmin
           .from("raw_content")
-          .select("video_url")
-          .in("video_url", urls);
+          .select("video_id")
+          .in("video_id", videoIds);
 
         if (existingError) throw existingError;
 
-        const existingUrls = new Set((existing || []).map((row) => row.video_url));
+        const existingIds = new Set((existing || []).map((row) => row.video_id));
         const rows = videos
-          .filter((video) => !existingUrls.has(video.videoUrl))
+          .filter((video) => video.videoId && !existingIds.has(video.videoId))
           .map((video) => ({
             source_id: source.id,
             original_title: video.title,
             video_url: video.videoUrl,
+            video_id: video.videoId,
             published_at: video.publishedAt,
             published_date: video.publishedAt ? new Date(video.publishedAt).toLocaleDateString("en-IN") : null,
             thumbnail_url: video.thumbnailUrl,
