@@ -15,6 +15,19 @@ export const Route = createFileRoute("/_dashboard/dashboard")({
   head: () => ({ meta: [{ title: "Idea Engine — SKY Studio" }] }),
 });
 
+const DASHBOARD_TABLES = [
+  "sources_master",
+  "raw_content",
+  "scripts",
+  "user_uploads",
+  "app_settings",
+  "notifications",
+  "daily_backup_logs",
+  "script_chunks",
+  "youtube_seo",
+  "ai_chat_memory"
+];
+
 function Dashboard() {
   const qc = useQueryClient();
   
