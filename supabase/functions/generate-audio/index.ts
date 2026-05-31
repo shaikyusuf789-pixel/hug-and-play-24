@@ -57,16 +57,32 @@ serve(async (req) => {
       }
       audioBuffer = new Uint8Array(await res.arrayBuffer());
     } else {
-      // Default to Google/Gemini if specified or as fallback
-      // Since Gemini TTS might be a specialized endpoint or part of Gemini 2.0
-      // We'll use a placeholder or implement if possible. 
-      // If the user meant standard Google Cloud TTS:
+      // Logic for Google Gemini 2.0 / Experimental TTS if available via generative AI SDK
+      // or standard Google Cloud TTS. For now, using standard Google Cloud TTS as example.
       if (!geminiKey) throw new Error("GOOGLE_API_KEY not configured");
       
-      // Placeholder for actual TTS implementation if it's a specific API
-      // For now, let's assume it's a standard fetch to a TTS service
-      throw new Error(`TTS Provider ${provider} implementation pending in Edge Function.`);
+      const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${geminiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          input: { text: chunk.content },
+          voice: { languageCode: "te-IN", name: "te-IN-Standard-A" }, // Default to Telugu
+          audioConfig: { audioEncoding: "MP3" },
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`Google TTS failed: ${err}`);
+      }
+      const data = await res.json();
+      const binaryString = atob(data.audioContent);
+      audioBuffer = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        audioBuffer[i] = binaryString.charCodeAt(i);
+      }
     }
+
 
     // Upload to Supabase Storage
     const fileName = `${chunk.script_id}/${chunkId}.mp3`;
