@@ -377,3 +377,24 @@ export const saveYoutubeSeo = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
+export const getDashboardStats = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const [total, pending, approved, priority, scriptDone, audioDone] = await Promise.all([
+      supabaseAdmin.from("raw_content").select("*", { count: "exact", head: true }),
+      supabaseAdmin.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Pending"),
+      supabaseAdmin.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Approved"),
+      supabaseAdmin.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Priority"),
+      supabaseAdmin.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Script Done"),
+      supabaseAdmin.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Audio Done"),
+    ]);
+
+    return { 
+      total: total.count ?? 0, 
+      pending: pending.count ?? 0,
+      approved: approved.count ?? 0,
+      priority: priority.count ?? 0,
+      scriptDone: scriptDone.count ?? 0,
+      audioDone: audioDone.count ?? 0,
+    };
+  });
