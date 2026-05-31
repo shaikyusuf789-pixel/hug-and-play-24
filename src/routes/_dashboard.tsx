@@ -108,7 +108,7 @@ function DashboardLayout() {
             )}
           >
             <LayoutDashboard className={cn("h-4 w-4", path === "/dashboard" ? "text-white" : "text-slate-400 group-hover:text-slate-600")} />
-            <span className="font-semibold">Dashboard</span>
+            <span className="font-semibold text-white">Dashboard</span>
             {path === "/dashboard" && <div className="absolute left-0 w-1 h-6 bg-white rounded-r-full my-auto inset-y-0" />}
           </Link>
 
@@ -124,7 +124,7 @@ function DashboardLayout() {
             )}
           >
             <Database className={cn("h-4 w-4", path === "/tables" ? "text-white" : "text-slate-400 group-hover:text-slate-600")} />
-            <span className="font-semibold">Database Tables</span>
+            <span className="font-semibold text-white">Database Tables</span>
             {path === "/tables" && <div className="absolute left-0 w-1 h-6 bg-white rounded-r-full my-auto inset-y-0" />}
           </Link>
 
@@ -199,8 +199,8 @@ function DashboardLayout() {
   );
 
   return (
-    <div className="flex min-h-screen bg-[#0a0b14] text-slate-200 selection:bg-indigo-500/30">
-      <aside className="hidden w-64 shrink-0 border-r border-white/5 bg-[#0f111a] md:flex md:flex-col shadow-2xl">
+    <div className="flex min-h-screen bg-background text-foreground selection:bg-primary/30">
+      <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-sidebar/80 md:flex md:flex-col shadow-2xl backdrop-blur-3xl">
         <SidebarContent />
       </aside>
 
