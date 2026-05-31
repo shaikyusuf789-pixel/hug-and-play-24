@@ -49,9 +49,10 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
 
   return (
     <article className={cn(
-      "rounded-[2rem] sm:rounded-3xl gradient-card border border-border/40 shadow-card overflow-hidden flex flex-col animate-fade-in relative",
+      "rounded-[2rem] sm:rounded-3xl bg-card/60 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl shadow-indigo-500/10 overflow-hidden flex flex-col animate-fade-in relative group transition-all duration-300 hover:shadow-indigo-500/20 hover:-translate-y-1",
       isProcessing && "opacity-70 grayscale-[0.5]"
     )}>
+
       {isProcessing && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/5 backdrop-blur-[1px]">
           <Loader2 className="size-8 animate-spin text-primary mb-2" />
@@ -112,21 +113,25 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
             {idea.original_title ? (
               <>
                 "{idea.original_title}" {idea.sources_master?.channel_name && (
-                  <span className="text-muted-foreground/80 font-normal">by {idea.sources_master.channel_name}</span>
+                  <span className="text-primary font-medium px-2 py-0.5 rounded-full bg-primary/10 ml-1">
+                    {idea.sources_master.channel_name}
+                  </span>
                 )}
               </>
             ) : "—"}
           </p>
         </div>
 
+
         <div>
           <div className="text-[10px] uppercase tracking-widest text-primary font-semibold mb-1">
             Proposed Title
           </div>
-          <h2 className="text-sm sm:text-base font-bold leading-snug text-foreground">
+          <h2 className="text-sm sm:text-base font-bold leading-snug text-foreground group-hover:text-primary transition-colors">
             {idea.proposed_title || "—"}
           </h2>
         </div>
+
 
         {/* Meta */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -152,11 +157,12 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
 
         {/* summary points */}
         {summary.length > 0 && (
-          <div className="bg-muted/30 rounded-2xl p-3 border border-border/20">
-            <div className="text-[10px] uppercase tracking-widest text-accent font-black mb-2 flex items-center gap-1.5">
-              <div className="size-1 bg-accent rounded-full" />
+          <div className="bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-2xl p-3 border border-indigo-500/10">
+            <div className="text-[10px] uppercase tracking-widest text-indigo-600 dark:text-indigo-400 font-black mb-2 flex items-center gap-1.5">
+              <div className="size-1.5 bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
               Summary Points
             </div>
+
             <div className="relative">
               <ul className="space-y-0.5 transition-all">
                 {visible.map((s: string, i: number) => (
@@ -245,9 +251,10 @@ function ActionButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "py-2 sm:py-2.5 rounded-xl font-semibold text-xs uppercase tracking-wider shadow-card active:scale-95 transition disabled:opacity-50",
+        "py-2 sm:py-2.5 rounded-xl font-bold text-[10px] sm:text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all duration-200 disabled:opacity-50 hover:brightness-110 hover:shadow-xl",
         meta.className
       )}
+
     >
       {meta.label}
     </button>
@@ -274,12 +281,13 @@ function StatusBadge({
   return (
     <span
       className={cn(
-        "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+        "px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm backdrop-blur-md border border-white/20",
         map[status] || map["Pending"],
         className
       )}
     >
       {status}
     </span>
+
   );
 }
