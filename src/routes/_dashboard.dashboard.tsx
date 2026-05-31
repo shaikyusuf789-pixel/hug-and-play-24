@@ -35,8 +35,6 @@ function Dashboard() {
     queryKey: ["stats"],
     queryFn: () => fetchStatsFn(),
   });
-  
-  console.log("Dashboard Stats Data:", stats.data);
 
   const runFn = useServerFn(runIdeaEngine);
   const setLastRun = useServerFn(updateLastRunTimestamp);
