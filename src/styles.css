@@ -51,13 +51,13 @@
   --radius: 1.25rem;
   --background: #0f111a;
   --foreground: #ffffff;
-  --card: rgba(255, 255, 255, 0.03);
+  --card: #161825;
   --card-foreground: #ffffff;
-  --popover: #0f111a;
+  --popover: #161825;
   --popover-foreground: #ffffff;
   --primary: #6366f1;
   --primary-foreground: #ffffff;
-  --secondary: rgba(99, 102, 241, 0.2);
+  --secondary: #1e2032;
   --secondary-foreground: #e0e7ff;
   --muted: rgba(255, 255, 255, 0.05);
   --muted-foreground: #94a3b8;
@@ -101,7 +101,7 @@
 
 @layer utilities {
   .glass {
-    @apply bg-white/5 backdrop-blur-2xl border-white/10;
+    @apply bg-black/20 backdrop-blur-2xl border-white/10;
   }
   
   .shadow-card {
