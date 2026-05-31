@@ -78,10 +78,10 @@ function Dashboard() {
           </div>
         </div>
         
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <Button 
-            variant="outline"
-            className="h-11 md:h-12 gap-2 rounded-xl px-4 md:px-6 text-sm md:text-base font-bold transition-all hover:bg-secondary"
+            variant="default"
+            className="h-12 gap-2 rounded-xl px-6 text-sm font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
             onClick={async () => {
               try {
                 const { error } = await supabase.from('daily_backup_logs').insert({
@@ -89,14 +89,14 @@ function Dashboard() {
                   tables_backed_up: DASHBOARD_TABLES
                 });
                 if (error) throw error;
-                toast.success("Backup queued!");
+                toast.success("System backup initiated!");
               } catch (e: any) {
                 toast.error(e.message);
               }
             }}
           >
-            <Github className="h-4 w-4 md:h-5 md:w-5" />
-            Backup
+            <Github className="h-5 w-5" />
+            Full Backup
           </Button>
         </div>
       </div>
