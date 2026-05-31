@@ -54,24 +54,38 @@ function StoragePage() {
                </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                <Card className="bg-white/5 border-white/5 rounded-3xl p-6 hover:border-white/20 transition-all group">
                   <div className="flex items-center justify-between mb-4">
                      <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Biography</span>
                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white/5"><FileText className="h-4 w-4 text-slate-400" /></Button>
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">SKY Studio v4.2</h3>
-                  <p className="text-sm text-slate-400 line-clamp-2">Complete history of the YouTube production pipeline engine and its automated workflows.</p>
+                  <h3 className="text-lg font-bold text-white mb-2">SKY Studio Biography</h3>
+                  <p className="text-sm text-slate-400 line-clamp-2">The complete identity and mission of the SKY Studio autonomous ecosystem.</p>
                </Card>
                <Card className="bg-white/5 border-white/5 rounded-3xl p-6 hover:border-white/20 transition-all group">
                   <div className="flex items-center justify-between mb-4">
                      <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Neural Scheme</span>
                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white/5"><Layers className="h-4 w-4 text-slate-400" /></Button>
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">Mapping & Wiring</h3>
-                  <p className="text-sm text-slate-400 line-clamp-2">The underlying database relationships and logic mappings for script generation.</p>
+                  <h3 className="text-lg font-bold text-white mb-2">Database Mapping</h3>
+                  <p className="text-sm text-slate-400 line-clamp-2">Logical connections and structural data flow for the production pipeline.</p>
+               </Card>
+               <Card 
+                 className="bg-indigo-600/10 border-indigo-500/20 rounded-3xl p-6 hover:bg-indigo-600/20 transition-all group cursor-pointer"
+                 onClick={() => window.location.href = '/history'}
+               >
+                  <div className="flex items-center justify-between mb-4">
+                     <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Brain Archive</span>
+                     <div className="h-8 w-8 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                        <HistoryIcon className="h-4 w-4 text-indigo-400" />
+                     </div>
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-2">Chat History</h3>
+                  <p className="text-sm text-slate-400 line-clamp-2">Complete history of all AI assistant interactions and saved neural notes.</p>
                </Card>
             </div>
+
           </div>
         </div>
 
