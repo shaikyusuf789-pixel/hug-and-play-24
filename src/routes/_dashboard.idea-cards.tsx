@@ -90,9 +90,13 @@ function RawContentPage() {
   }, [ideas]);
 
   const filtered = useMemo(
-    () => ideas.filter((i) => i.status === activeTab),
+    () => ideas.filter((i) => {
+      if (activeTab === "Approved") return i.status === "Approved" || i.status === "Processing";
+      return i.status === activeTab;
+    }),
     [ideas, activeTab]
   );
+
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
