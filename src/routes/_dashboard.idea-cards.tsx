@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { getIdeas, updateIdeaStatus, approveAndProcessIdea } from "@/lib/engine.functions";
 import { IdeaCardView, type ActionKey, type IdeaCard } from "@/components/IdeaCardView";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_dashboard/idea-cards")({
   component: RawContentPage,
