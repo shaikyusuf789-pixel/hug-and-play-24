@@ -129,6 +129,7 @@ export const getIdeas = createServerFn({ method: "GET" })
 
     const { data: ideas, error } = await query;
     if (error) throw error;
+    console.log(`[getIdeas] Returning ${ideas?.length} ideas`);
     return { ideas: (ideas || []) as any[] };
   });
 
