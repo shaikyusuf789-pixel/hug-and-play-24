@@ -189,9 +189,17 @@ export const approveAndProcessIdea = createServerFn({ method: "POST" })
     if (!token) throw new Error("APIFY_API_TOKEN not configured in Lovable Secrets");
 
     // 1. Set status to Processing
-    await supabaseAdmin.from("raw_content").update({ status: "Processing" }).eq("id", id);
+    await supabaseAdmin.from("raw_content").update({ 
+      status: "Processing",
+      processing_step: "Initializing..." 
+    }).eq("id", id);
 
     try {
+      // Update step: Fetching Transcript
+      await supabaseAdmin.from("raw_content").update({ 
+        processing_step: "Fetching transcript from YouTube..." 
+      }).eq("id", id);
+
       // 2. Fetch the idea details
       const { data: idea, error: fetchErr } = await supabaseAdmin
         .from("raw_content")
@@ -218,6 +226,12 @@ export const approveAndProcessIdea = createServerFn({ method: "POST" })
         console.warn(`Transcript failed for ${idea.original_title}`, e);
       }
 
+      // Update step: AI Analysis
+      await supabaseAdmin.from("raw_content").update({ 
+        processing_step: "AI Analysis: Generating strategy..." 
+      }).eq("id", id);
+
+
       // 4. Call AI for new content
       const aiInput = `Channel: ${idea.sources_master?.channel_name || "Unknown"}
 Original Title: ${idea.original_title}
@@ -234,6 +248,7 @@ ${transcript || "(no transcript available)"}`;
         .from("raw_content")
         .update({
           status: "Approved",
+          processing_step: null,
           original_summary: transcript,
           proposed_title: ai.proposed_title,
           new_thumbnail_outline: ai.new_thumbnail_outline,
