@@ -255,19 +255,29 @@ function Dashboard() {
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-xs md:text-sm font-bold uppercase tracking-widest text-muted-foreground">Internal Database Core</h2>
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground/60 flex items-center gap-2">
+            <Sparkles className="h-3 w-3" />
+            Active Database Clusters
+          </h2>
+          <div className="px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-[9px] font-bold text-green-600 uppercase tracking-wider flex items-center gap-1">
+            <div className="h-1 w-1 rounded-full bg-green-500 animate-pulse" />
+            All Systems Nominal
+          </div>
+        </div>
+        <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-9 gap-3">
           {DASHBOARD_TABLES.map((table) => (
-            <div key={table} className="flex flex-col gap-2 rounded-2xl bg-white p-4 md:p-5 shadow-sm border border-slate-100 transition-all hover:border-primary/20">
-              <div className="truncate text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                {table.replace(/_/g, " ")}
+            <div key={table} className="group relative flex flex-col items-center justify-center gap-2 rounded-xl bg-card p-3 shadow-sm border border-border/40 transition-all hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5">
+              <div className="p-2 rounded-lg bg-secondary/50 group-hover:bg-primary/10 transition-colors">
+                <TableIcon className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
-              <div className="flex items-center justify-between mt-auto">
-                <div className="flex items-center gap-1.5 md:gap-2">
-                  <div className="h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
-                  <span className="text-[10px] md:text-[11px] font-bold uppercase text-green-600">Active</span>
+              <div className="text-center w-full">
+                <div className="truncate text-[8px] font-bold uppercase tracking-tight text-muted-foreground/80">
+                  {table.replace(/_/g, " ")}
                 </div>
-                <TableIcon className="h-3 w-3 md:h-4 md:w-4 text-slate-300" />
+              </div>
+              <div className="absolute top-1.5 right-1.5">
+                <div className="h-1 w-1 rounded-full bg-green-500" />
               </div>
             </div>
           ))}
