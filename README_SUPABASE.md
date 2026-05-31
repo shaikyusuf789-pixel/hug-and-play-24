@@ -6,7 +6,7 @@
 The project is strictly wired to a specific Supabase instance. **Do not use the project's default managed database.**
 
 - **Project URL:** `https://eozteueesaemhcmbqcxt.supabase.co`
-- **Publishable Key:** `sb_publishable_aITpoyEkEtU60jzenvS3ig_wCGXYVGz`
+- **Publishable Key:** `sb_publishable_8_LFpheRbnwNiecH1oHujQ_6HHrydgh`
 - **Service Role Key:** Required for server functions (stored in secrets as `CUSTOM_SUPABASE_SERVICE_ROLE_KEY`).
 
 ### Configuration Files
