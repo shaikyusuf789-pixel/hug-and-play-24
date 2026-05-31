@@ -22,9 +22,10 @@ This document tracks the current visual state of every page. Per **Rule 1**, upd
 - Tabs: Pending / Approved / Priority.
 - Card includes thumbnail, original/proposed title, meta, summary points, action buttons.
 - Mobile: card stack full-width, actions stay visible.
-- **Update (May 31, 2026)**: Added live processing states and realtime status updates (e.g., "Fetching transcript", "AI Analysis") that show up inside the card during the approval pipeline. Ideas move to the "Approved" tab immediately upon clicking approve. Also reduced the size of the "Generate" action button on Approved cards to match the width of other action buttons for a cleaner layout.
+- **Update (May 31, 2026)**: Added live processing states and realtime status updates (e.g., "Fetching transcript", "AI Analysis") that show up inside the card during the approval pipeline. Ideas move to the "Approved" tab immediately upon clicking approve. Also reduced the size of the "Generate" action button on Approved cards to match the width of other action buttons for a cleaner layout. Refined the card design with glassmorphism effects, enhanced shadows, better typography hierarchy, and a more vibrant yet professional indigo/purple theme.
 - Screenshot (Desktop): `docs/screenshots/idea-cards-desktop.png`
 - Screenshot (Mobile): `docs/screenshots/idea-cards-mobile.png`
+
 
 
 
