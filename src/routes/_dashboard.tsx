@@ -84,7 +84,7 @@ function DashboardLayout() {
   ];
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full sidebar-gradient backdrop-blur-3xl bg-white/[0.02]">
+    <div className="flex flex-col h-full sidebar-gradient backdrop-blur-3xl bg-black/20">
 
       <div className="px-6 py-6 flex items-center gap-3 border-b mb-4">
         <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-black shadow-lg shadow-indigo-500/40 border border-white/10 italic tracking-tighter">SKY</div>
@@ -163,7 +163,7 @@ function DashboardLayout() {
                     {item.number && (
                       <span className={cn(
                         "text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border",
-                        active ? "border-white/30" : "border-slate-200 text-slate-400"
+                        active ? "border-white/30" : "border-white/10 text-slate-400"
                       )}>
                         {item.number}
                       </span>
@@ -190,7 +190,7 @@ function DashboardLayout() {
             <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">TELUGU · POE · DNA</span>
             <span className="text-[9px] font-bold text-slate-400">V4.2</span>
           </div>
-          <div className="w-full bg-slate-200 rounded-full h-1">
+          <div className="w-full bg-black/20 rounded-full h-1">
             <div className="bg-indigo-500 h-1 rounded-full w-2/3"></div>
           </div>
         </div>
