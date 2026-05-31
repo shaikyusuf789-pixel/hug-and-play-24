@@ -22,7 +22,10 @@ This document tracks the current visual state of every page. Per **Rule 1**, upd
 - Tabs: Pending / Approved / Priority.
 - Card includes thumbnail, original/proposed title, meta, summary points, action buttons.
 - Mobile: card stack full-width, actions stay visible.
-- Screenshot: _pending_
+- **Update (May 31, 2026)**: Added live processing states and realtime status updates (e.g., "Fetching transcript", "AI Analysis") that show up inside the card during the approval pipeline. Ideas move to the "Approved" tab immediately upon clicking approve.
+- Screenshot (Desktop): `docs/screenshots/idea-cards-desktop.png`
+- Screenshot (Mobile): `docs/screenshots/idea-cards-mobile.png`
+
 
 ### /script-generator, /chunks, /audio, /slides, /annotations, /master-video, /youtube
 - Pipeline pages. Each must be mobile-usable (all controls reachable, no horizontal scroll).
