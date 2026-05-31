@@ -1,70 +1,193 @@
+import { useState, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { History, Search, Calendar, ChevronRight } from "lucide-react";
+import { 
+  MessageSquare, 
+  Trash2, 
+  Search, 
+  Clock, 
+  Bot, 
+  User, 
+  Filter,
+  Download,
+  BrainCircuit,
+  History as HistoryIcon
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_dashboard/history")({
-  component: HistoryPage,
+  component: ChatHistoryPage,
 });
 
-function HistoryPage() {
-  const activities = [
-    { id: 1, action: "Video Rendered", target: "How to use AI DNA", time: "2h ago", type: "success" },
-    { id: 2, action: "Script Generated", target: "Telugu Tech Review", time: "5h ago", type: "success" },
-    { id: 3, action: "Auto-run Failed", target: "Watchdog Engine", time: "1d ago", type: "error" },
-    { id: 4, action: "Channel Added", target: "T-Series Telugu", time: "2d ago", type: "info" },
-  ];
+function ChatHistoryPage() {
+  const [history, setHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const fetchHistory = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("ai_chat_memory")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setHistory(data || []);
+    } catch (error: any) {
+      toast.error("Error fetching history: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearHistory = async () => {
+    if (!confirm("Are you sure you want to permanently delete all chat history?")) return;
+    
+    try {
+      const { error } = await supabase
+        .from("ai_chat_memory")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000");
+
+      if (error) throw error;
+      setHistory([]);
+      toast.success("History cleared successfully");
+    } catch (error: any) {
+      toast.error("Failed to clear history: " + error.message);
+    }
+  };
+
+  const filteredHistory = history.filter(item => 
+    item.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.metadata?.title && item.metadata.title.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8">
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-[10px] font-black bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded uppercase tracking-[0.2em] border border-white/5 backdrop-blur-md">Audit Log</span>
-        </div>
-        <h1 className="text-3xl font-black text-white tracking-tight">Activity History</h1>
-        <p className="text-slate-400 mt-1 font-medium">Full traceback of engine operations and automation events.</p>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
-          <Input className="pl-12 h-13 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus-visible:ring-indigo-500" placeholder="Search engine logs..." />
-        </div>
-        <button className="px-6 h-13 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:border-white/20 transition-all">
-          <Calendar className="h-4 w-4 text-indigo-400" />
-          Last 30 Days
-        </button>
-      </div>
-
-      <Card className="rounded-[2.5rem] border border-white/10 shadow-2xl shadow-black/40 overflow-hidden bg-white/5 backdrop-blur-2xl">
-        <CardContent className="p-0">
-          <div className="divide-y divide-white/5">
-            {activities.map((item) => (
-              <div key={item.id} className="p-8 flex items-center justify-between hover:bg-white/[0.02] transition-all duration-300 cursor-pointer group relative overflow-hidden">
-                <div className="absolute inset-0 bg-linear-to-r from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="flex items-center gap-6 relative z-10">
-                  <div className={cn(
-                    "w-3 h-3 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)]",
-                    item.type === "success" ? "bg-emerald-400 shadow-emerald-400/20" : 
-                    item.type === "error" ? "bg-rose-400 shadow-rose-400/20" : "bg-indigo-400 shadow-indigo-400/20"
-                  )} />
-                  <div>
-                    <div className="font-black text-white text-lg tracking-tight group-hover:text-indigo-300 transition-colors">{item.action}</div>
-                    <div className="text-xs text-slate-500 font-medium uppercase tracking-widest mt-0.5">{item.target}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-8 relative z-10">
-                  <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest bg-white/5 px-2.5 py-1 rounded-full group-hover:text-slate-400 transition-colors">{item.time}</span>
-                  <div className="w-10 h-10 rounded-full border border-white/5 flex items-center justify-center group-hover:border-indigo-500/30 group-hover:bg-indigo-500/10 transition-all">
-                    <ChevronRight className="h-5 w-5 text-slate-700 group-hover:text-indigo-400" />
-                  </div>
-                </div>
-              </div>
-            ))}
+    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 pb-24">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <HistoryIcon className="h-5 w-5 text-primary" />
+            </div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Neural History</h1>
           </div>
-        </CardContent>
-      </Card>
+          <p className="text-slate-500 font-medium">The persistent memory of your Second Brain assistant.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" className="bg-white border-slate-200" onClick={fetchHistory}>
+            <Clock className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          <Button variant="destructive" className="shadow-lg shadow-rose-500/20" onClick={clearHistory}>
+            <Trash2 className="h-4 w-4 mr-2" />
+            Clear All
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input 
+              placeholder="Search through your second brain's memory..." 
+              className="pl-10 h-12 bg-white border-slate-200 rounded-xl"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Button variant="outline" className="h-12 px-6 bg-white border-slate-200">
+            <Filter className="h-4 w-4 mr-2" />
+            Filter
+          </Button>
+          <Button variant="outline" className="h-12 px-6 bg-white border-slate-200">
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+        </div>
+
+        <Card className="border-slate-200 shadow-sm overflow-hidden bg-white rounded-3xl">
+          <CardHeader className="border-b bg-slate-50/50 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <BrainCircuit className="h-4 w-4 text-primary" />
+                Memory Logs
+              </CardTitle>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white border px-2 py-0.5 rounded-full">
+                {filteredHistory.length} Entries
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <ScrollArea className="h-[600px]">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-3">
+                  <Bot className="h-12 w-12 text-primary animate-pulse" />
+                  <p className="text-sm font-bold text-slate-400">Accessing Neural Archive...</p>
+                </div>
+              ) : filteredHistory.length === 0 ? (
+                <div className="text-center py-20 bg-slate-50/30">
+                  <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 mb-4">
+                    <MessageSquare className="h-8 w-8 text-slate-300" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">No memories found</h3>
+                  <p className="text-sm text-slate-500 mt-1">Start chatting with the assistant to build history.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {filteredHistory.map((item) => (
+                    <div key={item.id} className="p-6 hover:bg-slate-50/50 transition-colors group">
+                      <div className="flex items-start gap-4">
+                        <div className={cn(
+                          "h-10 w-10 rounded-xl shrink-0 flex items-center justify-center shadow-sm",
+                          item.role === 'user' ? "bg-indigo-100 text-indigo-600" : "bg-primary/10 text-primary"
+                        )}>
+                          {item.role === 'user' ? <User className="h-5 w-5" /> : <Bot className="h-5 w-5" />}
+                        </div>
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-slate-900 capitalize">
+                                {item.role === 'user' ? 'You' : 'Second Brain'}
+                              </span>
+                              {item.category === 'note' && (
+                                <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase border border-amber-200">
+                                  Saved Note
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-400">
+                              {format(new Date(item.created_at), "MMM d, h:mm a")}
+                            </span>
+                          </div>
+                          {item.metadata?.title && (
+                            <h4 className="text-sm font-bold text-primary">{item.metadata.title}</h4>
+                          )}
+                          <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+                            {item.content}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
