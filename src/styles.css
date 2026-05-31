@@ -49,15 +49,15 @@
 
 :root {
   --radius: 1.25rem;
-  --background: #0f111a;
+  --background: #111420;
   --foreground: #ffffff;
-  --card: #161825;
+  --card: #1a1e2e;
   --card-foreground: #ffffff;
-  --popover: #161825;
+  --popover: #1a1e2e;
   --popover-foreground: #ffffff;
   --primary: #6366f1;
   --primary-foreground: #ffffff;
-  --secondary: #1e2032;
+  --secondary: #252a41;
   --secondary-foreground: #e0e7ff;
   --muted: rgba(255, 255, 255, 0.05);
   --muted-foreground: #94a3b8;

@@ -123,7 +123,7 @@ function Dashboard() {
         {cards.map((c) => {
           const Icon = c.icon;
           return (
-            <Card key={c.label} className="rounded-[2.5rem] border border-white/10 shadow-2xl shadow-black/40 overflow-hidden bg-white/5 backdrop-blur-2xl transition-all hover:scale-[1.03] duration-500 group hover:border-white/30 relative">
+            <Card key={c.label} className="rounded-[2.5rem] border border-white/10 shadow-2xl shadow-black/40 overflow-hidden bg-secondary backdrop-blur-2xl transition-all hover:scale-[1.03] duration-500 group hover:border-white/30 relative">
               <div className="absolute inset-0 bg-linear-to-br from-white/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-transparent relative overflow-hidden">
@@ -152,7 +152,7 @@ function Dashboard() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {DASHBOARD_TABLES.map((table) => (
-            <Card key={table} className="rounded-2xl border-white/10 shadow-xl shadow-black/20 border p-5 bg-white/5 hover:bg-white/[0.05] transition-all hover:-translate-y-2 hover:border-white/30 cursor-pointer group backdrop-blur-md">
+            <Card key={table} className="rounded-2xl border-white/10 shadow-xl shadow-black/20 border p-5 bg-secondary hover:bg-white/[0.05] transition-all hover:-translate-y-2 hover:border-white/30 cursor-pointer group backdrop-blur-md">
               <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3 truncate group-hover:text-indigo-300 transition-colors">
                 {table.replace(/_/g, " ")}
               </div>
@@ -169,7 +169,7 @@ function Dashboard() {
       </div>
 
       {/* Workflow Section */}
-      <Card className="rounded-[3rem] border border-white/10 shadow-2xl shadow-black/80 overflow-hidden bg-white/5 backdrop-blur-2xl relative group mt-8">
+      <Card className="rounded-[3rem] border border-white/10 shadow-2xl shadow-black/80 overflow-hidden bg-secondary backdrop-blur-2xl relative group mt-8">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/[0.04] blur-[120px] pointer-events-none group-hover:bg-indigo-600/[0.08] transition-all duration-1000" />
         <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-blue-600/[0.03] blur-[100px] pointer-events-none" />
         

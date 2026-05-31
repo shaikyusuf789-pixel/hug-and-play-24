@@ -49,7 +49,7 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
 
   return (
     <article className={cn(
-      "rounded-[2rem] sm:rounded-3xl bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/40 overflow-hidden flex flex-col animate-fade-in relative group transition-all duration-300 hover:shadow-white-lg hover:-translate-y-1",
+      "rounded-[2rem] sm:rounded-3xl bg-secondary backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/40 overflow-hidden flex flex-col animate-fade-in relative group transition-all duration-300 hover:shadow-white-lg hover:-translate-y-1",
       isProcessing && "opacity-70 grayscale-[0.5]"
     )}>
 
