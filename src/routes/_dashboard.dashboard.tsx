@@ -128,14 +128,16 @@ function Dashboard() {
         {cards.map((c) => {
           const Icon = c.icon;
           return (
-            <Card key={c.label} className={cn("rounded-3xl border border-white/5 shadow-2xl shadow-black/20 overflow-hidden bg-linear-to-br transition-all hover:scale-[1.02] duration-300 group", c.gradient)}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-transparent">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-slate-400/70 group-hover:text-white transition-colors">{c.label}</CardTitle>
+            <Card key={c.label} className={cn("rounded-3xl border border-white/10 shadow-2xl shadow-black/40 overflow-hidden bg-slate-950/40 backdrop-blur-md transition-all hover:scale-[1.02] duration-300 group hover:border-white/20")}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-transparent relative z-10">
+                <div className={cn("absolute inset-0 opacity-10 bg-linear-to-br transition-opacity group-hover:opacity-20", c.gradient)} />
+                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-slate-400/90 group-hover:text-white transition-colors relative z-10">{c.label}</CardTitle>
+
 
                 <Icon className={cn("h-4 w-4", c.color)} />
               </CardHeader>
-              <CardContent className="pt-4 pb-6">
-                <div className="text-4xl font-black text-white group-hover:scale-110 transition-transform origin-left">{c.value ?? "0"}</div>
+              <CardContent className="pt-4 pb-6 relative z-10">
+                <div className="text-4xl font-black text-white group-hover:translate-x-1 transition-transform origin-left">{c.value ?? "0"}</div>
               </CardContent>
             </Card>
           );
