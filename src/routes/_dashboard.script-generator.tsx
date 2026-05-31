@@ -796,7 +796,7 @@ function ScriptGenerator() {
                 ) : (
                   <>
                     <Wand2 className="mr-2 h-4 w-4" />
-                    Generate Script
+                    {isExistingScript ? "Regenerate Script" : "Generate Script"}
                   </>
                 )}
               </Button>
