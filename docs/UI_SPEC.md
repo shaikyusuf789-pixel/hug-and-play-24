@@ -12,7 +12,11 @@ This document tracks the current visual state of every page. Per **Rule 1**, upd
 
 ### /dashboard
 - Layout: sidebar + main content. Sidebar collapses into a Sheet drawer on mobile (hamburger top-left).
-- Screenshot: _pending_
+- Features: Idea Engine controls (auto-run, manual run, interval), real-time status tiles for Ideas/Approval/Priority/Scripting/Audio/Slides, and a dynamic database table explorer.
+- **Update (May 31, 2026)**: Refined the dashboard with a professional glassmorphism look, vibrant status tiles with icons, and a cleaner workflow summary section. Added mobile-optimized controls and interactive table cards.
+- Screenshot (Desktop): `docs/screenshots/dashboard-desktop.png`
+- Screenshot (Mobile): `docs/screenshots/dashboard-mobile.png`
+
 
 ### /tables (Database Tables)
 - Lists ALL public tables dynamically from Supabase via `get_public_tables` RPC.
