@@ -2,106 +2,16 @@ import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 
-const APIFY_BASE = "https://api.apify.com/v2";
-const CHANNEL_SCRAPER = "streamers~youtube-scraper";
-const TRANSCRIPT_ACTOR = "lume~yt-transcripts-summary";
-
-async function apifyRun(actorId: string, input: unknown, token: string) {
-  const res = await fetch(`${APIFY_BASE}/acts/${actorId}/run-sync-get-dataset-items?token=${token}&clean=true`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Apify ${actorId} failed (${res.status}): ${text.slice(0, 300)}`);
-  }
-  return (await res.json()) as any[];
-}
-
-async function callAI(prompt: string, system: string) {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error("OPENAI_API_KEY not configured in secrets");
-
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: prompt },
-      ],
-      response_format: { type: "json_object" },
-    }),
-  });
-  
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`OpenAI error ${res.status}: ${errorText.slice(0, 300)}`);
-  }
-  
-  const data = await res.json();
-  const content = data.choices[0].message.content;
-  try {
-    return JSON.parse(content);
-  } catch (e) {
-    console.error("Failed to parse AI JSON:", content);
-    throw new Error("AI returned invalid JSON format");
-  }
-}
-
 export const processChunks = createServerFn({ method: "POST" })
   .inputValidator(z.object({ scriptContent: z.string() }))
   .handler(async ({ data: { scriptContent } }) => {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) throw new Error("OPENAI_API_KEY is not set.");
-
-    const systemPrompt = `
-You are an expert script editor for SKY Academy. Your task is to split a long Telugu script into smaller chunks for video production.
-Rules:
-1. Each chunk MUST be between 170 and 200 words (word count is based on Telugu words).
-2. Split the script intelligently at natural sentence boundaries or logical paragraph breaks.
-3. DO NOT change the text content. Just split it verbatim.
-4. Return the result as a JSON array of strings.
-Example: ["chunk 1 text...", "chunk 2 text...", ...]
-`;
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Split this script into chunks of 170-200 words each:\n\n${scriptContent}` },
-        ],
-        temperature: 0.1,
-      }),
+    console.log("Splitting chunks via Edge Function...");
+    
+    const { data, error } = await supabaseAdmin.functions.invoke("process-chunks", {
+      body: { scriptContent }
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
-    }
-
-    const aiData = await response.json();
-    const result_content = aiData.choices[0].message.content;
-    
-    let chunks = [];
-    try {
-      const cleaned = result_content.replace(/```json/g, "").replace(/```/g, "").trim();
-      chunks = JSON.parse(cleaned);
-    } catch (e) {
-      console.error("Failed to parse AI response", result_content);
-      throw new Error("AI returned invalid JSON for chunks.");
-    }
-
-    return { chunks };
+    if (error) throw error;
+    return data;
   });
+
