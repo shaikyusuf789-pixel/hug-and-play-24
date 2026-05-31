@@ -1,7 +1,7 @@
 # Supabase Backend Configuration for Spark Joy
 
 This project is architected with a strict separation of concerns:
-- **Frontend**: Managed via Lovable (VibeCoder).
+- **Frontend**: Managed via Sky Studio (VibeCoder).
 - **Backend**: Managed strictly via your own **Supabase Project**.
 
 ## Database Tables Mapping
@@ -32,7 +32,7 @@ When migrating this project to another platform (Replit, Bolt, etc.), you must p
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase Project Settings > API (anon/public) |
 | `CUSTOM_SUPABASE_SERVICE_ROLE_KEY` | Supabase Project Settings > API (service_role) |
 
-**Note on Service Role Key**: Lovable Cloud reserves the `SUPABASE_SERVICE_ROLE_KEY` prefix, so we use `CUSTOM_SUPABASE_SERVICE_ROLE_KEY` to connect server-side functions and bypass RLS for administrative tasks.
+**Note on Service Role Key**: Direct Supabase reserves the `SUPABASE_SERVICE_ROLE_KEY` prefix, so we use `CUSTOM_SUPABASE_SERVICE_ROLE_KEY` to connect server-side functions and bypass RLS for administrative tasks.
 
 ## Deployment Checklist
 1. Provide the Supabase URL and keys in the target platform's secrets/environment settings.
