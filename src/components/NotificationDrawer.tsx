@@ -139,25 +139,25 @@ export function NotificationDrawer() {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative hover:bg-slate-100 rounded-full">
-          <Bell className="h-5 w-5 text-slate-600" />
+        <Button variant="ghost" size="icon" className="relative rounded-full">
+          <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white border-2 border-white">
+            <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full border-2 border-card bg-destructive text-[10px] font-bold text-destructive-foreground">
               {unreadCount}
             </span>
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:w-[400px] p-0 border-l-slate-100 shadow-2xl">
-        <div className="flex flex-col h-full bg-slate-50/30">
-          <SheetHeader className="p-6 border-b bg-white">
+      <SheetContent className="w-full border-l-border p-0 shadow-xl sm:w-[400px]">
+        <div className="flex h-full flex-col bg-background">
+          <SheetHeader className="border-b bg-card p-6">
             <div className="flex items-center justify-between">
               <div>
-                <SheetTitle className="text-xl font-bold text-white">Notifications</SheetTitle>
-                <p className="text-xs text-slate-500 mt-1">Stay updated with your pipeline activity</p>
+                <SheetTitle className="text-xl font-bold text-foreground">Notifications</SheetTitle>
+                <p className="mt-1 text-xs text-muted-foreground">Stay updated with your pipeline activity</p>
               </div>
               {unreadCount > 0 && (
-                <Button variant="ghost" size="sm" onClick={markAllAsRead} className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 font-semibold text-xs">
+                <Button variant="ghost" size="sm" onClick={markAllAsRead} className="text-xs font-semibold text-primary">
                   Mark all as read
                 </Button>
               )}
@@ -168,21 +168,21 @@ export function NotificationDrawer() {
             <div className="p-4 space-y-3">
               {notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center px-6">
-                  <div className="h-16 w-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                    <Bell className="h-8 w-8 text-slate-300" />
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
+                    <Bell className="h-8 w-8 text-muted-foreground" />
                   </div>
-                  <h3 className="text-white font-bold">No notifications yet</h3>
-                  <p className="text-sm text-slate-500 mt-2 max-w-[240px]">We'll alert you when there are channel suggestions or pipeline updates.</p>
+                  <h3 className="font-bold text-foreground">No notifications yet</h3>
+                  <p className="mt-2 max-w-[240px] text-sm text-muted-foreground">We'll alert you when there are channel suggestions or pipeline updates.</p>
                 </div>
               ) : (
                 notifications.map((notification) => (
                   <div
                     key={notification.id}
                     className={cn(
-                      "group relative flex gap-4 p-4 rounded-2xl border transition-all duration-200",
+                      "group relative flex gap-4 rounded-lg border p-4 transition-colors",
                       notification.read 
-                        ? "bg-white/50 border-slate-100 opacity-80" 
-                        : "bg-white border-indigo-100 shadow-sm shadow-indigo-50"
+                        ? "bg-card opacity-80" 
+                        : "bg-card shadow-sm"
                     )}
                   >
                     <div className="shrink-0 mt-0.5">
@@ -192,16 +192,16 @@ export function NotificationDrawer() {
                       <div className="flex items-center gap-2 mb-1">
                         <p className={cn(
                           "text-sm font-bold truncate",
-                          notification.read ? "text-slate-400" : "text-white"
+                          notification.read ? "text-muted-foreground" : "text-foreground"
                         )}>
                           {notification.title}
                         </p>
-                        {!notification.read && <div className="h-1.5 w-1.5 rounded-full bg-indigo-500" />}
+                        {!notification.read && <div className="h-1.5 w-1.5 rounded-full bg-primary" />}
                       </div>
-                      <p className="text-xs text-slate-600 leading-relaxed mb-2">
+                      <p className="mb-2 text-xs leading-relaxed text-muted-foreground">
                         {notification.message}
                       </p>
-                      <span className="text-[10px] text-slate-400 font-medium">
+                      <span className="text-[10px] font-medium text-muted-foreground">
                         {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                       </span>
                     </div>
@@ -211,7 +211,7 @@ export function NotificationDrawer() {
                          <Button
                            variant="ghost"
                            size="icon"
-                           className="h-7 w-7 rounded-lg hover:bg-indigo-50 text-indigo-600"
+                            className="h-7 w-7 rounded-lg text-primary"
                            onClick={() => markAsRead(notification.id)}
                          >
                            <Check className="h-3.5 w-3.5" />
@@ -220,7 +220,7 @@ export function NotificationDrawer() {
                        <Button
                          variant="ghost"
                          size="icon"
-                         className="h-7 w-7 rounded-lg hover:bg-rose-50 text-rose-600"
+                         className="h-7 w-7 rounded-lg text-destructive"
                          onClick={() => deleteNotification(notification.id)}
                        >
                          <Trash2 className="h-3.5 w-3.5" />
