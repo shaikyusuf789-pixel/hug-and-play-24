@@ -190,16 +190,17 @@ export const approveAndProcessIdea = createServerFn({ method: "POST" })
     if (!token) throw new Error("APIFY_API_TOKEN not configured in project secrets");
 
     // 1. Set status to Processing
-    await supabaseAdmin.from("raw_content").update({ 
-      status: "Processing",
-      processing_step: "Initializing..." 
-    }).eq("id", id);
+    try {
+      await supabaseAdmin.from("raw_content").update({ 
+        status: "Processing"
+      } as any).eq("id", id);
+    } catch (e) {
+      console.warn("Failed to update status to Processing, continuing...", e);
+    }
 
     try {
-      // Update step: Fetching Transcript
-      await supabaseAdmin.from("raw_content").update({ 
-        processing_step: "Fetching transcript from YouTube..." 
-      }).eq("id", id);
+      // Update progress
+      console.log(`[${id}] Fetching transcript...`);
 
       // 2. Fetch the idea details
       const { data: idea, error: fetchErr } = await supabaseAdmin
@@ -227,10 +228,8 @@ export const approveAndProcessIdea = createServerFn({ method: "POST" })
         console.warn(`Transcript failed for ${idea.original_title}`, e);
       }
 
-      // Update step: AI Analysis
-      await supabaseAdmin.from("raw_content").update({ 
-        processing_step: "AI Analysis: Generating strategy..." 
-      }).eq("id", id);
+      // AI Analysis
+      console.log(`[${id}] Starting AI analysis...`);
 
 
       // 4. Call AI for new content
@@ -249,7 +248,6 @@ ${transcript || "(no transcript available)"}`;
         .from("raw_content")
         .update({
           status: "Approved",
-          processing_step: null,
           original_summary: transcript,
           proposed_title: ai.proposed_title,
           new_thumbnail_outline: ai.new_thumbnail_outline,
@@ -257,7 +255,7 @@ ${transcript || "(no transcript available)"}`;
           core_hooks: ai.core_hooks ?? [],
           summary_points: ai.summary_points?.slice(0, 7) ?? [],
           video_outline: ai.video_outline ?? {},
-        })
+        } as any)
         .eq("id", id);
 
       if (updErr) throw updErr;

@@ -188,11 +188,14 @@ function RawContentPage() {
       toast.info("Moving to Approved section and starting AI pipeline...");
       
       // Optimistic update
-      qc.setQueryData(["ideas"], (old: any) => ({
-        ideas: old.ideas.map((i: any) =>
-          i.id === idea.id ? { ...i, status: "Processing", processing_step: "Initializing..." } : i
-        ),
-      }));
+      qc.setQueryData(["ideas"], (old: any) => {
+        if (!old?.ideas) return old;
+        return {
+          ideas: old.ideas.map((i: any) =>
+            i.id === idea.id ? { ...i, status: "Processing" } : i
+          ),
+        };
+      });
 
       try {
         await approveFn({ data: { id: idea.id } });

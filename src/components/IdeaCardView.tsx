@@ -54,16 +54,12 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
     )}>
 
       {isProcessing && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/5 backdrop-blur-[1px]">
-          <Loader2 className="size-8 animate-spin text-primary mb-2" />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Processing...</span>
-          {idea.processing_step && (
-            <span className="text-[10px] text-primary/80 mt-1 font-medium italic animate-pulse">
-              {idea.processing_step}
-            </span>
-          )}
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/20 backdrop-blur-[2px]">
+          <Loader2 className="size-8 animate-spin text-primary mb-2 shadow-white-lg" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white bg-indigo-600 px-3 py-1 rounded-full shadow-white-lg">
+            AI Engine Running...
+          </span>
         </div>
-
       )}
       {/* Thumbnail */}
       <div className="relative w-full aspect-video bg-muted overflow-hidden">
