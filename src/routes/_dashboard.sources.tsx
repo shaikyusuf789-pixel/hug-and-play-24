@@ -23,17 +23,11 @@ function SourcesPage() {
   const [url, setUrl] = useState("");
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  const fetchSourcesFn = useServerFn(getSources);
+  
   const sources = useQuery({
     queryKey: ["sources"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sources_master")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchSourcesFn(),
   });
 
   const addFn = useServerFn(addSource);
