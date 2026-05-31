@@ -105,8 +105,9 @@ export function AIChatAssistant() {
         setCurrentSessionId(data.id);
         setMessages([]);
         setShowSessions(false);
-        return data.id;
+        return data.id as string;
       }
+      return null;
     } catch (error) {
       console.error("Error creating new session:", error);
       toast.error("Failed to start new chat");
