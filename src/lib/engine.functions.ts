@@ -255,7 +255,7 @@ export const getIdeas = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     let query = supabaseAdmin
       .from("raw_content")
-      .select("*, sources_master(channel_name)")
+      .select("*, sources_master!fk_raw_content_source(channel_name)")
       .order("created_at", { ascending: false });
 
     if (data.status) {
@@ -340,7 +340,7 @@ export const approveAndProcessIdea = createServerFn({ method: "POST" })
       // 2. Fetch the idea details
       const { data: idea, error: fetchErr } = await supabaseAdmin
         .from("raw_content")
-        .select("*, sources_master(channel_name)")
+        .select("*, sources_master!fk_raw_content_source(channel_name)")
         .eq("id", id)
         .single();
       if (fetchErr || !idea) throw new Error("Idea not found");
