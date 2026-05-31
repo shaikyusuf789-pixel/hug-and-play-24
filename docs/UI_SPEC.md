@@ -7,7 +7,7 @@ Sky Studio is a premium, autonomous AI video production pipeline designed for SK
 
 ## 1. Core Architecture
 - **Frontend**: React 19 (TanStack Start), Tailwind CSS v4, Lucide Icons.
-- **Backend (Database & Auth)**: Direct connection to the user's Supabase project `klhcrdacefntzqwqwiiu`.
+- **Backend (Database & Auth)**: Direct connection to the user's Supabase project `eozteueesaemhcmbqcxt`.
 - **Logic Layer**: TanStack `createServerFn` for app actions, with direct Supabase table reads/writes.
 - **AI Integration**: OpenAI, Google AI Studio, Apify, ElevenLabs.
 
@@ -23,7 +23,7 @@ Sky Studio is a premium, autonomous AI video production pipeline designed for SK
   - **Action Bar**: "Initialize Scraper" (manual trigger) and "Backup" (GitHub sync).
   - **Status Tiles**: Real-time counts of ideas at each stage (Pending, Approved, Priority, etc.). Current verified state: 155 total ideas, 131 pending approval, 1 approved, 0 priority, 1 script done, 0 audio done.
 - **Logic**: `Initialize Scraper` runs the local `runIdeaEngine` server function. It reads `sources_master`, scrapes YouTube RSS feeds, deduplicates by `video_url`, and inserts new rows into `raw_content`.
-- **Data**: Reads from and writes to `raw_content`, `app_settings`, and `sources_master` in Supabase project `klhcrdacefntzqwqwiiu`.
+- **Data**: Reads from and writes to `raw_content`, `app_settings`, and `sources_master` in Supabase project `eozteueesaemhcmbqcxt`.
 
 ### 2.2 Idea Cards (/idea-cards)
 ![Idea Cards](screenshots/idea-cards.png)

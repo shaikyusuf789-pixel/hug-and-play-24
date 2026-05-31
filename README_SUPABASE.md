@@ -5,7 +5,7 @@
 ## 🔗 Core Backend Integration
 The project is strictly wired to a specific Supabase instance. **Do not use the project's default managed database.**
 
-- **Project URL:** `https://klhcrdacefntzqwqwiiu.supabase.co`
+- **Project URL:** `https://eozteueesaemhcmbqcxt.supabase.co`
 - **Publishable Key:** `sb_publishable_aITpoyEkEtU60jzenvS3ig_wCGXYVGz`
 - **Service Role Key:** Required for server functions (stored in secrets as `CUSTOM_SUPABASE_SERVICE_ROLE_KEY`).
 
@@ -40,7 +40,7 @@ Every component in the UI is mapped directly to these tables in your Supabase pr
 To replicate this setup elsewhere:
 1. Copy the frontend code.
 2. Add the `CUSTOM_SUPABASE_SERVICE_ROLE_KEY` to the new platform's secrets.
-3. Ensure the Supabase project at `klhcrdacefntzqwqwiiu.supabase.co` has the following RPC in the `public` schema:
+3. Ensure the Supabase project at `eozteueesaemhcmbqcxt.supabase.co` has the following RPC in the `public` schema:
    ```sql
    CREATE OR REPLACE FUNCTION public.get_public_tables()
    RETURNS TABLE (table_name TEXT) LANGUAGE plpgsql SECURITY DEFINER AS $$

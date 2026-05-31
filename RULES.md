@@ -15,7 +15,7 @@ After every change set (frontend, schema, or config):
 
 ## Rule 3 — Frontend only here, Supabase is backend
 This repository is the frontend ONLY. Nothing app-data lives in the managed backend.
-- All tables, storage buckets, secrets, edge functions, auth = the user's direct Supabase project: `klhcrdacefntzqwqwiiu`.
+- All tables, storage buckets, secrets, edge functions, auth = the user's direct Supabase project: `eozteueesaemhcmbqcxt`.
 - Frontend reads `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` pointing to that project.
 - Never create tables or store secrets in the internal managed DB.
 
