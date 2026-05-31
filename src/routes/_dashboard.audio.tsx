@@ -88,7 +88,7 @@ function AudioEngine() {
   const generateAudio = async (chunkId: string) => {
     setGeneratingChunkId(chunkId);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-audio", {
+      const res = await supabase.functions.invoke("generate-audio", {
         body: { 
           chunkId, 
           provider: model, 
@@ -97,7 +97,9 @@ function AudioEngine() {
         },
       });
 
-      if (error) throw error;
+      if (res.error) throw res.error;
+      const data = res.data;
+
 
       toast.success("Audio generated successfully.");
       fetchChunks(selectedScriptId);
