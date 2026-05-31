@@ -48,14 +48,14 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
 
   return (
     <article className={cn(
-      "rounded-[2.5rem] bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/40 overflow-hidden flex flex-col animate-fade-in relative group transition-all duration-500 hover:shadow-white-lg hover:-translate-y-1 hover:border-white/20",
+      "rounded-[2rem] md:rounded-[2.5rem] bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/40 overflow-hidden flex flex-col animate-fade-in relative group transition-all duration-500 hover:shadow-white-lg hover:-translate-y-1 hover:border-white/20",
       isProcessing && "opacity-70 grayscale-[0.5]"
     )}>
 
       {isProcessing && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]">
-          <Loader2 className="size-10 animate-spin text-indigo-400 mb-4 shadow-white-lg" />
-          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white bg-indigo-600 px-4 py-1.5 rounded-full shadow-white-lg">
+          <Loader2 className="size-8 md:size-10 animate-spin text-indigo-400 mb-4 shadow-white-lg" />
+          <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white bg-indigo-600 px-3 md:px-4 py-1.5 rounded-full shadow-white-lg">
             AI Engine Running
           </span>
         </div>
@@ -78,7 +78,7 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
         )}
         <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
         {idea.duration && (
-          <span className="absolute bottom-3 right-3 px-2 py-0.5 rounded-md text-[10px] font-black bg-black/80 text-white border border-white/10">
+          <span className="absolute bottom-2 md:bottom-3 right-2 md:right-3 px-1.5 md:px-2 py-0.5 rounded-md text-[9px] md:text-[10px] font-black bg-black/80 text-white border border-white/10">
             {idea.duration}
           </span>
         )}
@@ -87,29 +87,29 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
             href={idea.video_url}
             target="_blank"
             rel="noreferrer"
-            className="absolute top-3 right-3 h-9 w-9 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-indigo-600 hover:scale-110 transition-all border border-white/10"
+            className="absolute top-2 md:top-3 right-2 md:right-3 h-8 w-8 md:h-9 md:w-9 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-indigo-600 hover:scale-110 transition-all border border-white/10"
           >
-            <ExternalLink className="size-4" />
+            <ExternalLink className="size-3.5 md:size-4" />
           </a>
         )}
         <StatusBadge
           status={idea.status}
-          className="absolute top-3 left-3"
+          className="absolute top-2 md:top-3 left-2 md:left-3"
         />
       </div>
 
       {/* Body */}
-      <div className="px-6 py-6 space-y-5">
+      <div className="px-5 md:px-6 py-5 md:py-6 space-y-4 md:space-y-5">
         <div className="space-y-1">
-          <div className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-black flex items-center gap-2">
+          <div className="text-[8px] md:text-[9px] uppercase tracking-[0.15em] md:tracking-[0.2em] text-slate-500 font-black flex items-center gap-2">
             <div className="h-1 w-1 rounded-full bg-slate-700" />
             Original Intelligence
           </div>
-          <p className="text-sm font-medium text-slate-300 leading-snug line-clamp-2 italic">
+          <p className="text-xs md:text-sm font-medium text-slate-300 leading-snug line-clamp-2 italic">
             {idea.original_title ? (
               <>
                 "{idea.original_title}" {idea.sources_master?.channel_name && (
-                  <span className="text-indigo-400 font-black px-2 py-0.5 rounded-lg bg-indigo-500/10 ml-1 border border-indigo-500/10 uppercase text-[9px] tracking-widest">
+                  <span className="text-indigo-400 font-black px-1.5 md:px-2 py-0.5 rounded-lg bg-indigo-500/10 ml-1 border border-indigo-500/10 uppercase text-[8px] md:text-[9px] tracking-widest">
                     {idea.sources_master.channel_name}
                   </span>
                 )}
@@ -119,32 +119,32 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
         </div>
 
         <div className="space-y-1">
-          <div className="text-[9px] uppercase tracking-[0.2em] text-indigo-400 font-black flex items-center gap-2">
+          <div className="text-[8px] md:text-[9px] uppercase tracking-[0.15em] md:tracking-[0.2em] text-indigo-400 font-black flex items-center gap-2">
             <div className="h-1 w-1 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
             Proposed Direction
           </div>
-          <h2 className="text-base sm:text-lg font-black leading-tight text-white group-hover:text-indigo-300 transition-colors tracking-tight">
+          <h2 className="text-sm sm:text-base md:text-lg font-black leading-tight text-white group-hover:text-indigo-300 transition-colors tracking-tight">
             {idea.proposed_title || "—"}
           </h2>
         </div>
 
         {/* Meta */}
-        <div className="flex flex-wrap items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
+        <div className="flex flex-wrap items-center gap-3 md:gap-4 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-500">
           {idea.views && (
-            <span className="inline-flex items-center gap-1.5 bg-white/5 px-2 py-0.5 rounded border border-white/5">
-              <Eye className="size-3" />
+            <span className="inline-flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+              <Eye className="size-2.5 md:size-3" />
               <span className="text-slate-300">{idea.views.toLocaleString()}</span>
             </span>
           )}
           {idea.published_date && (
-            <span className="inline-flex items-center gap-1.5">
-              <Calendar className="size-3" />
+            <span className="inline-flex items-center gap-1">
+              <Calendar className="size-2.5 md:size-3" />
               {new Date(idea.published_date).toLocaleDateString()}
             </span>
           )}
           {idea.duration && (
-            <span className="inline-flex items-center gap-1.5">
-              <Clock className="size-3" />
+            <span className="inline-flex items-center gap-1">
+              <Clock className="size-2.5 md:size-3" />
               {idea.duration}
             </span>
           )}
