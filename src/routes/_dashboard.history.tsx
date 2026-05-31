@@ -21,7 +21,7 @@ function HistoryPage() {
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Audit Log</span>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">Activity History</h1>
+          <h1 className="text-3xl font-bold text-white">Activity History</h1>
           <p className="text-slate-500 mt-1">Full traceback of engine operations and automation events.</p>
         </div>
       </div>
@@ -47,7 +47,7 @@ function HistoryPage() {
                   item.type === "error" ? "bg-rose-500" : "bg-blue-500"
                 }`} />
                 <div>
-                  <div className="font-bold text-slate-900">{item.action}</div>
+                  <div className="font-bold text-white">{item.action}</div>
                   <div className="text-sm text-slate-500">{item.target}</div>
                 </div>
               </div>

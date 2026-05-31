@@ -15,7 +15,7 @@ function MasterVideoPage() {
             <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Phase 6</span>
             <span className="text-[10px] text-slate-400 font-medium tracking-wider">• RENDERING ENGINE</span>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">Master Video</h1>
+          <h1 className="text-3xl font-bold text-white">Master Video</h1>
           <p className="text-slate-500 mt-1">Final assembly and high-definition rendering.</p>
         </div>
         <div className="flex gap-3">
@@ -58,7 +58,7 @@ function MasterVideoPage() {
 
         <div className="space-y-6">
           <div className="bg-white rounded-3xl border shadow-sm p-6 space-y-4">
-            <h3 className="font-bold text-slate-900 flex items-center gap-2">
+            <h3 className="font-bold text-white flex items-center gap-2">
               <Activity className="h-4 w-4 text-indigo-500" />
               Render Logs
             </h3>

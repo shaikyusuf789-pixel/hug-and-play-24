@@ -333,7 +333,7 @@ function ScriptGenerator() {
               <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Phase 1</span>
               <span className="text-[10px] text-slate-400 font-medium tracking-wider">• SKY Academy DNA v4.1 • Powered by Poe.com</span>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Script Generation</h1>
+            <h1 className="text-2xl font-bold text-white">Script Generation</h1>
           </div>
         </div>
         <div className="flex items-center gap-3">

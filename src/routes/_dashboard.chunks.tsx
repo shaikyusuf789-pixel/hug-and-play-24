@@ -142,7 +142,7 @@ function ChunksPage() {
             <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Phase 2</span>
             <span className="text-[10px] text-slate-400 font-medium tracking-wider">• SEGMENTATION ENGINE</span>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">Chunking Engine</h1>
+          <h1 className="text-3xl font-bold text-white">Chunking Engine</h1>
           <p className="text-slate-500 mt-1">Smart script segmentation for optimized visual matching.</p>
         </div>
         
@@ -218,7 +218,7 @@ function ChunksPage() {
                 <Textarea 
                   value={chunk.content}
                   onChange={(e) => handleUpdateChunkContent(index, e.target.value)}
-                  className="min-h-[140px] text-slate-900 leading-relaxed resize-none focus-visible:ring-indigo-500 border-none p-0 focus-visible:ring-0 shadow-none text-base font-telugu"
+                  className="min-h-[140px] text-white leading-relaxed resize-none focus-visible:ring-indigo-500 border-none p-0 focus-visible:ring-0 shadow-none text-base font-telugu"
                   placeholder="Chunk content..."
                 />
               </CardContent>
@@ -226,12 +226,12 @@ function ChunksPage() {
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-20 text-center space-y-4">
-          <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto border border-slate-100">
+        <div className="bg-slate-900/50 rounded-3xl border border-dashed border-white/10 p-20 text-center space-y-4">
+          <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto border border-white/10">
             <Layers className="h-8 w-8 text-slate-300" />
           </div>
           <div className="max-w-xs mx-auto space-y-2">
-            <h3 className="text-lg font-bold text-slate-900">No Chunks Segmented</h3>
+            <h3 className="text-lg font-bold text-white">No Chunks Segmented</h3>
             <p className="text-slate-500">Select a finished script from the dropdown and click "Auto Chunk Script" to split it into 170-200 word segments using AI.</p>
           </div>
         </div>

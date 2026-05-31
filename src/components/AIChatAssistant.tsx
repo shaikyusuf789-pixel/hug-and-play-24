@@ -96,7 +96,7 @@ export function AIChatAssistant() {
                 <Bot className="h-6 w-6" />
               </div>
               <div>
-                <CardTitle className="text-sm font-bold text-slate-900">SKY AI Assistant</CardTitle>
+                <CardTitle className="text-sm font-bold text-white">SKY AI Assistant</CardTitle>
                 <div className="flex items-center gap-1.5">
                   <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                   <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Memory Active & Ready</span>
@@ -156,8 +156,8 @@ export function AIChatAssistant() {
                     <div className={cn(
                       "rounded-2xl px-4 py-2.5 text-sm shadow-sm",
                       msg.role === "user" 
-                        ? "bg-slate-50 text-slate-800 rounded-tr-none border border-slate-100" 
-                        : "bg-white text-slate-800 rounded-tl-none border border-indigo-50"
+                        ? "bg-slate-800 text-slate-100 rounded-tr-none border border-slate-700" 
+                        : "bg-indigo-900/50 text-slate-100 rounded-tl-none border border-indigo-500/30"
                     )}>
                       {msg.content}
                     </div>

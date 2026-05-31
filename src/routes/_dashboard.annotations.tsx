@@ -21,7 +21,7 @@ function AnnotationsPage() {
             <span className="text-[10px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Phase 5</span>
             <span className="text-[10px] text-slate-400 font-medium tracking-wider">• ENRICHMENT ENGINE</span>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">Annotations</h1>
+          <h1 className="text-3xl font-bold text-white">Annotations</h1>
           <p className="text-slate-500 mt-1">Dynamic overlays, captions, and auditory cues.</p>
         </div>
         <Button className="bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-100 px-6 gap-2 h-11 rounded-2xl">
@@ -45,7 +45,7 @@ function AnnotationsPage() {
                   <span className="w-1 h-1 rounded-full bg-slate-300" />
                   <span className="text-[10px] font-bold text-amber-500">{ann.time}</span>
                 </div>
-                <p className="font-bold text-slate-900 text-lg">{ann.content}</p>
+                <p className="font-bold text-white text-lg">{ann.content}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

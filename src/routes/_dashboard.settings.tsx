@@ -16,7 +16,7 @@ function SettingsPage() {
         <div className="flex items-center gap-2 mb-1">
           <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Configuration</span>
         </div>
-        <h1 className="text-3xl font-bold text-slate-900">System Settings</h1>
+        <h1 className="text-3xl font-bold text-white">System Settings</h1>
         <p className="text-slate-500 mt-1">Configure your AI engine providers and global preferences.</p>
       </div>
 
@@ -24,7 +24,7 @@ function SettingsPage() {
         <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
           <div className="p-6 border-b bg-slate-50/50 flex items-center gap-2">
             <Zap className="h-4 w-4 text-indigo-500" />
-            <h3 className="font-bold text-slate-900">API Credentials</h3>
+            <h3 className="font-bold text-white">API Credentials</h3>
           </div>
           <div className="p-6 space-y-4">
             <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-amber-800 text-sm">
@@ -41,19 +41,19 @@ function SettingsPage() {
         <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
           <div className="p-6 border-b bg-slate-50/50 flex items-center gap-2">
             <Bell className="h-4 w-4 text-indigo-500" />
-            <h3 className="font-bold text-slate-900">Notifications</h3>
+            <h3 className="font-bold text-white">Notifications</h3>
           </div>
           <div className="p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-bold text-slate-900">Email Alerts</div>
+                <div className="font-bold text-white">Email Alerts</div>
                 <div className="text-xs text-slate-500">Get notified when a manual run completes.</div>
               </div>
               <Switch />
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-bold text-slate-900">Telegram Bot</div>
+                <div className="font-bold text-white">Telegram Bot</div>
                 <div className="text-xs text-slate-500">Daily reports sent to your Telegram.</div>
               </div>
               <Switch defaultChecked />

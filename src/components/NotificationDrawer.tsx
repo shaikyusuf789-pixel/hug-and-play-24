@@ -153,7 +153,7 @@ export function NotificationDrawer() {
           <SheetHeader className="p-6 border-b bg-white">
             <div className="flex items-center justify-between">
               <div>
-                <SheetTitle className="text-xl font-bold text-slate-900">Notifications</SheetTitle>
+                <SheetTitle className="text-xl font-bold text-white">Notifications</SheetTitle>
                 <p className="text-xs text-slate-500 mt-1">Stay updated with your pipeline activity</p>
               </div>
               {unreadCount > 0 && (
@@ -171,7 +171,7 @@ export function NotificationDrawer() {
                   <div className="h-16 w-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
                     <Bell className="h-8 w-8 text-slate-300" />
                   </div>
-                  <h3 className="text-slate-900 font-bold">No notifications yet</h3>
+                  <h3 className="text-white font-bold">No notifications yet</h3>
                   <p className="text-sm text-slate-500 mt-2 max-w-[240px]">We'll alert you when there are channel suggestions or pipeline updates.</p>
                 </div>
               ) : (
@@ -192,7 +192,7 @@ export function NotificationDrawer() {
                       <div className="flex items-center gap-2 mb-1">
                         <p className={cn(
                           "text-sm font-bold truncate",
-                          notification.read ? "text-slate-600" : "text-slate-900"
+                          notification.read ? "text-slate-400" : "text-white"
                         )}>
                           {notification.title}
                         </p>
