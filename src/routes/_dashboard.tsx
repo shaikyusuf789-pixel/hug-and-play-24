@@ -187,7 +187,7 @@ function DashboardLayout() {
       <div className="p-4 mt-auto">
         <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">TELUGU · POE · DNA</span>
+            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">TELUGU · POE · DNA</span>
             <span className="text-[9px] font-bold text-slate-400">V4.2</span>
           </div>
           <div className="w-full bg-slate-200 rounded-full h-1">

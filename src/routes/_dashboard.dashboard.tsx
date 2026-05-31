@@ -86,9 +86,10 @@ function Dashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Phase 1</span>
-            <span className="text-[10px] text-slate-400 font-medium tracking-wider">• COMPETITOR SCRAPER</span>
+            <span className="text-[10px] font-bold bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full uppercase tracking-widest border border-indigo-500/20">Phase 1</span>
+            <span className="text-[10px] text-slate-500 font-bold tracking-widest">• COMPETITOR SCRAPER</span>
           </div>
+
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Idea Engine</h1>
           <p className="text-sm text-slate-400 mt-1 font-medium italic">Scrape competitor YouTube channels and generate fresh video ideas.</p>
 
@@ -141,7 +142,7 @@ function Dashboard() {
                 <Icon className={cn("h-4 w-4", c.color)} />
               </CardHeader>
               <CardContent className="pt-4 pb-6 relative z-10">
-                <div className="text-4xl font-black text-white group-hover:translate-x-1 transition-transform origin-left">{c.value ?? "0"}</div>
+                <div className="text-5xl font-black text-white group-hover:translate-x-1 transition-all duration-500 tracking-tighter">{c.value ?? "0"}</div>
               </CardContent>
             </Card>
           );
@@ -150,14 +151,15 @@ function Dashboard() {
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {DASHBOARD_TABLES.map((table) => (
-          <Card key={table} className="rounded-2xl border-white/5 shadow-sm border p-4 bg-[#151624]/40 hover:bg-[#1e1b4b]/40 transition-all hover:-translate-y-1 cursor-pointer">
+          <Card key={table} className="rounded-2xl border-white/5 shadow-xl shadow-black/20 border p-4 bg-[#151624]/40 hover:bg-[#1e1b4b]/60 transition-all hover:-translate-y-1 hover:border-indigo-500/20 cursor-pointer group">
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 truncate">
               {table.replace(/_/g, " ")}
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-indigo-400">Active</span>
-              <TableIcon className="h-3 w-3 text-slate-300" />
+              <span className="text-[10px] font-bold text-indigo-400 group-hover:text-cyan-400 transition-colors">Active</span>
+              <TableIcon className="h-3.5 w-3.5 text-slate-600 group-hover:text-indigo-400 transition-colors" />
             </div>
+
           </Card>
         ))}
       </div>
