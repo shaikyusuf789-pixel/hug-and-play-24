@@ -371,10 +371,9 @@ function SlideChunkCard({
         )}
       </div>
 
-      {/* Column 3: Generated Slide Preview */}
       <div className="flex flex-col space-y-2">
         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Gamma Slide</span>
-        <div className="aspect-video bg-slate-50 rounded-lg border border-slate-100 overflow-hidden relative">
+        <div className="aspect-video bg-white rounded-lg border border-slate-200 overflow-hidden relative shadow-sm">
           {chunk.slide_url ? (
             <iframe 
               src={chunk.slide_url} 
@@ -382,21 +381,21 @@ function SlideChunkCard({
               title={`Slide ${idx + 1}`}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-[9px] text-slate-400 font-bold uppercase">
+            <div className="w-full h-full flex items-center justify-center text-[9px] text-slate-400 font-bold uppercase bg-slate-50/30">
               No slide yet
             </div>
           )}
         </div>
         <Button 
           variant="outline"
-          className="w-full h-7 text-[9px] font-bold uppercase border-slate-200 text-slate-500"
+          className="w-full h-8 text-[9px] font-bold uppercase border-slate-200 text-slate-500 hover:bg-slate-50 rounded-lg shadow-sm"
           onClick={() => generateGammaSlide(chunk.id)}
           disabled={!localPrompt || processingId === `${chunk.id}-slide`}
         >
           {processingId === `${chunk.id}-slide` ? (
-            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
           ) : (
-            <Layout className="h-3 w-3 mr-1" />
+            <Layout className="h-3 w-3 mr-1.5" />
           )}
           {chunk.slide_url ? "Update Slide" : "Generate Slide"}
         </Button>
