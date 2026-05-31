@@ -35,9 +35,16 @@ function TablesPage() {
   const { data: tableNames, isLoading: loadingNames } = useQuery({
     queryKey: ["supabase-tables"],
     queryFn: async () => {
-      // Known tables from our schema
-      const tables: TableName[] = ["sources_master", "raw_content", "scripts", "user_uploads", "app_settings"];
-      return tables;
+      // Dynamically fetch all table names from the current Supabase instance
+      const { data, error } = await supabase.rpc('get_public_tables' as any);
+      
+      if (error) {
+        console.error("Error fetching tables from RPC:", error);
+        // Fallback to known tables if RPC fails
+        return ["sources_master", "raw_content", "scripts", "user_uploads", "app_settings", "notifications", "daily_backup_logs", "script_chunks", "youtube_seo", "ai_chat_memory"];
+      }
+      
+      return (data as any[]).map(t => t.table_name) as string[];
     },
   });
 
@@ -59,7 +66,7 @@ function TablesPage() {
   );
 }
 
-function SupabaseTable({ tableName }: { tableName: TableName }) {
+function SupabaseTable({ tableName }: { tableName: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -125,7 +132,7 @@ function SupabaseTable({ tableName }: { tableName: TableName }) {
       case "scripts": return ["title", "content", "idea_id", "model"];
       case "user_uploads": return ["file_name", "file_path", "display_name"];
       case "raw_content": return ["original_title", "video_url", "status", "source_id"];
-      default: return [];
+      default: return ["id", "created_at"];
     }
   }, [rows, tableName]);
 

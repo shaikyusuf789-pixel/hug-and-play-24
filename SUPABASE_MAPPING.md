@@ -23,8 +23,19 @@ This project is architected with a strict separation of concerns:
 - `slides`: Generated slide images.
 - `user-uploads`: User-uploaded documents/media.
 
-## Deployment Note
-When migrating this project to another platform (Replit, Bolt, etc.), ensure you:
-1. Provide the `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in the environment variables.
-2. The frontend is stateless; all business data resides in Supabase.
-3. RLS policies are set to allow `authenticated` and `service_role` full access to enable the server-side engine functions.
+## Environment Configuration
+When migrating this project to another platform (Replit, Bolt, etc.), you must provide the following environment variables:
+
+| Variable | Source |
+|----------|--------|
+| `VITE_SUPABASE_URL` | Supabase Project Settings > API |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase Project Settings > API (anon/public) |
+| `CUSTOM_SUPABASE_SERVICE_ROLE_KEY` | Supabase Project Settings > API (service_role) |
+
+**Note on Service Role Key**: Lovable Cloud reserves the `SUPABASE_SERVICE_ROLE_KEY` prefix, so we use `CUSTOM_SUPABASE_SERVICE_ROLE_KEY` to connect server-side functions and bypass RLS for administrative tasks.
+
+## Deployment Checklist
+1. Provide the Supabase URL and keys in the target platform's secrets/environment settings.
+2. The frontend is stateless; all business logic and data resides in Supabase.
+3. RLS policies are set to allow `authenticated` and `service_role` access.
+4. The `get_public_tables()` RPC function must be present in the Supabase `public` schema for the database browser to function correctly.
