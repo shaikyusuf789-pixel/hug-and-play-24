@@ -15,7 +15,6 @@ import { Route as DashboardYoutubeRouteImport } from './routes/_dashboard.youtub
 import { Route as DashboardUploadsRouteImport } from './routes/_dashboard.uploads'
 import { Route as DashboardTablesRouteImport } from './routes/_dashboard.tables'
 import { Route as DashboardStorageRouteImport } from './routes/_dashboard.storage'
-import { Route as DashboardSourcesRouteImport } from './routes/_dashboard.sources'
 import { Route as DashboardSlidesRouteImport } from './routes/_dashboard.slides'
 import { Route as DashboardSettingsRouteImport } from './routes/_dashboard.settings'
 import { Route as DashboardScriptGeneratorRouteImport } from './routes/_dashboard.script-generator'
@@ -58,11 +57,6 @@ const DashboardTablesRoute = DashboardTablesRouteImport.update({
 const DashboardStorageRoute = DashboardStorageRouteImport.update({
   id: '/storage',
   path: '/storage',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardSourcesRoute = DashboardSourcesRouteImport.update({
-  id: '/sources',
-  path: '/sources',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardSlidesRoute = DashboardSlidesRouteImport.update({
@@ -153,7 +147,6 @@ export interface FileRoutesByFullPath {
   '/script-generator': typeof DashboardScriptGeneratorRoute
   '/settings': typeof DashboardSettingsRoute
   '/slides': typeof DashboardSlidesRoute
-  '/sources': typeof DashboardSourcesRoute
   '/storage': typeof DashboardStorageRoute
   '/tables': typeof DashboardTablesRoute
   '/uploads': typeof DashboardUploadsRoute
@@ -175,7 +168,6 @@ export interface FileRoutesByTo {
   '/script-generator': typeof DashboardScriptGeneratorRoute
   '/settings': typeof DashboardSettingsRoute
   '/slides': typeof DashboardSlidesRoute
-  '/sources': typeof DashboardSourcesRoute
   '/storage': typeof DashboardStorageRoute
   '/tables': typeof DashboardTablesRoute
   '/uploads': typeof DashboardUploadsRoute
@@ -199,7 +191,6 @@ export interface FileRoutesById {
   '/_dashboard/script-generator': typeof DashboardScriptGeneratorRoute
   '/_dashboard/settings': typeof DashboardSettingsRoute
   '/_dashboard/slides': typeof DashboardSlidesRoute
-  '/_dashboard/sources': typeof DashboardSourcesRoute
   '/_dashboard/storage': typeof DashboardStorageRoute
   '/_dashboard/tables': typeof DashboardTablesRoute
   '/_dashboard/uploads': typeof DashboardUploadsRoute
@@ -223,7 +214,6 @@ export interface FileRouteTypes {
     | '/script-generator'
     | '/settings'
     | '/slides'
-    | '/sources'
     | '/storage'
     | '/tables'
     | '/uploads'
@@ -245,7 +235,6 @@ export interface FileRouteTypes {
     | '/script-generator'
     | '/settings'
     | '/slides'
-    | '/sources'
     | '/storage'
     | '/tables'
     | '/uploads'
@@ -268,7 +257,6 @@ export interface FileRouteTypes {
     | '/_dashboard/script-generator'
     | '/_dashboard/settings'
     | '/_dashboard/slides'
-    | '/_dashboard/sources'
     | '/_dashboard/storage'
     | '/_dashboard/tables'
     | '/_dashboard/uploads'
@@ -322,13 +310,6 @@ declare module '@tanstack/react-router' {
       path: '/storage'
       fullPath: '/storage'
       preLoaderRoute: typeof DashboardStorageRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/_dashboard/sources': {
-      id: '/_dashboard/sources'
-      path: '/sources'
-      fullPath: '/sources'
-      preLoaderRoute: typeof DashboardSourcesRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/_dashboard/slides': {
@@ -447,7 +428,6 @@ interface DashboardRouteChildren {
   DashboardScriptGeneratorRoute: typeof DashboardScriptGeneratorRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardSlidesRoute: typeof DashboardSlidesRoute
-  DashboardSourcesRoute: typeof DashboardSourcesRoute
   DashboardStorageRoute: typeof DashboardStorageRoute
   DashboardTablesRoute: typeof DashboardTablesRoute
   DashboardUploadsRoute: typeof DashboardUploadsRoute
@@ -469,7 +449,6 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardScriptGeneratorRoute: DashboardScriptGeneratorRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardSlidesRoute: DashboardSlidesRoute,
-  DashboardSourcesRoute: DashboardSourcesRoute,
   DashboardStorageRoute: DashboardStorageRoute,
   DashboardTablesRoute: DashboardTablesRoute,
   DashboardUploadsRoute: DashboardUploadsRoute,
@@ -487,3 +466,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
