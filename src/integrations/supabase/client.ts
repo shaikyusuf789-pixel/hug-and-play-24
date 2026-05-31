@@ -19,13 +19,24 @@ function createSupabaseClient() {
     throw new Error(message);
   }
 
-  return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  const client = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
       storage: typeof window !== 'undefined' ? localStorage : undefined,
       persistSession: true,
       autoRefreshToken: true,
     }
   });
+
+  // Log connection status in development
+  if (typeof window !== 'undefined') {
+    client.from('sources_master').select('count', { count: 'exact', head: true })
+      .then(({ error, count }) => {
+        if (error) console.error('[Supabase] Connection test failed:', error.message);
+        else console.log('[Supabase] Connected to project klhcrdacefntzqwqwiiu. Found', count, 'sources.');
+      });
+  }
+
+  return client;
 }
 
 let _supabase: ReturnType<typeof createSupabaseClient> | undefined;
