@@ -160,67 +160,63 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Workflow Section */}
-      <Card className="rounded-[3rem] border border-white/10 shadow-2xl shadow-black/80 overflow-hidden bg-white/5 backdrop-blur-2xl relative group mt-8">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/[0.04] blur-[120px] pointer-events-none group-hover:bg-indigo-600/[0.08] transition-all duration-1000" />
-        <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-blue-600/[0.03] blur-[100px] pointer-events-none" />
-        
-        <CardHeader className="p-10 border-b border-white/5 bg-white/[0.01]">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-            <div className="h-16 w-16 rounded-[2rem] bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-inner">
-               <BrainCircuit className="h-8 w-8 animate-pulse" />
+      <Card className="group relative mt-6 overflow-hidden rounded-xl border bg-card shadow-sm">
+        <CardHeader className="border-b bg-secondary/50 p-6 sm:p-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl border bg-card text-primary shadow-sm">
+               <BrainCircuit className="h-7 w-7" />
             </div>
             <div>
-              <CardTitle className="text-2xl sm:text-3xl font-black text-white tracking-tighter flex items-center gap-3">
+              <CardTitle className="flex items-center gap-3 text-2xl font-black text-foreground sm:text-3xl">
                 Autonomous Workflow
               </CardTitle>
-              <p className="text-slate-500 font-medium text-sm mt-1 uppercase tracking-widest">Production Pipeline Architecture</p>
+              <p className="mt-1 text-sm font-medium uppercase text-muted-foreground">Production Pipeline Architecture</p>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-10 grid md:grid-cols-2 gap-12 text-sm text-slate-400 relative z-10">
-           <div className="space-y-10">
-              <div className="flex gap-6 group/item">
-                 <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 text-indigo-300 flex items-center justify-center shrink-0 font-black shadow-2xl border border-indigo-500/20 text-xl group-hover/item:scale-110 group-hover/item:bg-indigo-500/20 transition-all duration-500">01</div>
+        <CardContent className="relative z-10 grid gap-8 p-6 text-sm text-muted-foreground md:grid-cols-2 sm:p-8">
+           <div className="space-y-8">
+              <div className="flex gap-4">
+                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border bg-secondary text-lg font-black text-primary">01</div>
                  <div className="space-y-1">
-                    <strong className="text-white block text-lg font-black tracking-tight group-hover/item:text-indigo-400 transition-colors">Configure Sources</strong>
-                    <p className="leading-relaxed font-medium text-slate-500 group-hover/item:text-slate-400 transition-colors">Add YouTube channels or keyword search terms to monitor for new content. System auto-discovers high-performing benchmarks.</p>
+                     <strong className="block text-lg font-black text-foreground">Configure Sources</strong>
+                     <p className="font-medium leading-relaxed">Add YouTube channels or keyword search terms to monitor for new content. System auto-discovers high-performing benchmarks.</p>
                  </div>
               </div>
-              <div className="flex gap-6 group/item">
-                 <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 text-indigo-300 flex items-center justify-center shrink-0 font-black shadow-2xl border border-indigo-500/20 text-xl group-hover/item:scale-110 group-hover/item:bg-indigo-500/20 transition-all duration-500">02</div>
+               <div className="flex gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border bg-secondary text-lg font-black text-primary">02</div>
                  <div className="space-y-1">
-                    <strong className="text-white block text-lg font-black tracking-tight group-hover/item:text-indigo-400 transition-colors">Automated Scraping</strong>
-                    <p className="leading-relaxed font-medium text-slate-500 group-hover/item:text-slate-400 transition-colors">The engine pulls transcripts and metadata from recent videos via Apify. Data is normalized and stored for AI ingestion.</p>
+                     <strong className="block text-lg font-black text-foreground">Automated Scraping</strong>
+                     <p className="font-medium leading-relaxed">The engine pulls transcripts and metadata from recent videos via Apify. Data is normalized and stored for AI ingestion.</p>
                  </div>
               </div>
            </div>
-           <div className="space-y-10">
-              <div className="flex gap-6 group/item">
-                 <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 text-indigo-300 flex items-center justify-center shrink-0 font-black shadow-2xl border border-indigo-500/20 text-xl group-hover/item:scale-110 group-hover/item:bg-indigo-500/20 transition-all duration-500">03</div>
+            <div className="space-y-8">
+               <div className="flex gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border bg-secondary text-lg font-black text-primary">03</div>
                  <div className="space-y-1">
-                    <strong className="text-white block text-lg font-black tracking-tight group-hover/item:text-indigo-400 transition-colors">AI Idea Generation</strong>
-                    <p className="leading-relaxed font-medium text-slate-500 group-hover/item:text-slate-400 transition-colors">Claude & GPT-4o analyze benchmarks to propose unique titles, hooks, and outlines tailored to SKY Academy DNA.</p>
+                     <strong className="block text-lg font-black text-foreground">AI Idea Generation</strong>
+                     <p className="font-medium leading-relaxed">Claude & GPT-4o analyze benchmarks to propose unique titles, hooks, and outlines tailored to SKY Academy DNA.</p>
                  </div>
               </div>
-              <div className="flex gap-6 group/item">
-                 <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 text-indigo-300 flex items-center justify-center shrink-0 font-black shadow-2xl border border-indigo-500/20 text-xl group-hover/item:scale-110 group-hover/item:bg-indigo-500/20 transition-all duration-500">04</div>
+               <div className="flex gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border bg-secondary text-lg font-black text-primary">04</div>
                  <div className="space-y-1">
-                    <strong className="text-white block text-lg font-black tracking-tight group-hover/item:text-indigo-400 transition-colors">One-Click Approval</strong>
-                    <p className="leading-relaxed font-medium text-slate-500 group-hover/item:text-slate-400 transition-colors">Review strategies in the Idea Cards view. A single click moves the concept into full script generation and production.</p>
+                     <strong className="block text-lg font-black text-foreground">One-Click Approval</strong>
+                     <p className="font-medium leading-relaxed">Review strategies in the Idea Cards view. A single click moves the concept into full script generation and production.</p>
                  </div>
               </div>
            </div>
         </CardContent>
-        <div className="p-8 bg-white/[0.02] border-t border-white/5 flex items-center justify-center gap-8">
+        <div className="flex flex-col items-start justify-center gap-3 border-t bg-secondary/50 p-6 sm:flex-row sm:items-center sm:gap-8">
            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-indigo-400" />
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Powered by Advanced LLMs</span>
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-[10px] font-black uppercase text-muted-foreground">Powered by Advanced LLMs</span>
            </div>
-           <div className="h-1 w-1 rounded-full bg-white/20" />
+            <div className="hidden h-1 w-1 rounded-full bg-border sm:block" />
            <div className="flex items-center gap-2">
-              <TableIcon className="h-4 w-4 text-indigo-400" />
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Real-time Data Sync</span>
+               <TableIcon className="h-4 w-4 text-primary" />
+               <span className="text-[10px] font-black uppercase text-muted-foreground">Real-time Data Sync</span>
            </div>
         </div>
       </Card>
