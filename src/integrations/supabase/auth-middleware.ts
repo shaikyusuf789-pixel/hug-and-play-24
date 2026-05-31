@@ -6,10 +6,15 @@ import type { Database } from './types'
 
 export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server(
   async ({ next }) => {
-    const SUPABASE_URL = "https://eozteueesaemhcmbqcxt.supabase.co";
-    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_8_LFpheRbnwNiecH1oHujQ_6HHrydgh";
+    const SUPABASE_URL = process.env.SUPABASE_URL || "https://eozteueesaemhcmbqcxt.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+
+    if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+      throw new Error('Supabase configuration missing');
+    }
 
     const request = getRequest();
+
 
     if (!request?.headers) {
       throw new Error('Unauthorized: No request headers available');
