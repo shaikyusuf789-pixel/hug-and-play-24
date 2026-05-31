@@ -44,7 +44,7 @@ function TablesPage() {
         return ["sources_master", "raw_content", "scripts", "user_uploads", "app_settings", "notifications", "daily_backup_logs", "script_chunks", "youtube_seo", "ai_chat_memory"];
       }
       
-      return (data as any[]).map(t => t.table_name) as TableName[];
+      return (data as any[]).map(t => t.table_name) as string[];
     },
   });
 
