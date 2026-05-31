@@ -73,8 +73,6 @@ function RawContentPage() {
         },
         (payload) => {
           console.log('Change received!', payload);
-          // Simply invalidate queries to refetch fresh data
-          // This ensures the counts and the list stay in sync
           qc.invalidateQueries({ queryKey: ["ideas"] });
         }
       )
@@ -84,13 +82,6 @@ function RawContentPage() {
       supabase.removeChannel(channel);
     };
   }, [qc]);
-
-
-  // Also fetch Priority ideas for Script Generator context if needed
-  const { data: priorityIdeasData } = useQuery({
-    queryKey: ["priority-ideas"],
-    queryFn: () => fetchFn({ data: { status: "Priority" } }),
-  });
 
   const ideas = (data?.ideas || []) as IdeaCard[];
 
@@ -121,7 +112,6 @@ function RawContentPage() {
     }),
     [ideas, activeTab]
   );
-
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
@@ -186,8 +176,6 @@ function RawContentPage() {
     
     if (action === "approve") {
       toast.info("Moving to Approved section and starting AI pipeline...");
-      
-      // Optimistic update
       qc.setQueryData(["ideas"], (old: any) => {
         if (!old?.ideas) return old;
         return {
@@ -199,17 +187,13 @@ function RawContentPage() {
 
       try {
         await approveFn({ data: { id: idea.id } });
-        // Realtime will handle the final "Approved" state update, 
-        // but we invalidate just in case
         qc.invalidateQueries({ queryKey: ["ideas"] });
       } catch (err: any) {
         toast.error("Failed to process idea: " + err.message);
-        // Rollback
         qc.invalidateQueries({ queryKey: ["ideas"] });
       }
       return;
     }
-
 
     const status = ACTION_TO_STATUS[action];
     mutate.mutate({ idea, status });
@@ -221,17 +205,17 @@ function RawContentPage() {
   return (
     <div className="min-h-screen w-full bg-background/50">
       <div className="mx-auto w-full max-w-2xl px-3 sm:px-4 pt-4 sm:pt-6 pb-20">
-        <div className="sticky top-0 z-30 -mx-3 sm:-mx-4 px-3 sm:px-4 pt-2 pb-3 glass border-b border-border/40 mb-4 sm:rounded-b-2xl">
+        <div className="sticky top-0 z-30 -mx-3 sm:-mx-4 px-3 sm:px-4 pt-2 pb-3 bg-white/5 backdrop-blur-2xl border-b border-white/10 mb-4 sm:rounded-b-2xl">
           <header className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
               <div className="size-10 rounded-xl gradient-primary grid place-items-center shadow-glow">
                 <GraduationCap className="size-5 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-base font-bold leading-none text-white tracking-tight">
+                <h1 className="text-base font-black leading-none text-white tracking-tight">
                   SKY Academy
                 </h1>
-                <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-[0.14em] font-medium">
+                <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-[0.2em] font-black">
                   AI Content Intelligence
                 </p>
               </div>
@@ -239,7 +223,7 @@ function RawContentPage() {
             <button
               onClick={() => refetch()}
               disabled={isFetching}
-              className="text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded-full bg-card/60 border border-border inline-flex items-center gap-1.5 disabled:opacity-50"
+              className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white px-4 py-2 rounded-full bg-white/5 border border-white/10 inline-flex items-center gap-2 disabled:opacity-50 transition-all"
             >
               {isFetching ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
               Refresh
@@ -255,15 +239,15 @@ function RawContentPage() {
                   key={t.key}
                   onClick={() => setActiveTab(t.key)}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition shrink-0",
+                    "flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all shrink-0",
                     active
-                      ? "gradient-primary text-primary-foreground border-transparent shadow-glow"
-                      : "bg-card/60 border-border text-muted-foreground hover:text-foreground"
+                      ? "bg-indigo-600 text-white border-transparent shadow-glow"
+                      : "bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10"
                   )}
                 >
                   <Icon className="size-3.5" />
                   {t.label}
-                  <span className={cn("min-w-[18px] text-center px-1 rounded-full text-[10px]", active ? "bg-black/20" : "bg-background/60")}>
+                  <span className={cn("min-w-[18px] text-center px-1.5 rounded-full text-[9px] font-black", active ? "bg-black/20" : "bg-white/10")}>
                     {counts[t.key]}
                   </span>
                 </button>
@@ -272,20 +256,21 @@ function RawContentPage() {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {isLoading ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="aspect-video w-full rounded-3xl bg-muted animate-pulse" />
+                <div key={i} className="aspect-video w-full rounded-[2.5rem] bg-white/5 animate-pulse border border-white/5" />
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="rounded-[2.5rem] bg-card/40 border border-border/40 px-6 py-20 text-center backdrop-blur-sm">
-              <div className="size-16 mx-auto rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 grid place-items-center mb-4 border border-primary/10 shadow-inner">
-                <Sparkles className="size-8 text-primary/60" />
+            <div className="rounded-[3rem] bg-white/5 border border-white/10 px-6 py-20 text-center backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute inset-0 bg-linear-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+              <div className="size-16 mx-auto rounded-[2rem] bg-indigo-500/10 grid place-items-center mb-6 border border-indigo-500/20 shadow-inner relative z-10">
+                <Sparkles className="size-8 text-indigo-400" />
               </div>
-              <h3 className="text-lg font-bold text-foreground/90">No {activeTab.toLowerCase()} ideas</h3>
-              <p className="text-sm text-muted-foreground mt-2 max-w-[200px] mx-auto leading-relaxed">
+              <h3 className="text-xl font-black text-white tracking-tight relative z-10">No {activeTab.toLowerCase()} ideas</h3>
+              <p className="text-sm text-slate-500 mt-2 max-w-[200px] mx-auto leading-relaxed font-medium relative z-10">
                 {activeTab === "Pending" ? "Your inbox is empty. Time to scrape some more!" : `Your ${activeTab.toLowerCase()} list is currently empty.`}
               </p>
             </div>
@@ -301,8 +286,8 @@ function RawContentPage() {
                 />
               ))}
               {visibleCount < filtered.length && (
-                <div ref={sentinelRef} className="py-8 grid place-items-center text-muted-foreground text-xs">
-                  <Loader2 className="size-4 animate-spin" />
+                <div ref={sentinelRef} className="py-8 grid place-items-center text-slate-500">
+                  <Loader2 className="size-6 animate-spin" />
                 </div>
               )}
             </>
