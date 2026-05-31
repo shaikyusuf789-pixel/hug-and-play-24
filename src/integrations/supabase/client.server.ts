@@ -7,7 +7,7 @@ import type { Database } from './types';
 
 function createSupabaseAdminClient() {
   const SUPABASE_URL = process.env.SUPABASE_URL || "https://eozteueesaemhcmbqcxt.supabase.co";
-  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "sb_secret_XqFkljwgphI-CasghQBv3A_oY2BSf-Y";
 
   console.log(`[Supabase Admin] Key prefix: ${SUPABASE_SERVICE_ROLE_KEY?.slice(0, 15)}...`);
   if (!SUPABASE_SERVICE_ROLE_KEY) {
