@@ -195,7 +195,6 @@ export const runIdeaEngine = createServerFn({ method: "POST" })
             thumbnail_url: video.thumbnailUrl,
             date_extracted: new Date().toISOString(),
             status: "Pending",
-            processing_step: "Scraped",
           }));
 
         if (!rows.length) continue;
