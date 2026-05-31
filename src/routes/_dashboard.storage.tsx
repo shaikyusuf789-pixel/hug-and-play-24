@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Database, Folder, HardDrive, Search, MoreVertical, FileIcon, Download, Trash2 } from "lucide-react";
+import { Database, Folder, HardDrive, Search, MoreVertical, FileIcon, Download, Trash2, BrainCircuit, FileText, Layers, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,16 +36,57 @@ function StoragePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="md:col-span-3 relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
-          <Input className="pl-12 h-14 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus-visible:ring-indigo-500" placeholder="Search cloud assets..." />
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-3 space-y-6">
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+            <Input className="pl-12 h-14 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus-visible:ring-indigo-500" placeholder="Search cloud assets..." />
+          </div>
+
+          <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-6 md:p-8">
+            <div className="flex items-center gap-3 mb-6">
+               <div className="h-10 w-10 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                  <BrainCircuit className="h-6 w-6" />
+               </div>
+               <div>
+                  <h2 className="text-xl font-black text-white">Neural Storage</h2>
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-widest">App Biography & Neural Scheme</p>
+               </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               <Card className="bg-white/5 border-white/5 rounded-3xl p-6 hover:border-white/20 transition-all group">
+                  <div className="flex items-center justify-between mb-4">
+                     <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Biography</span>
+                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white/5"><FileText className="h-4 w-4 text-slate-400" /></Button>
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-2">SKY Studio v4.2</h3>
+                  <p className="text-sm text-slate-400 line-clamp-2">Complete history of the YouTube production pipeline engine and its automated workflows.</p>
+               </Card>
+               <Card className="bg-white/5 border-white/5 rounded-3xl p-6 hover:border-white/20 transition-all group">
+                  <div className="flex items-center justify-between mb-4">
+                     <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Neural Scheme</span>
+                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white/5"><Layers className="h-4 w-4 text-slate-400" /></Button>
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-2">Mapping & Wiring</h3>
+                  <p className="text-sm text-slate-400 line-clamp-2">The underlying database relationships and logic mappings for script generation.</p>
+               </Card>
+            </div>
+          </div>
         </div>
-        <Button className="h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-widest text-[11px] gap-3 shadow-button hover:shadow-white-lg transition-all hover:scale-105 active:scale-95">
-          <Folder className="h-4 w-4" />
-          New Folder
-        </Button>
+
+        <div className="space-y-4">
+          <Button className="w-full h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-widest text-[11px] gap-3 shadow-button hover:shadow-white-lg transition-all hover:scale-105 active:scale-95">
+            <Folder className="h-4 w-4" />
+            New Folder
+          </Button>
+          <Button variant="outline" className="w-full h-14 rounded-2xl border-white/10 bg-white/5 text-[11px] font-black uppercase tracking-widest text-white hover:bg-white/10 transition-all gap-3">
+            <Upload className="h-4 w-4" />
+            Upload Asset
+          </Button>
+        </div>
       </div>
+
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {files.map((file) => (
