@@ -76,111 +76,16 @@ Always ensure summary_points has at least 5-7 key takeaways.`;
 export const runIdeaEngine = createServerFn({ method: "POST" })
   .inputValidator(z.object({ sourceId: z.string().uuid().optional() }).optional())
   .handler(async ({ data: inputData }) => {
-    console.log("Starting Idea Engine run...");
-    const token = process.env.APIFY_API_TOKEN;
-    if (!token) throw new Error("APIFY_API_TOKEN not configured");
+    console.log("Starting Idea Engine run via Edge Function...");
+    
+    const { data, error } = await supabaseAdmin.functions.invoke("run-engine", {
+      body: { sourceId: inputData?.sourceId }
+    });
 
-    let query = supabaseAdmin.from("sources_master").select("*");
-    if (inputData?.sourceId) {
-      query = query.eq("id", inputData.sourceId);
-    }
-
-    const { data: sources, error: srcErr } = await query;
-    if (srcErr) throw srcErr;
-    if (!sources || sources.length === 0) return { processed: 0, message: "No YouTube sources configured." };
-
-    let totalProcessed = 0;
-    const errors: string[] = [];
-
-    for (const source of sources) {
-      try {
-        console.log(`Scraping channel: ${source.channel_name} (${source.source_url})`);
-        const videos = await apifyRun(
-          CHANNEL_SCRAPER,
-          { 
-            startUrls: [{ url: source.source_url }],
-            downloadSubtitles: false,
-            saveDescription: false,
-            maxResults: 10,
-          },
-          token,
-        );
-
-        console.log(`Apify response for ${source.channel_name}:`, JSON.stringify(videos).slice(0, 1000));
-        
-        // Handle nested structures and find the video list
-        let actualVideos: any[] = [];
-        if (videos && Array.isArray(videos)) {
-          // Check for the specific structure returned by the streamers/youtube-channel-scraper
-          actualVideos = videos;
-        }
-
-        console.log(`Processing ${actualVideos.length} potential videos for ${source.channel_name}`);
-        
-        // Take 3 videos per source as requested
-        const videoPromises = actualVideos.slice(0, 3).map(async (v) => {
-          try {
-            const videoUrl: string = v.url || v.videoUrl || v.link;
-            if (!videoUrl) {
-              console.log("Skipping item without valid video URL:", v.title || v.id);
-              return null;
-            }
-
-            // dedupe
-            const { data: existing } = await supabaseAdmin
-              .from("raw_content")
-              .select("id")
-              .eq("video_url", videoUrl)
-              .maybeSingle();
-            
-            if (existing) {
-              console.log(`Video already exists: ${v.title}`);
-              return null;
-            }
-
-            console.log(`Processing basic info for video: ${v.title} (${videoUrl})`);
-
-            // Fix for relative dates
-            let pubDate = v.date || v.publishedAt || null;
-            if (pubDate && isNaN(Date.parse(pubDate))) {
-              pubDate = null; 
-            }
-
-            const { error: insErr } = await supabaseAdmin.from("raw_content").insert({
-              source_id: source.id,
-              video_url: videoUrl,
-              views: typeof v.viewCount === "number" ? v.viewCount : typeof v.views === "number" ? v.views : null,
-              published_date: pubDate,
-              duration: v.duration?.toString() ?? null,
-              thumbnail_url: v.thumbnailUrl || v.thumbnail || null,
-              original_title: v.title,
-              status: "Pending",
-            });
-
-            if (insErr) throw insErr;
-            return true;
-          } catch (e: any) {
-            console.error(`Failed to process video ${v.title}:`, e);
-            throw e;
-          }
-        });
-
-        const results = await Promise.allSettled(videoPromises);
-        results.forEach((r, idx) => {
-          if (r.status === "fulfilled") {
-            if (r.value) totalProcessed++;
-          } else {
-            errors.push(`${source.channel_name} (video ${idx}): ${r.reason.message}`);
-          }
-        });
-
-      } catch (e: any) {
-        errors.push(`${source.channel_name}: ${e.message}`);
-      }
-    }
-
-    return { processed: totalProcessed, errors, sources: sources.length };
+    if (error) throw error;
+    return data;
   });
+
 
 const SourceInput = z.object({
   type: z.string().default("youtube"),
