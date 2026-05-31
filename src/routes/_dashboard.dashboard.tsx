@@ -123,7 +123,7 @@ function Dashboard() {
         {cards.map((c) => {
           const Icon = c.icon;
           return (
-            <Card key={c.label} className="rounded-[2.5rem] border border-white/10 shadow-2xl shadow-black/40 overflow-hidden bg-card backdrop-blur-2xl transition-all hover:scale-[1.03] duration-500 group hover:border-white/30 relative">
+            <Card key={c.label} className="rounded-[2.5rem] border border-white/10 shadow-2xl shadow-black/40 overflow-hidden bg-white/5 backdrop-blur-2xl transition-all hover:scale-[1.03] duration-500 group hover:border-white/30 relative">
               <div className="absolute inset-0 bg-linear-to-br from-white/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-transparent relative overflow-hidden">
@@ -152,7 +152,7 @@ function Dashboard() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {DASHBOARD_TABLES.map((table) => (
-            <Card key={table} className="rounded-2xl border-white/10 shadow-xl shadow-black/20 border p-5 bg-card hover:bg-white/[0.05] transition-all hover:-translate-y-2 hover:border-white/30 cursor-pointer group backdrop-blur-md">
+            <Card key={table} className="rounded-2xl border-white/10 shadow-xl shadow-black/20 border p-5 bg-white/5 hover:bg-white/[0.05] transition-all hover:-translate-y-2 hover:border-white/30 cursor-pointer group backdrop-blur-md">
               <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3 truncate group-hover:text-indigo-300 transition-colors">
                 {table.replace(/_/g, " ")}
               </div>
