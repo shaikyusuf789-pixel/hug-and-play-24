@@ -64,7 +64,7 @@ function PipelinePage() {
             <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Control Center</span>
             <span className="text-[10px] text-slate-400 font-medium tracking-wider">• WATCHDOG ACTIVE</span>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">Pipeline Engine</h1>
+          <h1 className="text-3xl font-bold text-white">Pipeline Engine</h1>
           <p className="text-slate-500 mt-1">Automated competitor monitoring and content generation.</p>
         </div>
 
@@ -83,7 +83,7 @@ function PipelinePage() {
         <div className="md:col-span-2 space-y-6">
           <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
             <div className="p-6 border-b flex justify-between items-center">
-              <h3 className="font-bold text-slate-900 flex items-center gap-2">
+              <h3 className="font-bold text-white flex items-center gap-2">
                 <Activity className="h-4 w-4 text-indigo-500" />
                 Live Pipeline Status
               </h3>
@@ -116,7 +116,7 @@ function PipelinePage() {
                       {stage.status === "completed" ? <CheckCircle2 className="h-4 w-4" /> : stage.id}
                     </div>
                     <div>
-                      <div className="font-bold text-sm text-slate-900">{stage.name} Engine</div>
+                      <div className="font-bold text-sm text-white">{stage.name} Engine</div>
                       <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{stage.time}</div>
                     </div>
                   </div>
@@ -158,19 +158,19 @@ function PipelinePage() {
           </div>
 
           <div className="bg-white rounded-3xl border shadow-sm p-6">
-            <h3 className="font-bold text-slate-900 mb-4">Quick Stats</h3>
+            <h3 className="font-bold text-white mb-4">Quick Stats</h3>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-slate-500 font-medium">Videos Found Today</span>
-                <span className="text-sm font-bold text-slate-900">3</span>
+                <span className="text-sm font-bold text-white">3</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-slate-500 font-medium">Scripts Generated</span>
-                <span className="text-sm font-bold text-slate-900">12</span>
+                <span className="text-sm font-bold text-white">12</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-slate-500 font-medium">Storage Used</span>
-                <span className="text-sm font-bold text-slate-900">4.2 GB</span>
+                <span className="text-sm font-bold text-white">4.2 GB</span>
               </div>
             </div>
           </div>

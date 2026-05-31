@@ -53,7 +53,7 @@ function TablesPage() {
   return (
     <div className="p-8 space-y-8 max-w-full overflow-hidden">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Database Tables</h1>
+        <h1 className="text-3xl font-bold text-white">Database Tables</h1>
         <p className="text-slate-500 mt-1">Direct view and two-way communication with your Supabase tables.</p>
       </div>
 
@@ -181,7 +181,7 @@ function SupabaseTable({ tableName }: { tableName: string }) {
           <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
             <TableIcon className="h-4 w-4 text-indigo-600" />
           </div>
-          <CardTitle className="text-lg font-bold text-slate-800 capitalize">
+          <CardTitle className="text-lg font-bold text-slate-200 capitalize">
             {tableName.replace(/_/g, " ")}
           </CardTitle>
           <span className="text-xs font-bold px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full">

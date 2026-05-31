@@ -89,7 +89,7 @@ function DashboardLayout() {
       <div className="px-6 py-6 flex items-center gap-3 border-b mb-4">
         <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-black shadow-lg shadow-indigo-500/40 border border-white/10 italic tracking-tighter">SKY</div>
         <div>
-          <h1 className="text-sm font-bold text-slate-900 leading-tight">SKY Studio</h1>
+          <h1 className="text-sm font-bold text-white leading-tight">SKY Studio</h1>
           <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">AI Video Bot v4.2</p>
         </div>
       </div>

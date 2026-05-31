@@ -21,13 +21,13 @@ function StoragePage() {
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Asset Management</span>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">App Storage</h1>
+          <h1 className="text-3xl font-bold text-white">App Storage</h1>
           <p className="text-slate-500 mt-1">Unified storage for all your generated content and raw assets.</p>
         </div>
         <div className="flex items-center gap-6 bg-white p-4 rounded-2xl border shadow-sm">
            <div className="text-right">
               <div className="text-[10px] font-bold text-slate-400 uppercase">Usage</div>
-              <div className="font-bold text-slate-900 text-sm">4.2 GB / 50 GB</div>
+              <div className="font-bold text-white text-sm">4.2 GB / 50 GB</div>
            </div>
            <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
               <HardDrive className="h-6 w-6" />
@@ -57,7 +57,7 @@ function StoragePage() {
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </div>
-            <h3 className="font-bold text-slate-900 mb-1 truncate">{file.name}</h3>
+            <h3 className="font-bold text-white mb-1 truncate">{file.name}</h3>
             <div className="flex items-center gap-3 text-xs text-slate-400 font-medium uppercase tracking-wider">
                <span>{file.size}</span>
                <span className="w-1 h-1 bg-slate-200 rounded-full" />
