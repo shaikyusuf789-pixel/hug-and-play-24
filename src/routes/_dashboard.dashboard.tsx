@@ -99,8 +99,9 @@ function Dashboard() {
             onClick={async () => {
               try {
                 const { data, error } = await supabase.functions.invoke("run-engine", {
-                  body: { backup: true },
+                  body: { sourceId: null },
                 });
+
 
                 if (error) throw error;
                 toast.success("GitHub Backup triggered successfully!");
