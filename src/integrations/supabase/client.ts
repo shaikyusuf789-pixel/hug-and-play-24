@@ -27,22 +27,6 @@ function createSupabaseClient() {
     }
   });
 
-  // Log connection status
-  if (typeof window !== 'undefined') {
-    (async () => {
-      const { data: sessionData } = await client.auth.getSession();
-      if (!sessionData?.session) {
-        console.warn('[Supabase] No active session found.');
-      }
-      
-      const { error, count } = await client.from('sources_master').select('count', { count: 'exact', head: true });
-      if (error) {
-        console.error('[Supabase] Connection test failed:', error.message);
-      } else {
-        console.log('[Supabase] Connected to project klhcrdacefntzqwqwiiu. Found', count, 'sources.');
-      }
-    })();
-  }
 
   return client;
 }

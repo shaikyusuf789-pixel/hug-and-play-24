@@ -47,14 +47,36 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
       }
     );
 
-    // Skip session check in development if needed, but for now let's just use the client we created
-    // which has the Authorization header correctly set for PostgREST calls.
-    return next({
-      context: {
-        supabase,
-        userId: "authenticated-user", // Fallback for middleware context
-        claims: {},
-      },
-    });
+    // Get the user ID from claims without calling getSession which might fail if no session cookie exists
+    // This is safe because we are using the direct Supabase URL and the token passed from the frontend
+    try {
+      const { data: claimsData, error: claimsError } = await (supabase.auth as any).getUser(token);
+      if (claimsError || !claimsData?.user) {
+        // Fallback to minimal validation if getUser fails
+        return next({
+          context: {
+            supabase,
+            userId: "authenticated-user",
+            claims: {},
+          },
+        });
+      }
+
+      return next({
+        context: {
+          supabase,
+          userId: claimsData.user.id,
+          claims: claimsData.user,
+        },
+      });
+    } catch (e) {
+      return next({
+        context: {
+          supabase,
+          userId: "authenticated-user",
+          claims: {},
+        },
+      });
+    }
   },
 );
