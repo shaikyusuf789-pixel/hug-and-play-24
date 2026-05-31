@@ -247,6 +247,12 @@ function SlideMaker() {
         </div>
       )}
 
+      <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 mb-6">
+        <p className="text-[10px] text-slate-500 font-medium">
+          Each row has 3 columns: <span className="font-bold">Chunk Text</span> (source) → <span className="font-bold">Slide Outline</span> (editable, AI-generated) → <span className="font-bold">Gamma Slide</span> (1-slide Gamma deck). Use <span className="font-bold text-orange-600">Generate All Slides</span> to process everything automatically.
+        </p>
+      </div>
+
       <div className="flex flex-col gap-4">
         {chunks.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
