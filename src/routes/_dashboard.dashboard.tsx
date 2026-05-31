@@ -30,19 +30,35 @@ const DASHBOARD_TABLES = [
 
 function Dashboard() {
   const qc = useQueryClient();
-  const fetchStatsFn = useServerFn(getDashboardStats);
   
   const stats = useQuery({
     queryKey: ["stats"],
-    queryFn: () => fetchStatsFn(),
-    refetchInterval: 5000, // Refresh every 5s for live updates
+    queryFn: async () => {
+      const [total, pending, approved, priority, scriptDone, audioDone] = await Promise.all([
+        supabase.from("raw_content").select("*", { count: "exact", head: true }),
+        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Pending"),
+        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Approved"),
+        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Priority"),
+        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Script Done"),
+        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Audio Done"),
+      ]);
+      return {
+        total: total.count ?? 0,
+        pending: pending.count ?? 0,
+        approved: approved.count ?? 0,
+        priority: priority.count ?? 0,
+        scriptDone: scriptDone.count ?? 0,
+        audioDone: audioDone.count ?? 0,
+      };
+    },
+    refetchInterval: 5000,
   });
 
-  const runFn = useServerFn(runIdeaEngine);
+  const runIdeaEngineFn = useServerFn(runIdeaEngine);
   const setLastRun = useServerFn(updateLastRunTimestamp);
   
   const run = useMutation({
-    mutationFn: () => runFn(),
+    mutationFn: () => runIdeaEngineFn(),
     onSuccess: (res) => {
       const message = res.message || `Processed ${res.processed} new ideas.`;
       (res.failed ? toast.warning : toast.success)(message);

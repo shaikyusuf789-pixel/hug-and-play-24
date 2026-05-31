@@ -253,19 +253,28 @@ export const bulkAddSources = createServerFn({ method: "POST" })
 export const getIdeas = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ status: z.string().optional() }).parse(d))
   .handler(async ({ data }) => {
+    console.log("[getIdeas] Fetching ideas for status:", data.status || "all");
     let query = supabaseAdmin
       .from("raw_content")
-      .select("*, sources_master(channel_name)")
-      .order("created_at", { ascending: false });
+      .select("*");
 
     if (data.status) {
       query = query.eq("status", data.status);
     }
 
     const { data: ideas, error } = await query;
-    if (error) throw error;
-    console.log(`[getIdeas] Returning ${ideas?.length} ideas`);
-    return { ideas: (ideas || []) as any[] };
+    if (error) {
+      console.error("[getIdeas] Error:", error);
+      throw error;
+    }
+    
+    // Sort manually if needed or just use simple order
+    const sorted = (ideas || []).sort((a, b) => 
+      new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+    );
+
+    console.log(`[getIdeas] Returning ${sorted.length} ideas`);
+    return { ideas: sorted as any[] };
   });
 
 export const updateIdeaStatus = createServerFn({ method: "POST" })
@@ -340,7 +349,7 @@ export const approveAndProcessIdea = createServerFn({ method: "POST" })
       // 2. Fetch the idea details
       const { data: idea, error: fetchErr } = await supabaseAdmin
         .from("raw_content")
-        .select("*, sources_master(channel_name)")
+        .select("*, sources_master!fk_raw_content_source(channel_name)")
         .eq("id", id)
         .single();
       if (fetchErr || !idea) throw new Error("Idea not found");
@@ -422,13 +431,22 @@ export const saveScript = createServerFn({ method: "POST" })
 
 export const getRecentScripts = createServerFn({ method: "GET" })
   .handler(async () => {
+    console.log("[getRecentScripts] Fetching...");
     const { data, error } = await supabaseAdmin
       .from("scripts")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(10);
-    if (error) throw error;
-    return { scripts: data || [] };
+      .select("*");
+    
+    if (error) {
+      console.error("[getRecentScripts] Error:", error);
+      throw error;
+    }
+    
+    const sorted = (data || []).sort((a, b) => 
+      new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+    );
+
+    console.log(`[getRecentScripts] Returning ${sorted.length} scripts`);
+    return { scripts: sorted.slice(0, 10) };
   });
 
 export const updateScript = createServerFn({ method: "POST" })

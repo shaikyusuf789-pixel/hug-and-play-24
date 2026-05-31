@@ -194,6 +194,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_raw_content_source"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "sources_master"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "raw_content_source_id_fkey"
             columns: ["source_id"]
             isOneToOne: false
