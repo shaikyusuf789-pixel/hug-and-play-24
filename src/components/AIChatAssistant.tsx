@@ -79,6 +79,22 @@ export function AIChatAssistant() {
     }
   };
 
+  const handleClearChat = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase.functions.invoke("ai-assistant", {
+        body: { messages: [{ role: "user", content: "Please clear our chat memory." }] },
+      });
+      if (error) throw error;
+      setMessages([]);
+      toast.success("Chat history cleared");
+    } catch (error: any) {
+      toast.error("Failed to clear history: " + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <>
       <Button
@@ -89,22 +105,44 @@ export function AIChatAssistant() {
       </Button>
 
       {isOpen && (
-        <Card className="fixed bottom-24 right-4 z-50 flex h-[calc(100vh-120px)] w-[calc(100vw-32px)] flex-col border shadow-xl animate-in slide-in-from-bottom-5 sm:right-6 sm:h-[600px] sm:w-[400px]">
+        <Card className="fixed bottom-24 right-4 z-50 flex h-[calc(100vh-120px)] w-[calc(100vw-32px)] flex-col border shadow-xl animate-in slide-in-from-bottom-5 sm:right-6 sm:h-[600px] sm:w-[400px] overflow-hidden">
           <CardHeader className="border-b bg-card p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-                <Bot className="h-6 w-6" />
-              </div>
-              <div>
-                <CardTitle className="text-sm font-bold text-foreground">SKY AI Assistant</CardTitle>
-                <div className="flex items-center gap-1.5">
-                  <div className="h-1.5 w-1.5 rounded-full bg-accent" />
-                  <span className="text-[10px] font-medium uppercase text-muted-foreground">Memory Active & Ready</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                  <Bot className="h-6 w-6" />
+                </div>
+                <div>
+                  <CardTitle className="text-sm font-bold text-foreground">SKY Second Brain</CardTitle>
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[10px] font-medium uppercase text-muted-foreground tracking-wider">Neural Core Active</span>
+                  </div>
                 </div>
               </div>
+              <div className="flex items-center gap-1">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-muted-foreground hover:text-rose-500"
+                  onClick={handleClearChat}
+                  title="Clear Chat Memory"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-muted-foreground"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-1 mt-2">
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">Second Brain Enabled</span>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[9px] font-black text-primary uppercase tracking-widest border border-primary/20">Read/Write Access</span>
+              <span className="rounded-full bg-indigo-500/10 px-2.5 py-0.5 text-[9px] font-black text-indigo-600 uppercase tracking-widest border border-indigo-500/20">Global History</span>
             </div>
           </CardHeader>
 
@@ -116,25 +154,35 @@ export function AIChatAssistant() {
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
                       <Bot className="h-8 w-8 text-primary" />
                     </div>
-                    <p className="text-sm font-medium text-foreground">Hello! How can I help you today?</p>
-                    <p className="mx-auto mt-1 max-w-[200px] text-[11px] text-muted-foreground">I can search for ideas, edit content, and check channel performance.</p>
+                    <p className="text-sm font-bold text-foreground">SKY Studio Second Brain</p>
+                    <p className="mx-auto mt-2 max-w-[240px] text-[11px] text-muted-foreground leading-relaxed">
+                      I have full access to your production pipeline. I can approve ideas, manage sources, and help you build your YouTube empire.
+                    </p>
                     
                     <div className="mt-6 grid grid-cols-1 gap-2">
                        <Button 
                          variant="outline" 
                          size="sm" 
-                         className="h-8 justify-start text-[10px]"
-                         onClick={() => setInput("What are the ssc related new ideas in our pending list?")}
+                         className="h-8 justify-start text-[10px] bg-slate-50/50"
+                         onClick={() => setInput("Show me recent pending ideas")}
                        >
-                         "Show me SSC related pending ideas"
+                         "Show me recent pending ideas"
                        </Button>
                        <Button 
                          variant="outline" 
                          size="sm" 
-                         className="h-8 justify-start text-[10px]"
-                         onClick={() => setInput("Which channels have high rejection rates?")}
+                         className="h-8 justify-start text-[10px] bg-slate-50/50"
+                         onClick={() => setInput("Add a new YouTube channel source")}
                        >
-                         "Check channel performance"
+                         "Add a new YouTube channel source"
+                       </Button>
+                       <Button 
+                         variant="outline" 
+                         size="sm" 
+                         className="h-8 justify-start text-[10px] bg-slate-50/50"
+                         onClick={() => setInput("How is the pipeline performing today?")}
+                       >
+                         "Check pipeline health"
                        </Button>
                     </div>
                   </div>
@@ -154,7 +202,7 @@ export function AIChatAssistant() {
                       {msg.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
                     </div>
                     <div className={cn(
-                      "rounded-2xl px-4 py-2.5 text-sm shadow-sm",
+                      "rounded-2xl px-4 py-2.5 text-sm shadow-sm leading-relaxed",
                       msg.role === "user" 
                         ? "rounded-tr-none border bg-secondary text-secondary-foreground" 
                         : "rounded-tl-none border bg-card text-card-foreground"
@@ -168,7 +216,7 @@ export function AIChatAssistant() {
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                       <Bot className="h-4 w-4" />
                     </div>
-                    <div className="rounded-lg border bg-card px-4 py-2 text-sm">
+                    <div className="rounded-2xl border bg-card px-4 py-2 text-sm">
                       <Loader2 className="h-4 w-4 animate-spin text-primary" />
                     </div>
                   </div>
@@ -188,14 +236,14 @@ export function AIChatAssistant() {
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask anything..."
-                className="rounded-lg bg-background"
+                placeholder="Talk to your second brain..."
+                className="rounded-lg bg-background border-muted h-10 text-sm"
               />
               <Button 
                 type="submit" 
                 size="icon" 
                 disabled={isLoading || !input.trim()}
-                className="h-10 w-10 shrink-0 rounded-lg bg-primary"
+                className="h-10 w-10 shrink-0 rounded-lg bg-primary shadow-lg shadow-primary/20"
               >
                 <Send className="h-4 w-4" />
               </Button>
@@ -206,3 +254,4 @@ export function AIChatAssistant() {
     </>
   );
 }
+
