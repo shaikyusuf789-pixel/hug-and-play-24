@@ -37,6 +37,7 @@ function SlideMaker() {
   const [selectedScriptId, setSelectedScriptId] = useState<string>("");
   const [chunks, setChunks] = useState<any[]>([]);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [isProcessingAll, setIsProcessingAll] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
