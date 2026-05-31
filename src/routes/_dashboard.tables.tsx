@@ -35,29 +35,27 @@ function TablesPage() {
   const { data: tableNames, isLoading: loadingNames } = useQuery({
     queryKey: ["supabase-tables"],
     queryFn: async () => {
-      // Dynamically fetch all table names from the current Supabase instance
       const { data, error } = await supabase.rpc('get_public_tables' as any);
-      
       if (error) {
-        console.error("Error fetching tables from RPC:", error);
-        // Fallback to known tables if RPC fails
         return ["sources_master", "raw_content", "scripts", "user_uploads", "app_settings", "notifications", "daily_backup_logs", "script_chunks", "youtube_seo", "ai_chat_memory"];
       }
-      
       return (data as any[]).map(t => t.table_name) as string[];
     },
   });
 
-  if (loadingNames) return <div className="p-8"><Loader2 className="animate-spin" /></div>;
+  if (loadingNames) return <div className="p-8"><Loader2 className="animate-spin text-indigo-500" /></div>;
 
   return (
-    <div className="p-8 space-y-8 max-w-full overflow-hidden">
+    <div className="p-4 md:p-8 space-y-8 max-w-full overflow-hidden">
       <div>
-        <h1 className="text-3xl font-bold text-white">Database Tables</h1>
-        <p className="text-slate-500 mt-1">Direct view and two-way communication with your Supabase tables.</p>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] font-black bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded uppercase tracking-[0.2em] border border-white/5 backdrop-blur-md">Supabase Integration</span>
+        </div>
+        <h1 className="text-3xl font-black text-white tracking-tight">Database Tables</h1>
+        <p className="text-slate-400 mt-1 font-medium">Direct view and two-way communication with your Supabase tables.</p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         {tableNames?.map((name) => (
           <SupabaseTable key={name} tableName={name} />
         ))}
@@ -125,7 +123,6 @@ function SupabaseTable({ tableName }: { tableName: string }) {
 
   const columns = useMemo(() => {
     if (rows && rows.length > 0) return Object.keys(rows[0]);
-    // Fallback columns if table is empty
     switch (tableName) {
       case "sources_master": return ["channel_name", "source_url", "type"];
       case "app_settings": return ["key", "value"];
@@ -154,7 +151,6 @@ function SupabaseTable({ tableName }: { tableName: string }) {
   const handleSave = () => {
     if (!editingId) return;
     const { id, created_at, updated_at, ...cleanData } = editData;
-    // Process JSON fields
     Object.keys(cleanData).forEach(key => {
       if (typeof cleanData[key] === 'string' && (cleanData[key].startsWith('{') || cleanData[key].startsWith('['))) {
         try { cleanData[key] = JSON.parse(cleanData[key]); } catch (e) {}
@@ -165,7 +161,6 @@ function SupabaseTable({ tableName }: { tableName: string }) {
 
   const handleAdd = () => {
     const cleanData = { ...newData };
-    // Process JSON fields
     Object.keys(cleanData).forEach(key => {
       if (typeof cleanData[key] === 'string' && (cleanData[key].startsWith('{') || cleanData[key].startsWith('['))) {
         try { cleanData[key] = JSON.parse(cleanData[key]); } catch (e) {}
@@ -175,25 +170,30 @@ function SupabaseTable({ tableName }: { tableName: string }) {
   };
 
   return (
-    <Card className="rounded-3xl border-slate-100 shadow-sm overflow-hidden border">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-6 bg-slate-50/50 border-b">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
-            <TableIcon className="h-4 w-4 text-indigo-600" />
+    <Card className="rounded-[2.5rem] border border-white/10 shadow-2xl shadow-black/40 overflow-hidden bg-white/5 backdrop-blur-2xl transition-all duration-300 hover:border-white/20">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0 p-6 bg-white/[0.01] border-b border-white/5">
+        <div className="flex items-center gap-4">
+          <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 shadow-inner">
+            <TableIcon className="h-5 w-5 text-indigo-400" />
           </div>
-          <CardTitle className="text-lg font-bold text-slate-200 capitalize">
-            {tableName.replace(/_/g, " ")}
-          </CardTitle>
-          <span className="text-xs font-bold px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full">
-            {rows?.length || 0} Rows
-          </span>
+          <div>
+            <CardTitle className="text-lg font-black text-white uppercase tracking-widest">
+              {tableName.replace(/_/g, " ")}
+            </CardTitle>
+            <div className="flex items-center gap-1.5 mt-1">
+              <div className="h-1 w-1 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">
+                {rows?.length || 0} Records Found
+              </span>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative w-48 hidden sm:block">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+        <div className="flex items-center gap-3">
+          <div className="relative w-full sm:w-48 group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
             <Input 
-              placeholder="Search..." 
-              className="pl-9 h-9 rounded-xl border-slate-200" 
+              placeholder="Search table..." 
+              className="pl-10 h-10 rounded-xl border-white/10 bg-black/20 text-white placeholder:text-slate-600 focus-visible:ring-indigo-500 text-xs w-full" 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -202,79 +202,79 @@ function SupabaseTable({ tableName }: { tableName: string }) {
             variant="default" 
             size="sm" 
             onClick={() => setIsAdding(!isAdding)} 
-            className="h-9 rounded-xl bg-indigo-600 hover:bg-indigo-700 gap-2"
+            className="h-10 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-widest text-[10px] gap-3 shadow-button transition-all"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Add Row</span>
           </Button>
-          <Button variant="outline" size="icon" onClick={() => refetch()} className="h-9 w-9 rounded-xl">
-            <RefreshCw className="h-4 w-4 text-slate-600" />
+          <Button variant="ghost" size="icon" onClick={() => refetch()} className="h-10 w-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10">
+            <RefreshCw className={cn("h-4 w-4 text-slate-400", isLoading && "animate-spin")} />
           </Button>
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-x-auto max-w-full max-h-[600px] overflow-y-auto">
+        <div className="overflow-x-auto max-w-full max-h-[600px] overflow-y-auto custom-scrollbar">
           <table className="w-full text-left text-sm border-separate border-spacing-0">
-            <thead className="bg-slate-50/80 backdrop-blur-sm sticky top-0 z-10 text-[10px] uppercase tracking-widest font-bold text-slate-400 border-b">
+            <thead className="bg-white/[0.02] backdrop-blur-3xl sticky top-0 z-10 text-[10px] uppercase tracking-[0.2em] font-black text-slate-500 border-b border-white/5">
               <tr>
-                <th className="px-6 py-3 min-w-[100px] bg-slate-50/80 border-b border-r">Actions</th>
+                <th className="px-6 py-4 min-w-[120px] bg-indigo-500/[0.02] border-b border-white/5 border-r border-white/5">Actions</th>
                 {columns.map((col) => (
-                  <th key={col} className="px-6 py-3 min-w-[150px] bg-slate-50/80 border-b">{col}</th>
+                  <th key={col} className="px-6 py-4 min-w-[180px] bg-indigo-500/[0.02] border-b border-white/5">{col}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-white/5">
               {isAdding && (
-                <tr className="bg-indigo-50/30">
-                  <td className="px-6 py-3 whitespace-nowrap">
-                    <div className="flex items-center gap-1">
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-indigo-600 bg-white shadow-sm" onClick={handleAdd}>
+                <tr className="bg-indigo-500/10">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 text-emerald-400 bg-white/5 hover:bg-white/10 border border-emerald-500/20" onClick={handleAdd}>
                         <Check className="h-4 w-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400" onClick={() => setIsAdding(false)}>
+                      <Button size="icon" variant="ghost" className="h-9 w-9 text-slate-500 hover:text-white" onClick={() => setIsAdding(false)}>
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
                   </td>
                   {columns.map((col) => (
-                    <td key={col} className="px-6 py-3">
+                    <td key={col} className="px-6 py-4">
                       {col !== 'id' && col !== 'created_at' && col !== 'updated_at' ? (
                         <Input 
-                          className="h-8 text-xs min-w-[120px] bg-white"
-                          placeholder={`Enter ${col}...`}
+                          className="h-10 text-xs min-w-[150px] bg-black/40 border-white/10 text-white focus-visible:ring-indigo-500 rounded-lg"
+                          placeholder={`Value for ${col}...`}
                           value={newData[col] || ''}
                           onChange={(e) => setNewData({ ...newData, [col]: e.target.value })}
                         />
                       ) : (
-                        <span className="text-[10px] text-slate-400 italic">Auto-generated</span>
+                        <span className="text-[10px] text-slate-600 italic font-medium">Automatic System Key</span>
                       )}
                     </td>
                   ))}
                 </tr>
               )}
               {isLoading ? (
-                <tr><td colSpan={columns.length + 1} className="p-8 text-center"><Loader2 className="animate-spin inline mr-2" /> Loading...</td></tr>
+                <tr><td colSpan={columns.length + 1} className="p-12 text-center text-slate-500"><Loader2 className="animate-spin inline mr-3 h-5 w-5" /> Syncing Table Data...</td></tr>
               ) : displayedRows.length === 0 && !isAdding ? (
-                <tr><td colSpan={columns.length + 1} className="p-8 text-center text-slate-400 font-medium"><AlertCircle className="h-5 w-5 mx-auto mb-2 opacity-20" /> No records found</td></tr>
+                <tr><td colSpan={columns.length + 1} className="p-16 text-center text-slate-600 font-black uppercase tracking-widest text-xs"><AlertCircle className="h-8 w-8 mx-auto mb-4 opacity-10" /> No Data Found In Cloud</td></tr>
               ) : displayedRows.map((row: any) => (
-                <tr key={row.id} className="hover:bg-indigo-50/20 transition-colors even:bg-slate-50/20">
-                  <td className="px-6 py-3 whitespace-nowrap border-r border-slate-100">
+                <tr key={row.id} className="hover:bg-white/[0.03] transition-colors duration-300">
+                  <td className="px-6 py-4 whitespace-nowrap border-r border-white/5">
                     {editingId === row.id ? (
-                      <div className="flex items-center gap-1">
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-600 bg-emerald-50" onClick={handleSave}>
+                      <div className="flex items-center gap-2">
+                        <Button size="icon" variant="ghost" className="h-9 w-9 text-emerald-400 bg-emerald-500/10 border border-emerald-500/20" onClick={handleSave}>
                           <Check className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-600 bg-rose-50" onClick={() => setEditingId(null)}>
+                        <Button size="icon" variant="ghost" className="h-9 w-9 text-rose-400 bg-rose-500/10 border border-rose-500/20" onClick={() => setEditingId(null)}>
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1">
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-indigo-600" onClick={() => startEdit(row)}>
+                      <div className="flex items-center gap-2">
+                        <Button size="icon" variant="ghost" className="h-9 w-9 text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all" onClick={() => startEdit(row)}>
                           <Edit2 className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-rose-600" onClick={() => {
-                          if (confirm("Are you sure?")) deleteMutation.mutate(row.id);
+                        <Button size="icon" variant="ghost" className="h-9 w-9 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all" onClick={() => {
+                          if (confirm("Permanently delete this record?")) deleteMutation.mutate(row.id);
                         }}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -282,15 +282,15 @@ function SupabaseTable({ tableName }: { tableName: string }) {
                     )}
                   </td>
                   {columns.map((col) => (
-                    <td key={col} className="px-6 py-3 border-b border-slate-50">
+                    <td key={col} className="px-6 py-4 border-b border-white/5">
                       {editingId === row.id && col !== 'id' && col !== 'created_at' && col !== 'updated_at' ? (
                         <Input 
-                          className="h-8 text-xs min-w-[120px]"
+                          className="h-10 text-xs min-w-[150px] bg-black/40 border-indigo-500/30 text-white rounded-lg"
                           value={typeof editData[col] === 'object' ? JSON.stringify(editData[col]) : editData[col] || ''}
                           onChange={(e) => setEditData({ ...editData, [col]: e.target.value })}
                         />
                       ) : (
-                        <div className="max-w-[300px] truncate font-medium text-slate-600">
+                        <div className="max-w-[400px] truncate font-medium text-slate-400 hover:text-white transition-colors">
                           {typeof row[col] === 'object' ? JSON.stringify(row[col]) : String(row[col] ?? '')}
                         </div>
                       )}
@@ -302,17 +302,17 @@ function SupabaseTable({ tableName }: { tableName: string }) {
           </table>
         </div>
         {filteredRows.length > 5 && (
-          <div className="p-3 bg-slate-50/30 border-t flex justify-center">
+          <div className="p-4 bg-white/[0.01] border-t border-white/5 flex justify-center">
             <Button 
               variant="ghost" 
               size="sm" 
-              className="text-xs font-bold text-slate-500 hover:text-indigo-600 gap-2"
+              className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-indigo-400 gap-3"
               onClick={() => setIsExpanded(!isExpanded)}
             >
               {isExpanded ? (
-                <>Show Less <ChevronUp className="h-3 w-3" /></>
+                <>Collapse View <ChevronUp className="h-4 w-4" /></>
               ) : (
-                <>Show {filteredRows.length - 5} More <ChevronDown className="h-3 w-3" /></>
+                <>Reveal {filteredRows.length - 5} More Records <ChevronDown className="h-4 w-4" /></>
               )}
             </Button>
           </div>
