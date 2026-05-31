@@ -270,7 +270,7 @@ export const getIdeas = createServerFn({ method: "GET" })
     
     // Sort manually if needed or just use simple order
     const sorted = (ideas || []).sort((a, b) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
     );
 
     console.log(`[getIdeas] Returning ${sorted.length} ideas`);
@@ -442,7 +442,7 @@ export const getRecentScripts = createServerFn({ method: "GET" })
     }
     
     const sorted = (data || []).sort((a, b) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
     );
 
     console.log(`[getRecentScripts] Returning ${sorted.length} scripts`);
