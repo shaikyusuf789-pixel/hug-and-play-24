@@ -149,7 +149,8 @@ export function AIChatAssistant() {
           <CardContent className="flex-1 bg-background p-0">
             <ScrollArea 
               ref={scrollRef} 
-              className="h-full p-4 [&>[data-radix-scroll-area-viewport]]:overscroll-contain scrollbar-visible"
+              className="h-full p-4 [&>[data-radix-scroll-area-viewport]]:overscroll-contain"
+              type="always"
             >
               <div className="space-y-4">
                 {messages.length === 0 && (
