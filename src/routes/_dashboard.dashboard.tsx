@@ -101,7 +101,6 @@ function Dashboard() {
               variant="outline"
               onClick={async () => {
                 try {
-                  // Reverting to server-side backup logic if run-engine is not an edge function
                   const { error } = await supabase.from('daily_backup_logs').insert({
                     status: 'PENDING',
                     tables_backed_up: DASHBOARD_TABLES
