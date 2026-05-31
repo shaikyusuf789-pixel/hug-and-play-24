@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = "https://eozteueesaemhcmbqcxt.supabase.co";
-const NEW_KEY = "sb_secret_qSkSoKYu9J_u9z9oUwnaKA__Qss9AvM";
+const NEW_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const OLD_KEY = process.env.CUSTOM_SUPABASE_SERVICE_ROLE_KEY;
 
 async function test(key, name) {
