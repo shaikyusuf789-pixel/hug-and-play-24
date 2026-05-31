@@ -9,7 +9,12 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
     const SUPABASE_URL = process.env.SUPABASE_URL || "https://eozteueesaemhcmbqcxt.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
 
+    if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+      throw new Error('Supabase configuration missing');
+    }
+
     const request = getRequest();
+
 
     if (!request?.headers) {
       throw new Error('Unauthorized: No request headers available');
