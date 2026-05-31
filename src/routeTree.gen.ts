@@ -15,12 +15,12 @@ import { Route as DashboardYoutubeRouteImport } from './routes/_dashboard.youtub
 import { Route as DashboardUploadsRouteImport } from './routes/_dashboard.uploads'
 import { Route as DashboardTablesRouteImport } from './routes/_dashboard.tables'
 import { Route as DashboardStorageRouteImport } from './routes/_dashboard.storage'
-import { Route as DashboardSourcesRouteImport } from './routes/_dashboard.sources'
 import { Route as DashboardSlidesRouteImport } from './routes/_dashboard.slides'
 import { Route as DashboardSettingsRouteImport } from './routes/_dashboard.settings'
 import { Route as DashboardScriptGeneratorRouteImport } from './routes/_dashboard.script-generator'
 import { Route as DashboardPipelineRouteImport } from './routes/_dashboard.pipeline'
 import { Route as DashboardMasterVideoRouteImport } from './routes/_dashboard.master-video'
+import { Route as DashboardIdeasEngineRouteImport } from './routes/_dashboard.ideas-engine'
 import { Route as DashboardIdeaCardsRouteImport } from './routes/_dashboard.idea-cards'
 import { Route as DashboardHookGeneratorRouteImport } from './routes/_dashboard.hook-generator'
 import { Route as DashboardHistoryRouteImport } from './routes/_dashboard.history'
@@ -59,11 +59,6 @@ const DashboardStorageRoute = DashboardStorageRouteImport.update({
   path: '/storage',
   getParentRoute: () => DashboardRoute,
 } as any)
-const DashboardSourcesRoute = DashboardSourcesRouteImport.update({
-  id: '/sources',
-  path: '/sources',
-  getParentRoute: () => DashboardRoute,
-} as any)
 const DashboardSlidesRoute = DashboardSlidesRouteImport.update({
   id: '/slides',
   path: '/slides',
@@ -88,6 +83,11 @@ const DashboardPipelineRoute = DashboardPipelineRouteImport.update({
 const DashboardMasterVideoRoute = DashboardMasterVideoRouteImport.update({
   id: '/master-video',
   path: '/master-video',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardIdeasEngineRoute = DashboardIdeasEngineRouteImport.update({
+  id: '/ideas-engine',
+  path: '/ideas-engine',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardIdeaCardsRoute = DashboardIdeaCardsRouteImport.update({
@@ -141,12 +141,12 @@ export interface FileRoutesByFullPath {
   '/history': typeof DashboardHistoryRoute
   '/hook-generator': typeof DashboardHookGeneratorRoute
   '/idea-cards': typeof DashboardIdeaCardsRoute
+  '/ideas-engine': typeof DashboardIdeasEngineRoute
   '/master-video': typeof DashboardMasterVideoRoute
   '/pipeline': typeof DashboardPipelineRoute
   '/script-generator': typeof DashboardScriptGeneratorRoute
   '/settings': typeof DashboardSettingsRoute
   '/slides': typeof DashboardSlidesRoute
-  '/sources': typeof DashboardSourcesRoute
   '/storage': typeof DashboardStorageRoute
   '/tables': typeof DashboardTablesRoute
   '/uploads': typeof DashboardUploadsRoute
@@ -162,12 +162,12 @@ export interface FileRoutesByTo {
   '/history': typeof DashboardHistoryRoute
   '/hook-generator': typeof DashboardHookGeneratorRoute
   '/idea-cards': typeof DashboardIdeaCardsRoute
+  '/ideas-engine': typeof DashboardIdeasEngineRoute
   '/master-video': typeof DashboardMasterVideoRoute
   '/pipeline': typeof DashboardPipelineRoute
   '/script-generator': typeof DashboardScriptGeneratorRoute
   '/settings': typeof DashboardSettingsRoute
   '/slides': typeof DashboardSlidesRoute
-  '/sources': typeof DashboardSourcesRoute
   '/storage': typeof DashboardStorageRoute
   '/tables': typeof DashboardTablesRoute
   '/uploads': typeof DashboardUploadsRoute
@@ -185,12 +185,12 @@ export interface FileRoutesById {
   '/_dashboard/history': typeof DashboardHistoryRoute
   '/_dashboard/hook-generator': typeof DashboardHookGeneratorRoute
   '/_dashboard/idea-cards': typeof DashboardIdeaCardsRoute
+  '/_dashboard/ideas-engine': typeof DashboardIdeasEngineRoute
   '/_dashboard/master-video': typeof DashboardMasterVideoRoute
   '/_dashboard/pipeline': typeof DashboardPipelineRoute
   '/_dashboard/script-generator': typeof DashboardScriptGeneratorRoute
   '/_dashboard/settings': typeof DashboardSettingsRoute
   '/_dashboard/slides': typeof DashboardSlidesRoute
-  '/_dashboard/sources': typeof DashboardSourcesRoute
   '/_dashboard/storage': typeof DashboardStorageRoute
   '/_dashboard/tables': typeof DashboardTablesRoute
   '/_dashboard/uploads': typeof DashboardUploadsRoute
@@ -208,12 +208,12 @@ export interface FileRouteTypes {
     | '/history'
     | '/hook-generator'
     | '/idea-cards'
+    | '/ideas-engine'
     | '/master-video'
     | '/pipeline'
     | '/script-generator'
     | '/settings'
     | '/slides'
-    | '/sources'
     | '/storage'
     | '/tables'
     | '/uploads'
@@ -229,12 +229,12 @@ export interface FileRouteTypes {
     | '/history'
     | '/hook-generator'
     | '/idea-cards'
+    | '/ideas-engine'
     | '/master-video'
     | '/pipeline'
     | '/script-generator'
     | '/settings'
     | '/slides'
-    | '/sources'
     | '/storage'
     | '/tables'
     | '/uploads'
@@ -251,12 +251,12 @@ export interface FileRouteTypes {
     | '/_dashboard/history'
     | '/_dashboard/hook-generator'
     | '/_dashboard/idea-cards'
+    | '/_dashboard/ideas-engine'
     | '/_dashboard/master-video'
     | '/_dashboard/pipeline'
     | '/_dashboard/script-generator'
     | '/_dashboard/settings'
     | '/_dashboard/slides'
-    | '/_dashboard/sources'
     | '/_dashboard/storage'
     | '/_dashboard/tables'
     | '/_dashboard/uploads'
@@ -312,13 +312,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardStorageRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/_dashboard/sources': {
-      id: '/_dashboard/sources'
-      path: '/sources'
-      fullPath: '/sources'
-      preLoaderRoute: typeof DashboardSourcesRouteImport
-      parentRoute: typeof DashboardRoute
-    }
     '/_dashboard/slides': {
       id: '/_dashboard/slides'
       path: '/slides'
@@ -352,6 +345,13 @@ declare module '@tanstack/react-router' {
       path: '/master-video'
       fullPath: '/master-video'
       preLoaderRoute: typeof DashboardMasterVideoRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/ideas-engine': {
+      id: '/_dashboard/ideas-engine'
+      path: '/ideas-engine'
+      fullPath: '/ideas-engine'
+      preLoaderRoute: typeof DashboardIdeasEngineRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/_dashboard/idea-cards': {
@@ -422,12 +422,12 @@ interface DashboardRouteChildren {
   DashboardHistoryRoute: typeof DashboardHistoryRoute
   DashboardHookGeneratorRoute: typeof DashboardHookGeneratorRoute
   DashboardIdeaCardsRoute: typeof DashboardIdeaCardsRoute
+  DashboardIdeasEngineRoute: typeof DashboardIdeasEngineRoute
   DashboardMasterVideoRoute: typeof DashboardMasterVideoRoute
   DashboardPipelineRoute: typeof DashboardPipelineRoute
   DashboardScriptGeneratorRoute: typeof DashboardScriptGeneratorRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardSlidesRoute: typeof DashboardSlidesRoute
-  DashboardSourcesRoute: typeof DashboardSourcesRoute
   DashboardStorageRoute: typeof DashboardStorageRoute
   DashboardTablesRoute: typeof DashboardTablesRoute
   DashboardUploadsRoute: typeof DashboardUploadsRoute
@@ -443,12 +443,12 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardHistoryRoute: DashboardHistoryRoute,
   DashboardHookGeneratorRoute: DashboardHookGeneratorRoute,
   DashboardIdeaCardsRoute: DashboardIdeaCardsRoute,
+  DashboardIdeasEngineRoute: DashboardIdeasEngineRoute,
   DashboardMasterVideoRoute: DashboardMasterVideoRoute,
   DashboardPipelineRoute: DashboardPipelineRoute,
   DashboardScriptGeneratorRoute: DashboardScriptGeneratorRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardSlidesRoute: DashboardSlidesRoute,
-  DashboardSourcesRoute: DashboardSourcesRoute,
   DashboardStorageRoute: DashboardStorageRoute,
   DashboardTablesRoute: DashboardTablesRoute,
   DashboardUploadsRoute: DashboardUploadsRoute,
@@ -466,3 +466,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
