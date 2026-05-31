@@ -105,7 +105,7 @@ export function AIChatAssistant() {
       </Button>
 
       {isOpen && (
-        <Card className="fixed bottom-24 right-4 z-50 flex h-[calc(100vh-120px)] w-[calc(100vw-32px)] flex-col border shadow-xl animate-in slide-in-from-bottom-5 sm:right-6 sm:h-[600px] sm:w-[400px] overflow-hidden">
+        <Card className="fixed bottom-24 right-4 z-50 flex h-[calc(100vh-120px)] w-[calc(100vw-32px)] flex-col border shadow-xl animate-in slide-in-from-bottom-5 sm:right-6 sm:h-[600px] sm:w-[400px] overflow-hidden overscroll-contain">
           <CardHeader className="border-b bg-card p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
