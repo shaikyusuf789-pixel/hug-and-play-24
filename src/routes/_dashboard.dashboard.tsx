@@ -87,7 +87,7 @@ function Dashboard() {
           </p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-4 bg-white/[0.02] p-2 rounded-[2rem] border border-white/5 backdrop-blur-xl">
+        <div className="flex flex-wrap items-center gap-4 bg-white/[0.03] p-2 rounded-[2rem] border border-white/10 backdrop-blur-3xl shadow-white-lg">
           <WatchdogControl className="bg-transparent border-none shadow-none p-2" />
           <div className="flex gap-2">
             <Button 
