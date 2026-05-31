@@ -169,7 +169,7 @@ function Dashboard() {
       </div>
 
       {/* Workflow Section */}
-      <Card className="rounded-[3rem] border border-white/10 shadow-2xl shadow-black/80 overflow-hidden bg-card backdrop-blur-2xl relative group mt-8">
+      <Card className="rounded-[3rem] border border-white/10 shadow-2xl shadow-black/80 overflow-hidden bg-white/5 backdrop-blur-2xl relative group mt-8">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/[0.04] blur-[120px] pointer-events-none group-hover:bg-indigo-600/[0.08] transition-all duration-1000" />
         <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-blue-600/[0.03] blur-[100px] pointer-events-none" />
         
