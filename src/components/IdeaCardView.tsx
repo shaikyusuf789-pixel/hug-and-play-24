@@ -152,47 +152,47 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
 
         {/* summary points */}
         {summary.length > 0 && (
-          <div className="bg-indigo-500/[0.03] rounded-3xl p-5 border border-indigo-500/10 relative overflow-hidden group/summary">
+          <div className="bg-indigo-500/[0.03] rounded-2xl md:rounded-3xl p-4 md:p-5 border border-indigo-500/10 relative overflow-hidden group/summary">
             <div className="absolute inset-0 bg-linear-to-br from-indigo-500/5 to-transparent opacity-0 group-hover/summary:opacity-100 transition-opacity" />
-            <div className="text-[9px] uppercase tracking-[0.25em] text-indigo-400 font-black mb-4 flex items-center gap-2 relative z-10">
-              <div className="size-1.5 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.8)] animate-pulse" />
+            <div className="text-[8px] md:text-[9px] uppercase tracking-[0.2em] md:tracking-[0.25em] text-indigo-400 font-black mb-3 md:mb-4 flex items-center gap-2 relative z-10">
+              <div className="size-1 md:size-1.5 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.8)] animate-pulse" />
               Strategy Intelligence
             </div>
 
-            <div className="relative min-h-[50px] z-10">
-              <ul className="space-y-3 transition-all">
+            <div className="relative min-h-[40px] md:min-h-[50px] z-10">
+              <ul className="space-y-2 md:space-y-3 transition-all">
                 {visible.length > 0 ? (
                   visible.map((s: string, i: number) => (
                     <li
                       key={i}
-                      className="text-[13px] text-slate-400 leading-relaxed flex gap-3 group/item"
+                      className="text-[12px] md:text-[13px] text-slate-400 leading-relaxed flex gap-2 md:gap-3 group/item"
                     >
-                      <span className="text-indigo-500 mt-[6px] shrink-0 text-[10px] font-black group-hover/item:scale-150 transition-transform">0{i+1}</span>
+                      <span className="text-indigo-500 mt-[5px] md:mt-[6px] shrink-0 text-[9px] md:text-[10px] font-black group-hover/item:scale-110 transition-transform">0{i+1}</span>
                       <span className="group-hover/item:text-slate-200 transition-colors font-medium">{s}</span>
                     </li>
                   ))
                 ) : (
-                  <li className="text-xs text-slate-600 italic py-2 font-medium uppercase tracking-widest text-center">
-                    Awaiting AI content generation pipeline
+                  <li className="text-[10px] md:text-xs text-slate-600 italic py-2 font-medium uppercase tracking-widest text-center">
+                    Awaiting AI content generation
                   </li>
                 )}
               </ul>
               {!expanded && hasMore && (
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-linear-to-t from-black/20 to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 md:h-10 bg-linear-to-t from-black/20 to-transparent" />
               )}
             </div>
             {hasMore && (
               <button
                 onClick={() => setExpanded((v) => !v)}
-                className="mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 hover:text-white transition-all relative z-10"
+                className="mt-3 md:mt-4 inline-flex items-center gap-1.5 md:gap-2 text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-indigo-400 hover:text-white transition-all relative z-10"
               >
                 {expanded ? (
                   <>
-                    Collapse <ChevronUp className="size-3" />
+                    Collapse <ChevronUp className="size-2.5 md:size-3" />
                   </>
                 ) : (
                   <>
-                    Reveal Strategy <ChevronDown className="size-3" />
+                    Reveal Strategy <ChevronDown className="size-2.5 md:size-3" />
                   </>
                 )}
               </button>
@@ -204,7 +204,7 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
         {actions.length > 0 && (
           <div
             className={cn(
-              "grid gap-3 pt-2",
+              "grid gap-2 md:gap-3 pt-1 md:pt-2",
               actions.length === 1 && "grid-cols-1",
               actions.length === 2 && "grid-cols-2",
               actions.length === 3 && "grid-cols-3"
