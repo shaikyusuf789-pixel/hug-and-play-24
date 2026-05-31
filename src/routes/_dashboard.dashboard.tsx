@@ -33,8 +33,16 @@ function Dashboard() {
   
   const stats = useQuery({
     queryKey: ["stats"],
-    queryFn: () => fetchStatsFn(),
+    queryFn: () => {
+      console.log("[Dashboard] Fetching stats...");
+      return fetchStatsFn();
+    },
   });
+
+  useEffect(() => {
+    console.log("[Dashboard] Stats updated:", stats.data);
+  }, [stats.data]);
+
 
   const runFn = useServerFn(runIdeaEngine);
   const setLastRun = useServerFn(updateLastRunTimestamp);
