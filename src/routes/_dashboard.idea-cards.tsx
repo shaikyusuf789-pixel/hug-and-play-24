@@ -12,6 +12,8 @@ import {
   Sparkles,
   LayoutGrid,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
 import { toast } from "sonner";
 import { getIdeas, updateIdeaStatus, approveAndProcessIdea } from "@/lib/engine.functions";
 import { IdeaCardView, type ActionKey, type IdeaCard } from "@/components/IdeaCardView";
