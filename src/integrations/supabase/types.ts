@@ -14,7 +14,377 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ai_chat_memory: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          role: string
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role: string
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role?: string
+        }
+        Relationships: []
+      }
+      app_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          value: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          value?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: Json | null
+        }
+        Relationships: []
+      }
+      daily_backup_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          last_backup_time: string | null
+          status: string
+          tables_backed_up: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          last_backup_time?: string | null
+          status: string
+          tables_backed_up?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          last_backup_time?: string | null
+          status?: string
+          tables_backed_up?: Json | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          read: boolean | null
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          read?: boolean | null
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      raw_content: {
+        Row: {
+          core_hooks: string | null
+          created_at: string | null
+          date_extracted: string | null
+          duration: string | null
+          id: string
+          new_thumbnail_outline: string | null
+          original_summary: string | null
+          original_title: string
+          processing_step: string | null
+          proposed_title: string | null
+          published_at: string | null
+          published_date: string | null
+          source_id: string | null
+          status: string | null
+          summary_points: Json | null
+          target_audience: string | null
+          thumbnail_url: string | null
+          updated_at: string | null
+          video_outline: Json | null
+          video_url: string
+          views: number | null
+        }
+        Insert: {
+          core_hooks?: string | null
+          created_at?: string | null
+          date_extracted?: string | null
+          duration?: string | null
+          id?: string
+          new_thumbnail_outline?: string | null
+          original_summary?: string | null
+          original_title: string
+          processing_step?: string | null
+          proposed_title?: string | null
+          published_at?: string | null
+          published_date?: string | null
+          source_id?: string | null
+          status?: string | null
+          summary_points?: Json | null
+          target_audience?: string | null
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          video_outline?: Json | null
+          video_url: string
+          views?: number | null
+        }
+        Update: {
+          core_hooks?: string | null
+          created_at?: string | null
+          date_extracted?: string | null
+          duration?: string | null
+          id?: string
+          new_thumbnail_outline?: string | null
+          original_summary?: string | null
+          original_title?: string
+          processing_step?: string | null
+          proposed_title?: string | null
+          published_at?: string | null
+          published_date?: string | null
+          source_id?: string | null
+          status?: string | null
+          summary_points?: Json | null
+          target_audience?: string | null
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          video_outline?: Json | null
+          video_url?: string
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raw_content_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "sources_master"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      script_chunks: {
+        Row: {
+          annotations: Json | null
+          audio_url: string | null
+          chunk_index: number
+          content: string
+          created_at: string | null
+          id: string
+          script_id: string | null
+          slide_id: string | null
+          slide_prompt: string | null
+          slide_url: string | null
+          status: string | null
+          updated_at: string | null
+          word_count: number | null
+        }
+        Insert: {
+          annotations?: Json | null
+          audio_url?: string | null
+          chunk_index: number
+          content: string
+          created_at?: string | null
+          id?: string
+          script_id?: string | null
+          slide_id?: string | null
+          slide_prompt?: string | null
+          slide_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+          word_count?: number | null
+        }
+        Update: {
+          annotations?: Json | null
+          audio_url?: string | null
+          chunk_index?: number
+          content?: string
+          created_at?: string | null
+          id?: string
+          script_id?: string | null
+          slide_id?: string | null
+          slide_prompt?: string | null
+          slide_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+          word_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "script_chunks_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "scripts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scripts: {
+        Row: {
+          content: string
+          created_at: string | null
+          final_audio_url: string | null
+          id: string
+          idea_id: string | null
+          model: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          video_type: string | null
+          word_count: number | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          final_audio_url?: string | null
+          id?: string
+          idea_id?: string | null
+          model?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          video_type?: string | null
+          word_count?: number | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          final_audio_url?: string | null
+          id?: string
+          idea_id?: string | null
+          model?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          video_type?: string | null
+          word_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scripts_idea_id_fkey"
+            columns: ["idea_id"]
+            isOneToOne: false
+            referencedRelation: "raw_content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sources_master: {
+        Row: {
+          channel_name: string
+          created_at: string | null
+          id: string
+          source_url: string
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          channel_name: string
+          created_at?: string | null
+          id?: string
+          source_url: string
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          channel_name?: string
+          created_at?: string | null
+          id?: string
+          source_url?: string
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      youtube_seo: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          script_id: string | null
+          selected_title: string | null
+          tags: string[] | null
+          thumbnail_lines: Json | null
+          thumbnail_prompt: string | null
+          thumbnail_url: string | null
+          title_variations: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          script_id?: string | null
+          selected_title?: string | null
+          tags?: string[] | null
+          thumbnail_lines?: Json | null
+          thumbnail_prompt?: string | null
+          thumbnail_url?: string | null
+          title_variations?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          script_id?: string | null
+          selected_title?: string | null
+          tags?: string[] | null
+          thumbnail_lines?: Json | null
+          thumbnail_prompt?: string | null
+          thumbnail_url?: string | null
+          title_variations?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "youtube_seo_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: true
+            referencedRelation: "scripts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
