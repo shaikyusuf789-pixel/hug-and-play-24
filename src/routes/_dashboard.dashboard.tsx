@@ -125,8 +125,8 @@ function Dashboard() {
         {cards.map((c) => {
           const Icon = c.icon;
           return (
-            <Card key={c.label} className="rounded-[2.5rem] border border-white/5 shadow-2xl shadow-black/80 overflow-hidden bg-[#151624]/60 backdrop-blur-xl transition-all hover:scale-[1.03] duration-500 group hover:border-indigo-500/30 relative">
-              <div className="absolute inset-0 bg-linear-to-br from-indigo-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <Card key={c.label} className="rounded-[2.5rem] border border-white/10 shadow-2xl shadow-black/40 overflow-hidden bg-card backdrop-blur-2xl transition-all hover:scale-[1.03] duration-500 group hover:border-white/30 relative">
+              <div className="absolute inset-0 bg-linear-to-br from-white/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-transparent relative overflow-hidden">
                 <div className={cn("absolute inset-0 opacity-10 bg-linear-to-br transition-opacity duration-500 group-hover:opacity-25", c.gradient)} />
