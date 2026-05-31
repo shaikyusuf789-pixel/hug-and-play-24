@@ -1,12 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = "https://klhcrdacefntzqwqwiiu.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_aITpoyEkEtU60jzenvS3ig_wCGXYVGz";
+const SUPABASE_URL = "https://eozteueesaemhcmbqcxt.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_8_LFpheRbnwNiecH1oHujQ_6HHrydgh";
 
 async function checkData() {
   const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
   
-  console.log("Checking raw_content join in project klhcrdacefntzqwqwiiu...");
+  console.log("Checking raw_content join in project eozteueesaemhcmbqcxt...");
   
   const { data, error } = await supabase
     .from("raw_content")
