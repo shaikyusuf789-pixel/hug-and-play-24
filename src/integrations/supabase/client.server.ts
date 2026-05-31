@@ -6,22 +6,19 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 function createSupabaseAdminClient() {
-  const SUPABASE_URL = "https://eozteueesaemhcmbqcxt.supabase.co";
+  const SUPABASE_URL = process.env.SUPABASE_URL || "https://eozteueesaemhcmbqcxt.supabase.co";
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  console.log(`[Supabase Admin] Initializing client with URL: ${SUPABASE_URL}`);
-  if (!SUPABASE_SERVICE_ROLE_KEY) {
-    console.error("[Supabase Admin] SUPABASE_SERVICE_ROLE_KEY is missing from process.env");
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing. Please check your project secrets.");
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    const missing = [
+      ...(!SUPABASE_URL ? ['SUPABASE_URL'] : []),
+      ...(!SUPABASE_SERVICE_ROLE_KEY ? ['SUPABASE_SERVICE_ROLE_KEY'] : []),
+    ];
+    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Connect Supabase in your project settings.`;
+    console.error(`[Supabase Admin] ${message}`);
+    throw new Error(message);
   }
-  
-  if (SUPABASE_SERVICE_ROLE_KEY.startsWith('eyJ')) {
-    console.warn("[Supabase Admin] SUPABASE_SERVICE_ROLE_KEY looks like a JWT. This might be an old format key.");
-  } else if (SUPABASE_SERVICE_ROLE_KEY.startsWith('sb_')) {
-    console.log("[Supabase Admin] SUPABASE_SERVICE_ROLE_KEY uses the new 'sb_' format.");
-  } else {
-    console.warn("[Supabase Admin] SUPABASE_SERVICE_ROLE_KEY has an unknown format.");
-  }
+
 
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
