@@ -103,55 +103,62 @@ function IdeasEnginePage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* AI Engine Section */}
-        <Card className="border-none bg-slate-900 text-white shadow-2xl">
-          <CardHeader className="p-5 md:p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20">
-                <Sparkles className="h-5 w-5" />
+        <Card className="border-none bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/80 shadow-xl ring-1 ring-black/5 overflow-hidden group">
+          <CardHeader className="p-5 md:p-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-primary/10 blur-2xl transition-all group-hover:bg-primary/20" />
+            <div className="flex items-center gap-3 mb-2 relative z-10">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/30 rotate-3 group-hover:rotate-0 transition-transform duration-300">
+                <Sparkles className="h-6 w-6" />
               </div>
               <div>
-                <CardTitle className="text-lg md:text-xl font-black">AI Engine</CardTitle>
-                <CardDescription className="text-slate-400 font-medium text-xs md:text-sm">Add high-performance channels for monitoring.</CardDescription>
+                <CardTitle className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">AI Engine</CardTitle>
+                <CardDescription className="text-slate-500 font-semibold text-xs md:text-sm">Add high-performance channels for automated monitoring.</CardDescription>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-5 md:p-6 pt-0 md:pt-0">
+          <CardContent className="p-5 md:p-6 pt-0 md:pt-0 relative z-10">
             <form
-              className="space-y-4"
+              className="space-y-5"
               onSubmit={(e) => {
                 e.preventDefault();
                 add.mutate({ channel_name: aiName, source_url: aiUrl });
               }}
             >
               <div className="space-y-2">
-                <Label htmlFor="ai-name" className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-400">Channel Name</Label>
+                <Label htmlFor="ai-name" className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                  <div className="h-1 w-1 rounded-full bg-primary" />
+                  Channel Name
+                </Label>
                 <Input 
                   id="ai-name" 
                   value={aiName} 
                   onChange={(e) => setAiName(e.target.value)} 
                   placeholder="e.g. Gagan Pratap" 
-                  className="bg-white/5 border-white/10 text-white placeholder:text-slate-600 h-11 md:h-12 rounded-xl focus:ring-primary text-sm"
+                  className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 h-12 md:h-14 rounded-2xl focus:ring-2 focus:ring-primary/20 border-2 transition-all shadow-sm"
                   required 
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="ai-url" className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-400">YouTube URL</Label>
+                <Label htmlFor="ai-url" className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                  <div className="h-1 w-1 rounded-full bg-primary" />
+                  YouTube URL
+                </Label>
                 <div className="relative">
-                  <Youtube className="absolute left-3 top-1/2 h-4 w-4 md:h-5 md:w-5 -translate-y-1/2 text-slate-500" />
+                  <Youtube className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-primary/60" />
                   <Input 
                     id="ai-url" 
                     type="url" 
                     value={aiUrl} 
                     onChange={(e) => setAiUrl(e.target.value)} 
                     placeholder="https://youtube.com/@..." 
-                    className="bg-white/5 border-white/10 text-white placeholder:text-slate-600 h-11 md:h-12 pl-10 rounded-xl focus:ring-primary text-sm"
+                    className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 h-12 md:h-14 pl-12 rounded-2xl focus:ring-2 focus:ring-primary/20 border-2 transition-all shadow-sm"
                     required 
                   />
                 </div>
               </div>
-              <Button type="submit" disabled={add.isPending} className="w-full h-11 md:h-12 rounded-xl font-bold gap-2 text-sm">
-                {add.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                Add to Source Master
+              <Button type="submit" disabled={add.isPending} className="w-full h-12 md:h-14 rounded-2xl font-black gap-2 text-base shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all hover:-translate-y-0.5 active:translate-y-0">
+                {add.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
+                Sync to Source Master
               </Button>
             </form>
           </CardContent>
