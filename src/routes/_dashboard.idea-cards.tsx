@@ -60,6 +60,11 @@ function RawContentPage() {
     queryFn: () => fetchFn({ data: {} }),
   });
 
+  useEffect(() => {
+    console.log("[IdeaCards] Data updated:", data);
+  }, [data]);
+
+
   // Realtime subscription for live updates
   useEffect(() => {
     const channel = supabase
