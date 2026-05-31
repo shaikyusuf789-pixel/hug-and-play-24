@@ -14,10 +14,10 @@ After every change set (frontend, schema, or config):
 - Fix or document any new finding before closing the task.
 
 ## Rule 3 — Frontend only here, Supabase is backend
-This repository is the frontend ONLY. Nothing app-data lives in Lovable Cloud.
+This repository is the frontend ONLY. Nothing app-data lives in the managed backend.
 - All tables, storage buckets, secrets, edge functions, auth = the user's direct Supabase project: `klhcrdacefntzqwqwiiu`.
 - Frontend reads `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` pointing to that project.
-- Never create tables or store secrets in Lovable's managed DB.
+- Never create tables or store secrets in the internal managed DB.
 
 ## Mobile-first
 Every page must work on a phone. All buttons, actions, and data must be reachable without a laptop. Use the existing `Sheet` mobile drawer pattern in `src/routes/_dashboard.tsx`.
