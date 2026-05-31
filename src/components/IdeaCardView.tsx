@@ -281,12 +281,13 @@ function StatusBadge({
   return (
     <span
       className={cn(
-        "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+        "px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm backdrop-blur-md border border-white/20",
         map[status] || map["Pending"],
         className
       )}
     >
       {status}
     </span>
+
   );
 }
