@@ -195,30 +195,54 @@ function SlideMaker() {
       )}
 
       {!showHistory && (
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <Select value={selectedScriptId} onValueChange={setSelectedScriptId}>
-            <SelectTrigger className="w-full md:w-[400px] bg-white border-slate-200 h-10 rounded-xl shadow-sm focus:ring-rose-500">
-              <SelectValue placeholder="Select Script to generate slides" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl border-slate-200 shadow-lg">
-              {scripts.map(s => (
-                <SelectItem key={s.id} value={s.id} className="text-sm font-medium">
-                  {s.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="flex gap-2">
-            <Button variant="outline" className="h-10 text-xs font-bold gap-2" onClick={async () => {
-              for (const chunk of chunks) await generateSlidePrompt(chunk.id);
-            }}>
-              <Type className="h-4 w-4 text-purple-600" /> All Outlines
-            </Button>
-            <Button className="h-10 text-xs font-bold gap-2 bg-orange-500 hover:bg-orange-600 text-white" onClick={async () => {
-              for (const chunk of chunks) if (chunk.slide_prompt) await generateGammaSlide(chunk.id);
-            }}>
-              <Layout className="h-4 w-4" /> All Slides
-            </Button>
+        <div className="bg-white border border-slate-100 rounded-xl p-3 flex flex-col md:flex-row items-center justify-between gap-4 mb-6 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Layout className="h-5 w-5 text-orange-500" />
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">Chunk-wise Slide Generation</h2>
+              <p className="text-[10px] text-slate-400">Each chunk → Individual Gamma slide</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <Select value={selectedScriptId} onValueChange={setSelectedScriptId}>
+              <SelectTrigger className="w-full md:w-[250px] bg-slate-50 border-slate-200 h-9 text-xs rounded-lg">
+                <SelectValue placeholder="Select Script" />
+              </SelectTrigger>
+              <SelectContent>
+                {scripts.map(s => (
+                  <SelectItem key={s.id} value={s.id} className="text-xs">
+                    {s.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <div className="flex gap-2 shrink-0">
+              <Button 
+                variant="outline" 
+                className="h-9 text-[10px] font-bold gap-2 border-purple-200 text-purple-600 hover:bg-purple-50"
+                onClick={async () => {
+                  if (chunks.length === 0) return;
+                  toast.info("Queueing outlines...");
+                  for (const chunk of chunks) await generateSlidePrompt(chunk.id);
+                  toast.success("All outlines generated!");
+                }}
+              >
+                <Type className="h-3.5 w-3.5" /> All Outlines
+              </Button>
+              <Button 
+                className="h-9 text-[10px] font-bold gap-2 bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-100"
+                onClick={async () => {
+                  if (chunks.length === 0) return;
+                  toast.info("Queueing slides...");
+                  for (const chunk of chunks) if (chunk.slide_prompt) await generateGammaSlide(chunk.id);
+                  toast.success("All slides generated!");
+                }}
+              >
+                <Layout className="h-3.5 w-3.5" /> Generate All Slides
+              </Button>
+            </div>
           </div>
         </div>
       )}
