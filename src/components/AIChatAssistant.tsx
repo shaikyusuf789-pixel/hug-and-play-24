@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bot, Send, X, MessageSquare, Loader2, User, ChevronDown, Trash2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -105,7 +105,7 @@ export function AIChatAssistant() {
       </Button>
 
       {isOpen && (
-        <Card className="fixed bottom-24 right-4 z-50 flex h-[calc(100vh-120px)] w-[calc(100vw-32px)] flex-col border shadow-xl animate-in slide-in-from-bottom-5 sm:right-6 sm:h-[600px] sm:w-[400px] overflow-hidden">
+        <Card className="fixed bottom-24 right-4 z-50 flex h-[calc(100vh-120px)] w-[calc(100vw-32px)] flex-col border shadow-xl animate-in slide-in-from-bottom-5 sm:right-6 sm:h-[600px] sm:w-[400px] overflow-hidden overscroll-contain">
           <CardHeader className="border-b bg-card p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -146,8 +146,12 @@ export function AIChatAssistant() {
             </div>
           </CardHeader>
 
-          <CardContent className="flex-1 bg-background p-0">
-            <ScrollArea ref={scrollRef} className="h-full p-4">
+          <CardContent className="flex-1 min-h-0 bg-background p-0 relative">
+            <ScrollArea 
+              ref={scrollRef} 
+              className="h-full p-4 [&>[data-radix-scroll-area-viewport]]:overscroll-contain"
+              type="always"
+            >
               <div className="space-y-4">
                 {messages.length === 0 && (
                   <div className="text-center py-8">
@@ -222,6 +226,7 @@ export function AIChatAssistant() {
                   </div>
                 )}
               </div>
+              <ScrollBar orientation="vertical" className="bg-slate-100/50" />
             </ScrollArea>
           </CardContent>
 
