@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Database, Folder, HardDrive, Search, MoreVertical, FileIcon, Download, Trash2, BrainCircuit, FileText, Layers, Upload } from "lucide-react";
+import { Database, Folder, HardDrive, Search, MoreVertical, FileIcon, Download, Trash2, BrainCircuit, FileText, Layers, Upload, History as HistoryIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
