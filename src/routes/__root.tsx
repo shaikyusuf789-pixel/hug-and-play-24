@@ -1,7 +1,7 @@
 import { createRootRoute, Scripts, ScrollRestoration, Outlet } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import "@/index.css";
+import "@/styles.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
