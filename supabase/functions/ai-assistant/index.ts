@@ -26,8 +26,8 @@ serve(async (req) => {
     const biography = metadata?.find(m => m.key === "app_biography")?.value;
     const neuralScheme = metadata?.find(m => m.key === "neural_scheme")?.value;
 
-    const systemPrompt = `You are the SKY Studio AI Assistant, a "Second Brain" for this YouTube production pipeline application.
-You have full knowledge of the app's biography and neural scheme.
+    const systemPrompt = `You are the SKY Studio AI Assistant, the "Second Brain" of this YouTube production pipeline.
+You have absolute knowledge of the app's biography, neural scheme, and data structures.
 
 APP BIOGRAPHY:
 ${JSON.stringify(biography, null, 2)}
@@ -35,26 +35,20 @@ ${JSON.stringify(biography, null, 2)}
 NEURAL SCHEME:
 ${JSON.stringify(neuralScheme, null, 2)}
 
-YOUR ROLE:
-- You help the user manage their YouTube production pipeline.
-- You can READ and WRITE data using the provided tools.
-- When adding a source, ask for the channel name and URL if not provided.
-- You can check existing scripts, ideas, and sources.
+YOUR MISSION:
+1. Act as a second brain. You know every button, every page, and every table.
+2. Provide answers based on the current state of the app.
+3. You can read and write data using the tools provided.
+4. When a user asks to add a source, use 'add_source'.
+5. When they ask about ideas, use 'get_recent_ideas'.
+6. When they ask about scripts, use 'get_script_by_title'.
 
-TOOLS AVAILABLE:
-1. get_sources: Returns list of YouTube channels being monitored.
-2. add_source (name, url): Adds a new channel to the monitor list.
-3. get_recent_ideas: Returns recently scraped ideas.
-4. get_script_by_title (title): Returns script content if it exists.
-`;
+Always be professional, concise, and incredibly helpful.`;
 
-    // Function to handle tool calls
     const handleToolCall = async (call: any) => {
       const { name, arguments: argsJson } = call.function;
       const args = JSON.parse(argsJson);
       
-      console.log(`Tool call: ${name}`, args);
-
       if (name === "get_sources") {
         const { data } = await supabase.from("sources_master").select("*");
         return JSON.stringify(data);
@@ -77,7 +71,10 @@ TOOLS AVAILABLE:
       return "Tool not found";
     };
 
-    const apiPayload = {
+    const apiKey = Deno.env.get("OPENAI_API_KEY");
+    if (!apiKey) throw new Error("Missing OPENAI_API_KEY");
+
+    const requestBody = {
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
@@ -132,19 +129,18 @@ TOOLS AVAILABLE:
       ]
     };
 
-    let response = await fetch("https://api.lovable.ai/v1/chat/completions", {
+    let response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`,
+        "Authorization": `Bearer ${apiKey}`,
       },
-      body: JSON.stringify(apiPayload),
+      body: JSON.stringify(requestBody),
     });
 
     let data = await response.json();
     let message = data.choices[0].message;
 
-    // Handle tool calls iteratively
     while (message.tool_calls) {
       const toolResults = [];
       for (const toolCall of message.tool_calls) {
@@ -157,15 +153,14 @@ TOOLS AVAILABLE:
         });
       }
 
-      // Send results back to LLM
-      const nextResponse = await fetch("https://api.lovable.ai/v1/chat/completions", {
+      const nextResponse = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`,
+          "Authorization": `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: apiPayload.model,
+          model: requestBody.model,
           messages: [
             { role: "system", content: systemPrompt },
             ...messages,
