@@ -810,7 +810,7 @@ function ScriptGenerator() {
                       size="sm" 
                       className="h-7 text-[10px]"
                       onClick={() => {
-                        const fullScript = segments.map(s => s.telugu_text).join("\n\n");
+                        const fullScript = segments.map(s => s.telugu_text || s.voiceover).join("\n\n");
                         navigator.clipboard.writeText(fullScript);
                         toast.success("Full script copied to clipboard!");
                       }}
@@ -819,7 +819,7 @@ function ScriptGenerator() {
                     </Button>
                   </div>
                   <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 leading-relaxed text-sm font-telugu max-h-[400px] overflow-y-auto whitespace-pre-wrap">
-                    {segments.map(s => s.telugu_text).join("\n\n")}
+                    {segments.map(s => s.telugu_text || s.voiceover).join("\n\n")}
                   </div>
                   {isExistingScript && (
                     <div className="bg-blue-50 border border-blue-100 p-3 rounded-lg flex items-center gap-2">
