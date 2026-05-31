@@ -93,7 +93,7 @@ function Dashboard() {
             <Button 
               onClick={() => run.mutate()} 
               disabled={run.isPending} 
-              className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-2xl shadow-indigo-500/40 h-12 px-8 gap-3 rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all hover:scale-105 active:scale-95"
+              className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-button hover:shadow-white-lg h-12 px-8 gap-3 rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all hover:scale-105 active:scale-95"
             >
               {run.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4 fill-white/20" />}
               Initialize Scraper
@@ -111,7 +111,7 @@ function Dashboard() {
                   toast.error("Failed to trigger backup: " + e.message);
                 }
               }}
-              className="border-white/10 bg-white/5 hover:bg-white/10 text-white h-12 px-6 gap-3 rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all"
+              className="border-white/20 bg-white/5 hover:bg-white/10 hover:shadow-white-lg text-white h-12 px-6 gap-3 rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all"
             >
               <Github className="h-4 w-4" />
               Backup
