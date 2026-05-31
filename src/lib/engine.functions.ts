@@ -253,10 +253,10 @@ export const bulkAddSources = createServerFn({ method: "POST" })
 export const getIdeas = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ status: z.string().optional() }).parse(d))
   .handler(async ({ data }) => {
+    console.log("[getIdeas] Fetching ideas for status:", data.status || "all");
     let query = supabaseAdmin
       .from("raw_content")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .select("*");
 
     if (data.status) {
       query = query.eq("status", data.status);
@@ -267,8 +267,14 @@ export const getIdeas = createServerFn({ method: "GET" })
       console.error("[getIdeas] Error:", error);
       throw error;
     }
-    console.log(`[getIdeas] Returning ${ideas?.length} ideas`);
-    return { ideas: (ideas || []) as any[] };
+    
+    // Sort manually if needed or just use simple order
+    const sorted = (ideas || []).sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    console.log(`[getIdeas] Returning ${sorted.length} ideas`);
+    return { ideas: sorted as any[] };
   });
 
 export const updateIdeaStatus = createServerFn({ method: "POST" })
@@ -425,13 +431,22 @@ export const saveScript = createServerFn({ method: "POST" })
 
 export const getRecentScripts = createServerFn({ method: "GET" })
   .handler(async () => {
+    console.log("[getRecentScripts] Fetching...");
     const { data, error } = await supabaseAdmin
       .from("scripts")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(10);
-    if (error) throw error;
-    return { scripts: data || [] };
+      .select("*");
+    
+    if (error) {
+      console.error("[getRecentScripts] Error:", error);
+      throw error;
+    }
+    
+    const sorted = (data || []).sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    console.log(`[getRecentScripts] Returning ${sorted.length} scripts`);
+    return { scripts: sorted.slice(0, 10) };
   });
 
 export const updateScript = createServerFn({ method: "POST" })
