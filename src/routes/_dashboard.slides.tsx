@@ -195,7 +195,7 @@ function SlideMaker() {
       )}
 
       {!showHistory && (
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
           <Select value={selectedScriptId} onValueChange={setSelectedScriptId}>
             <SelectTrigger className="w-full md:w-[400px] bg-white border-slate-200 h-10 rounded-xl shadow-sm focus:ring-rose-500">
               <SelectValue placeholder="Select Script to generate slides" />
@@ -208,18 +208,24 @@ function SlideMaker() {
               ))}
             </SelectContent>
           </Select>
-          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-full h-10 w-10">
-            <Settings className="h-5 w-5" />
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" className="h-10 text-xs font-bold gap-2" onClick={async () => {
+              for (const chunk of chunks) await generateSlidePrompt(chunk.id);
+            }}>
+              <Type className="h-4 w-4 text-purple-600" /> All Outlines
+            </Button>
+            <Button className="h-10 text-xs font-bold gap-2 bg-orange-500 hover:bg-orange-600 text-white" onClick={async () => {
+              for (const chunk of chunks) if (chunk.slide_prompt) await generateGammaSlide(chunk.id);
+            }}>
+              <Layout className="h-4 w-4" /> All Slides
+            </Button>
+          </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6">
+      <div className="flex flex-col gap-4">
         {chunks.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center">
-            <div className="p-4 bg-slate-50 rounded-full mb-4">
-              <Layout className="h-8 w-8 text-slate-300" />
-            </div>
+          <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
             <p className="text-slate-400 font-medium">Select a script to start generating slides</p>
           </div>
         ) : (
