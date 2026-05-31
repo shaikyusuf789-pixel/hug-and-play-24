@@ -159,17 +159,23 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
               Summary Points
             </div>
 
-            <div className="relative">
+            <div className="relative min-h-[50px]">
               <ul className="space-y-0.5 transition-all">
-                {visible.map((s: string, i: number) => (
-                  <li
-                    key={i}
-                    className="text-[13px] text-foreground/85 leading-[1.35] flex gap-1.5"
-                  >
-                    <span className="text-primary mt-[5px] shrink-0 text-[10px]">●</span>
-                    <span>{s}</span>
+                {visible.length > 0 ? (
+                  visible.map((s: string, i: number) => (
+                    <li
+                      key={i}
+                      className="text-[13px] text-foreground/85 leading-[1.35] flex gap-1.5"
+                    >
+                      <span className="text-primary mt-[5px] shrink-0 text-[10px]">●</span>
+                      <span>{s}</span>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-[13px] text-muted-foreground italic py-2">
+                    Click "Approve" to generate AI summary and strategy...
                   </li>
-                ))}
+                )}
               </ul>
               {!expanded && hasMore && (
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-linear-to-t from-card to-transparent" />
