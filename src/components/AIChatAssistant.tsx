@@ -226,6 +226,7 @@ export function AIChatAssistant() {
                   </div>
                 )}
               </div>
+              <ScrollBar orientation="vertical" className="bg-slate-100/50" />
             </ScrollArea>
           </CardContent>
 
