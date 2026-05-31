@@ -7,9 +7,9 @@ Sky Studio is a premium, autonomous AI video production pipeline designed for SK
 
 ## 1. Core Architecture
 - **Frontend**: React 19 (TanStack Start), Tailwind CSS v4, Lucide Icons.
-- **Backend (Database & Auth)**: Direct connection to **Supabase** project `eozteueesaemhcmbqcxt`.
-- **Logic Layer**: Supabase Edge Functions (Deno) and TanStack `createServerFn`.
-- **AI Integration**: OpenAI (GPT-4o), Google AI Studio (Gemini 2.0), Apify (YouTube Scrapers), ElevenLabs (TTS).
+- **Backend (Database & Auth)**: Direct connection to the user's Supabase project `klhcrdacefntzqwqwiiu`.
+- **Logic Layer**: TanStack `createServerFn` for app actions, with direct Supabase table reads/writes.
+- **AI Integration**: OpenAI, Google AI Studio, Apify, ElevenLabs.
 
 ---
 
@@ -21,9 +21,9 @@ Sky Studio is a premium, autonomous AI video production pipeline designed for SK
 - **UI Components**:
   - **System Core v4.2 Header**: Title and subtitle with live status indicators.
   - **Action Bar**: "Initialize Scraper" (manual trigger) and "Backup" (GitHub sync).
-  - **Status Tiles**: Real-time counts of ideas at each stage (Pending, Approved, Priority, etc.).
-- **Logic**: Calls `run-engine` Edge Function to scrape YouTube channels via Apify.
-- **Data**: Reads from `raw_content`, `app_settings`, and `sources_master` tables.
+  - **Status Tiles**: Real-time counts of ideas at each stage (Pending, Approved, Priority, etc.). Current verified state: 155 total ideas, 131 pending approval, 1 approved, 0 priority, 1 script done, 0 audio done.
+- **Logic**: `Initialize Scraper` runs the local `runIdeaEngine` server function. It reads `sources_master`, scrapes YouTube RSS feeds, deduplicates by `video_url`, and inserts new rows into `raw_content`.
+- **Data**: Reads from and writes to `raw_content`, `app_settings`, and `sources_master` in Supabase project `klhcrdacefntzqwqwiiu`.
 
 ### 2.2 Idea Cards (/idea-cards)
 ![Idea Cards](screenshots/idea-cards.png)
@@ -58,7 +58,7 @@ Sky Studio is a premium, autonomous AI video production pipeline designed for SK
 ## 3. Configuration & Security
 
 ### 3.1 API Keys & Secrets
-**CRITICAL**: All keys are stored in **Supabase Edge Function Secrets**, not in the frontend code.
+**CRITICAL**: All keys are stored in Supabase project secrets, not in the frontend code.
 - `OPENAI_API_KEY`: Core AI logic and script generation.
 - `APIFY_API_TOKEN`: YouTube scraping and transcripts.
 - `ELEVEN_LABS_API_KEY`: Premium voiceovers.
@@ -77,5 +77,5 @@ Live schema view available at `/tables`. Main tables:
 To replicate this exact product on a new platform:
 1. **Frontend**: Deploy the React code using the `VITE_SUPABASE_URL` of the target project.
 2. **Backend**: Run the migration SQL files to create the schema in the new Supabase project.
-3. **Secrets**: Manually add the 4 API keys listed above to the new project's Edge Function secrets.
-4. **Functions**: Deploy the `supabase/functions/` folder to the new project.
+3. **Secrets**: Manually add the 4 API keys listed above to the target project's secrets.
+4. **Functions**: Use the TanStack server functions in `src/lib/engine.functions.ts` for dashboard scraping and data pipeline actions.

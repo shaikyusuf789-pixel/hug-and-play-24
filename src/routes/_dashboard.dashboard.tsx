@@ -42,7 +42,8 @@ function Dashboard() {
   const run = useMutation({
     mutationFn: () => runFn(),
     onSuccess: (res) => {
-      toast.success(`Processed ${res.processed} new ideas.`);
+      const message = res.message || `Processed ${res.processed} new ideas.`;
+      (res.failed ? toast.warning : toast.success)(message);
       qc.invalidateQueries({ queryKey: ["stats"] });
       qc.invalidateQueries({ queryKey: ["ideas"] });
       setLastRun();
@@ -100,7 +101,6 @@ function Dashboard() {
               variant="outline"
               onClick={async () => {
                 try {
-                  // Reverting to server-side backup logic if run-engine is not an edge function
                   const { error } = await supabase.from('daily_backup_logs').insert({
                     status: 'PENDING',
                     tables_backed_up: DASHBOARD_TABLES

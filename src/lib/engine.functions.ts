@@ -5,6 +5,79 @@ import { z } from "zod";
 const APIFY_BASE = "https://api.apify.com/v2";
 const TRANSCRIPT_ACTOR = "lume~yt-transcripts-summary";
 
+type ScrapedVideo = {
+  title: string;
+  videoUrl: string;
+  publishedAt: string | null;
+  thumbnailUrl: string | null;
+};
+
+function decodeXml(value: string) {
+  return value
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .trim();
+}
+
+function extractChannelId(url: string, html: string) {
+  const direct = url.match(/youtube\.com\/channel\/([a-zA-Z0-9_-]+)/)?.[1];
+  if (direct) return direct;
+
+  return (
+    html.match(/"channelId":"(UC[a-zA-Z0-9_-]{20,})"/)?.[1] ||
+    html.match(/"externalId":"(UC[a-zA-Z0-9_-]{20,})"/)?.[1] ||
+    html.match(/<meta itemprop="channelId" content="(UC[a-zA-Z0-9_-]{20,})">/)?.[1] ||
+    null
+  );
+}
+
+async function scrapeYoutubeRss(sourceUrl: string): Promise<ScrapedVideo[]> {
+  const pageRes = await fetch(sourceUrl, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 SkyStudioBot/1.0",
+      Accept: "text/html,application/xhtml+xml",
+    },
+  });
+
+  if (!pageRes.ok) {
+    throw new Error(`YouTube source returned ${pageRes.status}`);
+  }
+
+  const html = await pageRes.text();
+  const channelId = extractChannelId(sourceUrl, html);
+  if (!channelId) {
+    throw new Error("Could not detect YouTube channel id");
+  }
+
+  const feedRes = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`, {
+    headers: { "User-Agent": "Mozilla/5.0 SkyStudioBot/1.0", Accept: "application/xml,text/xml" },
+  });
+
+  if (!feedRes.ok) {
+    throw new Error(`YouTube feed returned ${feedRes.status}`);
+  }
+
+  const xml = await feedRes.text();
+  return [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].slice(0, 10).map(([, entry]) => {
+    const videoId = entry.match(/<yt:videoId>(.*?)<\/yt:videoId>/)?.[1]?.trim();
+    const title = decodeXml(entry.match(/<title>([\s\S]*?)<\/title>/)?.[1] || "Untitled video");
+    const publishedAt = entry.match(/<published>(.*?)<\/published>/)?.[1]?.trim() || null;
+    const thumbnailUrl = entry.match(/<media:thumbnail url="(.*?)"/)?.[1] || null;
+    const link = entry.match(/<link rel="alternate" href="(.*?)"/)?.[1];
+
+    return {
+      title,
+      videoUrl: decodeXml(link || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : sourceUrl)),
+      publishedAt,
+      thumbnailUrl: thumbnailUrl ? decodeXml(thumbnailUrl) : null,
+    };
+  }).filter((video) => video.videoUrl.includes("youtube.com/watch"));
+}
+
 async function apifyRun(actorId: string, input: unknown, token: string) {
   const res = await fetch(`${APIFY_BASE}/acts/${actorId}/run-sync-get-dataset-items?token=${token}&clean=true`, {
     method: "POST",
@@ -74,20 +147,76 @@ export const runIdeaEngine = createServerFn({ method: "POST" })
   .inputValidator(z.object({ sourceId: z.string().uuid().optional() }).optional())
   .handler(async ({ data: inputData }) => {
     console.log("Starting Idea Engine run...");
-    
-    // Check if run-engine exists as an edge function, otherwise fallback to mock
-    try {
-      const { data, error } = await supabaseAdmin.functions.invoke("run-engine", {
-        body: { sourceId: inputData?.sourceId }
-      });
-      if (!error) return data;
-      console.warn("Edge Function 'run-engine' failed or missing, using local processing...", error);
-    } catch (e) {
-      console.warn("Edge Function invocation failed, falling back...", e);
+
+    let sourceQuery = supabaseAdmin
+      .from("sources_master")
+      .select("id, channel_name, source_url, type")
+      .order("created_at", { ascending: false });
+
+    if (inputData?.sourceId) {
+      sourceQuery = sourceQuery.eq("id", inputData.sourceId);
     }
 
-    // Mock processing for demonstration when Edge Functions are not deployed
-    return { processed: 0, message: "Engine run simulated. Please deploy 'run-engine' Edge Function for full automation." };
+    const { data: sources, error: sourceError } = await sourceQuery;
+    if (sourceError) {
+      console.error("Failed to load sources for Idea Engine:", sourceError);
+      return { processed: 0, failed: 1, message: sourceError.message };
+    }
+
+    if (!sources?.length) {
+      return { processed: 0, failed: 0, message: "No sources configured. Add YouTube sources first." };
+    }
+
+    let processed = 0;
+    const failures: string[] = [];
+
+    for (const source of sources) {
+      try {
+        const videos = await scrapeYoutubeRss(source.source_url);
+        if (!videos.length) continue;
+
+        const urls = videos.map((video) => video.videoUrl);
+        const { data: existing, error: existingError } = await supabaseAdmin
+          .from("raw_content")
+          .select("video_url")
+          .in("video_url", urls);
+
+        if (existingError) throw existingError;
+
+        const existingUrls = new Set((existing || []).map((row) => row.video_url));
+        const rows = videos
+          .filter((video) => !existingUrls.has(video.videoUrl))
+          .map((video) => ({
+            source_id: source.id,
+            original_title: video.title,
+            video_url: video.videoUrl,
+            published_at: video.publishedAt,
+            published_date: video.publishedAt ? new Date(video.publishedAt).toLocaleDateString("en-IN") : null,
+            thumbnail_url: video.thumbnailUrl,
+            date_extracted: new Date().toISOString(),
+            status: "Pending",
+          }));
+
+        if (!rows.length) continue;
+
+        const { error: insertError } = await supabaseAdmin.from("raw_content").insert(rows);
+        if (insertError) throw insertError;
+
+        processed += rows.length;
+      } catch (error: any) {
+        const message = `${source.channel_name}: ${error?.message || "scrape failed"}`;
+        failures.push(message);
+        console.warn("Idea Engine source failed:", message);
+      }
+    }
+
+    return {
+      processed,
+      failed: failures.length,
+      message: failures.length
+        ? `Processed ${processed} ideas. ${failures.length} source(s) failed: ${failures.slice(0, 3).join("; ")}`
+        : `Processed ${processed} new ideas.`,
+    };
   });
 
 
