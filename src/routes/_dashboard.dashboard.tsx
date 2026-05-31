@@ -72,6 +72,10 @@ function Dashboard() {
 
   return (
     <div className="relative mx-auto min-h-full max-w-6xl space-y-6 p-1 sm:space-y-8 sm:p-4">
+      <div className="text-[10px] text-muted-foreground opacity-50">
+        URL: {import.meta.env.VITE_SUPABASE_URL}
+      </div>
+
       <div className="relative z-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
         <div className="space-y-2">
           <div className="flex items-center gap-3 mb-2">
