@@ -235,7 +235,15 @@ function ScriptGenerator() {
 
   const { data: recentScriptsData } = useQuery({
     queryKey: ["recent-scripts"],
-    queryFn: () => getRecentScriptsFn(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("scripts")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return { scripts: data || [] };
+    },
     enabled: showHistory,
   });
 

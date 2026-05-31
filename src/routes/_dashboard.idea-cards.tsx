@@ -54,16 +54,23 @@ function RawContentPage() {
   const [activeTab, setActiveTab] = useState("Pending");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  const { data, isLoading, isFetching, refetch } = useQuery({
+  const { data: ideasData, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["ideas"],
-    queryFn: () => fetchFn({ data: {} }),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("raw_content")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return { ideas: data || [] };
+    },
   });
 
   const ideas = useMemo(() => {
-    const list = (data?.ideas || []) as IdeaCard[];
+    const list = (ideasData?.ideas || []) as IdeaCard[];
     console.log("[IdeaCards] Raw ideas from server:", list.length);
     return list;
-  }, [data]);
+  }, [ideasData]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {
