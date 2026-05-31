@@ -226,8 +226,8 @@ function ChunksPage() {
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-20 text-center space-y-4">
-          <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto border border-slate-100">
+        <div className="bg-slate-900/50 rounded-3xl border border-dashed border-white/10 p-20 text-center space-y-4">
+          <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto border border-white/10">
             <Layers className="h-8 w-8 text-slate-300" />
           </div>
           <div className="max-w-xs mx-auto space-y-2">

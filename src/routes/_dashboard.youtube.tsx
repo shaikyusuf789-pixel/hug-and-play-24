@@ -397,16 +397,16 @@ function YoutubeSeoPage() {
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
               <div className="lg:col-span-2 space-y-6">
                 <Card className="rounded-3xl border-slate-100 shadow-sm">
-                  <CardHeader className="border-b bg-slate-50/50 px-6 py-4">
+                  <CardHeader className="border-b border-white/5 bg-white/5 px-6 py-4">
                     <CardTitle className="text-sm font-bold">Thumbnail Creator</CardTitle>
                   </CardHeader>
                   <CardContent className="p-6 space-y-6">
-                    <div className="flex p-1 bg-slate-100 rounded-2xl">
+                    <div className="flex p-1 bg-white/5 rounded-2xl">
                       <button 
                         onClick={() => setThumbnailMode("generate")}
                         className={cn(
                           "flex-1 py-2 px-4 rounded-xl text-xs font-bold transition-all",
-                          thumbnailMode === "generate" ? "bg-white shadow-sm text-white" : "text-slate-500 hover:text-slate-700"
+                          thumbnailMode === "generate" ? "bg-indigo-600 shadow-sm text-white" : "text-slate-400 hover:text-white"
                         )}
                       >
                         AI Generate
@@ -415,7 +415,7 @@ function YoutubeSeoPage() {
                         onClick={() => setThumbnailMode("upload")}
                         className={cn(
                           "flex-1 py-2 px-4 rounded-xl text-xs font-bold transition-all",
-                          thumbnailMode === "upload" ? "bg-white shadow-sm text-white" : "text-slate-500 hover:text-slate-700"
+                          thumbnailMode === "upload" ? "bg-indigo-600 shadow-sm text-white" : "text-slate-400 hover:text-white"
                         )}
                       >
                         Upload Mode
