@@ -59,6 +59,8 @@ function ScriptGenerator() {
   const [showHistory, setShowHistory] = useState(false);
   const [selectedHistoryScriptId, setSelectedHistoryScriptId] = useState<string>("");
   const [isFromHistory, setIsFromHistory] = useState(false);
+  const [existingScriptId, setExistingScriptId] = useState<string | null>(null);
+  const [isExistingScript, setIsExistingScript] = useState(false);
 
   const { data: priorityIdeasData } = useQuery({
     queryKey: ["priority-ideas"],
@@ -162,7 +164,7 @@ function ScriptGenerator() {
     }
   };
 
-  const handleIdeaSelect = (ideaId: string) => {
+  const handleIdeaSelect = async (ideaId: string) => {
     const idea = approvedIdeas.find(i => i.id === ideaId);
     if (!idea) return;
     
@@ -170,6 +172,41 @@ function ScriptGenerator() {
     setIsFromHistory(false);
     setSelectedHistoryScriptId("");
     setTopic(idea.proposed_title || idea.original_title || "");
+    
+    // Check if script already exists for this idea
+    try {
+      const { data: existingScripts, error } = await supabase
+        .from("scripts")
+        .select("*")
+        .eq("idea_id", ideaId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      if (existingScripts && existingScripts.length > 0) {
+        const script = existingScripts[0];
+        setExistingScriptId(script.id);
+        setIsExistingScript(true);
+        
+        // Convert plain text script back to segments
+        const textSegments = script.content.split("\n\n");
+        const parsedSegments = textSegments.map((text: string, i: number) => ({
+          seg: i + 1,
+          title: `Segment ${i + 1}`,
+          telugu_text: text,
+        }));
+        
+        setSegments(parsedSegments);
+        toast.info("Script already generated for this idea. Loaded from database.");
+      } else {
+        setExistingScriptId(null);
+        setIsExistingScript(false);
+        setSegments([]);
+      }
+    } catch (err) {
+      console.error("Error checking for existing script:", err);
+    }
     
     // Combine outline and summary points for the Topic/Outline box
     const outline = idea.video_outline;
@@ -180,7 +217,6 @@ function ScriptGenerator() {
     
     setChapterContext(combinedContent);
     // Switch to PDF/Idea mode which uses chapterContext + content
-    // Actually, let's make it simple: pre-fill the transcript box if we have it
     if (idea.original_summary) {
       setContent(idea.original_summary);
     }
@@ -310,9 +346,65 @@ function ScriptGenerator() {
       }
       
       const data = res.data;
-
-      setSegments(data.segments || []);
+      const newSegments = data.segments || [];
+      setSegments(newSegments);
       toast.success("Script generated successfully!");
+
+      // Auto-save the generated script
+      if (newSegments.length > 0) {
+        const fullScriptText = newSegments.map((s: any) => s.telugu_text || s.voiceover).join("\n\n");
+        
+        try {
+          if (isExistingScript && existingScriptId) {
+            await updateScriptFn({ 
+              data: {
+                id: existingScriptId,
+                content: fullScriptText,
+              } 
+            });
+            toast.success("Existing script updated automatically.");
+          } else {
+            const saveRes = await saveScriptFn({ 
+              data: {
+                idea_id: selectedIdeaId || undefined,
+                title: topic || "Untitled Script",
+                content: fullScriptText,
+                word_count: wordCount,
+                video_type: videoType,
+                model: model,
+              } 
+            });
+            
+            // Re-fetch the script ID if it's new
+            if (selectedIdeaId) {
+              const { data: latest } = await supabase
+                .from("scripts")
+                .select("id")
+                .eq("idea_id", selectedIdeaId)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .single();
+              
+              if (latest) {
+                setExistingScriptId(latest.id);
+                setIsExistingScript(true);
+              }
+
+              // Update idea status to Script Done
+              await supabase
+                .from("raw_content")
+                .update({ status: "Script Done" })
+                .eq("id", selectedIdeaId);
+              
+              toast.success("Script saved and shifted to script_Done phase!");
+            }
+          }
+          queryClient.invalidateQueries({ queryKey: ["recent-scripts"] });
+        } catch (saveErr) {
+          console.error("Auto-save failed:", saveErr);
+          toast.error("Generation succeeded but auto-save failed.");
+        }
+      }
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to generate script");
@@ -708,6 +800,35 @@ function ScriptGenerator() {
                   </>
                 )}
               </Button>
+
+              {segments.length > 0 && (
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-indigo-600 font-bold uppercase text-[10px]">Full Script Preview</Label>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 text-[10px]"
+                      onClick={() => {
+                        const fullScript = segments.map(s => s.telugu_text).join("\n\n");
+                        navigator.clipboard.writeText(fullScript);
+                        toast.success("Full script copied to clipboard!");
+                      }}
+                    >
+                      Copy All
+                    </Button>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 leading-relaxed text-sm font-telugu max-h-[400px] overflow-y-auto whitespace-pre-wrap">
+                    {segments.map(s => s.telugu_text).join("\n\n")}
+                  </div>
+                  {isExistingScript && (
+                    <div className="bg-blue-50 border border-blue-100 p-3 rounded-lg flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-blue-500" />
+                      <span className="text-xs text-blue-700 font-medium">Script already exists for this idea</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
