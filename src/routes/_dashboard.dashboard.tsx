@@ -42,7 +42,8 @@ function Dashboard() {
   const run = useMutation({
     mutationFn: () => runFn(),
     onSuccess: (res) => {
-      toast.success(`Processed ${res.processed} new ideas.`);
+      const message = res.message || `Processed ${res.processed} new ideas.`;
+      (res.failed ? toast.warning : toast.success)(message);
       qc.invalidateQueries({ queryKey: ["stats"] });
       qc.invalidateQueries({ queryKey: ["ideas"] });
       setLastRun();
