@@ -190,16 +190,22 @@ export const approveAndProcessIdea = createServerFn({ method: "POST" })
     if (!token) throw new Error("APIFY_API_TOKEN not configured in project secrets");
 
     // 1. Set status to Processing
-    await supabaseAdmin.from("raw_content").update({ 
-      status: "Processing",
-      processing_step: "Initializing..." 
-    }).eq("id", id);
+    try {
+      await supabaseAdmin.from("raw_content").update({ 
+        status: "Processing",
+        processing_step: "Initializing..." 
+      } as any).eq("id", id);
+    } catch (e) {
+      console.warn("Failed to update processing_step (initial), continuing...", e);
+    }
 
     try {
       // Update step: Fetching Transcript
-      await supabaseAdmin.from("raw_content").update({ 
-        processing_step: "Fetching transcript from YouTube..." 
-      }).eq("id", id);
+      try {
+        await supabaseAdmin.from("raw_content").update({ 
+          processing_step: "Fetching transcript from YouTube..." 
+        } as any).eq("id", id);
+      } catch (e) {}
 
       // 2. Fetch the idea details
       const { data: idea, error: fetchErr } = await supabaseAdmin
@@ -228,9 +234,11 @@ export const approveAndProcessIdea = createServerFn({ method: "POST" })
       }
 
       // Update step: AI Analysis
-      await supabaseAdmin.from("raw_content").update({ 
-        processing_step: "AI Analysis: Generating strategy..." 
-      }).eq("id", id);
+      try {
+        await supabaseAdmin.from("raw_content").update({ 
+          processing_step: "AI Analysis: Generating strategy..." 
+        } as any).eq("id", id);
+      } catch (e) {}
 
 
       // 4. Call AI for new content
@@ -257,7 +265,7 @@ ${transcript || "(no transcript available)"}`;
           core_hooks: ai.core_hooks ?? [],
           summary_points: ai.summary_points?.slice(0, 7) ?? [],
           video_outline: ai.video_outline ?? {},
-        })
+        } as any)
         .eq("id", id);
 
       if (updErr) throw updErr;
