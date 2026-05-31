@@ -57,14 +57,7 @@ function RawContentPage() {
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["ideas"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("raw_content")
-        .select("*, sources_master(channel_name)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return { ideas: data };
-    },
+    queryFn: () => fetchFn({ data: {} }),
   });
 
   // Realtime subscription for live updates
