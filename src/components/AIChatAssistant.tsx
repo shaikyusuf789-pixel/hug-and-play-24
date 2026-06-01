@@ -178,6 +178,35 @@ export function AIChatAssistant() {
     }
   };
 
+  const startRename = (session: ChatSession, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRenamingId(session.id);
+    setRenameValue(session.title);
+  };
+
+  const saveRename = async (sessionId: string, e?: React.MouseEvent | React.FormEvent) => {
+    e?.stopPropagation?.();
+    e?.preventDefault?.();
+    const newTitle = renameValue.trim();
+    if (!newTitle) {
+      setRenamingId(null);
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('chat_sessions')
+        .update({ title: newTitle })
+        .eq('id', sessionId);
+      if (error) throw error;
+      setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, title: newTitle } : s));
+      setRenamingId(null);
+      toast.success("Session renamed");
+    } catch (error) {
+      console.error("Error renaming session:", error);
+      toast.error("Failed to rename session");
+    }
+  };
+
   return (
     <>
       <Button
