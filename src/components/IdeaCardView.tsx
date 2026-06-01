@@ -232,7 +232,7 @@ const ACTION_META: Record<
   { label: string; className: string }
 > = {
   approve: { label: "Approve", className: "bg-emerald-600 hover:bg-emerald-500 text-white" },
-  reject: { label: "Reject", className: "bg-white/5 border border-white/10 hover:bg-rose-600 hover:border-transparent text-slate-400 hover:text-white" },
+  reject: { label: "Reject", className: "bg-slate-100 border border-slate-200 hover:bg-rose-600 hover:border-transparent text-slate-700 hover:text-white" },
   priority: { label: "Priority", className: "bg-amber-600 hover:bg-amber-500 text-white" },
   done: { label: "Done", className: "bg-indigo-600 hover:bg-indigo-500 text-white" },
   generate: { label: "Generate", className: "bg-indigo-600 hover:bg-indigo-500 text-white shadow-button" },
