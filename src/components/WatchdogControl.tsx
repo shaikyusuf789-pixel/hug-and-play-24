@@ -23,6 +23,7 @@ interface Props {
 export function WatchdogControl({ className, variant = "full" }: Props) {
   const qc = useQueryClient();
   const [localInterval, setLocalInterval] = useState<number[]>([1]);
+  const [localVideos, setLocalVideos] = useState<number[]>([10]);
 
   const getSettings = useServerFn(getAutoRunSettings);
   const updateSettings = useServerFn(updateAutoRunSettings);
@@ -32,12 +33,13 @@ export function WatchdogControl({ className, variant = "full" }: Props) {
     queryFn: async () => {
       const data = await getSettings();
       setLocalInterval([data.interval_hrs]);
+      setLocalVideos([data.videos_per_run ?? 10]);
       return data;
     },
   });
 
   const update = useMutation({
-    mutationFn: (vars: { enabled: boolean; interval_hrs: number }) =>
+    mutationFn: (vars: { enabled: boolean; interval_hrs: number; videos_per_run?: number }) =>
       updateSettings({ data: vars }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["auto-run-settings"] });
@@ -45,15 +47,15 @@ export function WatchdogControl({ className, variant = "full" }: Props) {
   });
 
   const handleToggle = (val: boolean) => {
-    // Immediate optimistic update or just trigger mutation
     update.mutate({
       enabled: val,
       interval_hrs: settings?.interval_hrs ?? 1,
+      videos_per_run: settings?.videos_per_run ?? 10,
     }, {
       onSuccess: () => {
         if (val) {
           toast.success("Watchdog turned On", {
-            description: `Auto-scraping every ${settings?.interval_hrs ?? 1} hours`,
+            description: `Auto-scraping every ${settings?.interval_hrs ?? 1}h · ${settings?.videos_per_run ?? 10} videos/channel`,
           });
         } else {
           toast.info("Watchdog turned Off");
@@ -69,6 +71,15 @@ export function WatchdogControl({ className, variant = "full" }: Props) {
     update.mutate({
       enabled: settings?.enabled ?? false,
       interval_hrs: hrs,
+      videos_per_run: settings?.videos_per_run ?? 10,
+    });
+  };
+
+  const handleVideosChange = (n: number) => {
+    update.mutate({
+      enabled: settings?.enabled ?? false,
+      interval_hrs: settings?.interval_hrs ?? 1,
+      videos_per_run: n,
     });
   };
 
@@ -105,6 +116,21 @@ export function WatchdogControl({ className, variant = "full" }: Props) {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            <span className="text-slate-300">·</span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 text-[10px] font-bold text-slate-500 hover:text-indigo-600 px-0">
+                  {settings?.videos_per_run ?? 10} vids <ChevronRight className="h-2 w-2 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {[3, 5, 10, 15, 20, 30, 50].map((n) => (
+                  <DropdownMenuItem key={n} onClick={() => handleVideosChange(n)}>
+                    {n} videos / channel
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
@@ -124,6 +150,24 @@ export function WatchdogControl({ className, variant = "full" }: Props) {
           onValueCommit={(v) => handleIntervalChange(v[0])}
           min={1}
           max={24}
+          step={1}
+          className="w-full"
+        />
+      </div>
+
+      <div className="h-8 w-px bg-white/5" />
+
+      <div className="flex flex-col gap-2 min-w-[110px] sm:min-w-[130px]">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Videos / Channel</span>
+          <span className="text-[10px] font-bold text-indigo-400">{localVideos[0]}</span>
+        </div>
+        <Slider
+          value={localVideos}
+          onValueChange={setLocalVideos}
+          onValueCommit={(v) => handleVideosChange(v[0])}
+          min={1}
+          max={50}
           step={1}
           className="w-full"
         />

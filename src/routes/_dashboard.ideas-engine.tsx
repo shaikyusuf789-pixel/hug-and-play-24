@@ -62,9 +62,19 @@ function IdeasEnginePage() {
 
   const run = useMutation({
     mutationFn: () => runIdeaEngineFn(),
-    onSuccess: (res) => {
+    onSuccess: (res: any) => {
       const message = res.message || `Processed ${res.processed} new ideas.`;
       (res.failed ? toast.warning : toast.success)(message);
+      if (res.perChannel?.length) {
+        const failed = res.perChannel.filter((c: any) => c.error);
+        if (failed.length) {
+          console.warn("Channels that failed:", failed);
+          toast.warning(`${failed.length} channel(s) failed`, {
+            description: failed.slice(0, 5).map((c: any) => `${c.channel}: ${c.error}`).join("\n"),
+            duration: 10000,
+          });
+        }
+      }
       qc.invalidateQueries({ queryKey: ["stats"] });
       qc.invalidateQueries({ queryKey: ["ideas"] });
       setLastRun();

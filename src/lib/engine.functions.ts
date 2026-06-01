@@ -36,34 +36,51 @@ function extractChannelId(url: string, html: string) {
   );
 }
 
-async function scrapeYoutubeRss(sourceUrl: string): Promise<ScrapedVideo[]> {
-  const pageRes = await fetch(sourceUrl, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 SkyStudioBot/1.0",
-      Accept: "text/html,application/xhtml+xml",
-    },
-  });
+async function scrapeYoutubeRss(sourceUrl: string, limit: number = 10): Promise<ScrapedVideo[]> {
+  // Browser-like headers + consent cookie so EU/region gates don't bounce us to a consent page
+  const browserHeaders = {
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Cookie": "CONSENT=YES+cb.20210328-17-p0.en+FX+000",
+  };
 
-  if (!pageRes.ok) {
-    throw new Error(`YouTube source returned ${pageRes.status}`);
-  }
+  // 1) Try to extract channel id directly from URL
+  let channelId = sourceUrl.match(/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{20,})/)?.[1] || null;
 
-  const html = await pageRes.text();
-  const channelId = extractChannelId(sourceUrl, html);
+  // 2) Otherwise fetch the channel page and extract from HTML
   if (!channelId) {
-    throw new Error("Could not detect YouTube channel id");
+    const pageRes = await fetch(sourceUrl, { headers: browserHeaders, redirect: "follow" });
+    if (!pageRes.ok) {
+      throw new Error(`YouTube page returned ${pageRes.status}`);
+    }
+    const html = await pageRes.text();
+    channelId =
+      html.match(/"channelId":"(UC[a-zA-Z0-9_-]{20,})"/)?.[1] ||
+      html.match(/"externalId":"(UC[a-zA-Z0-9_-]{20,})"/)?.[1] ||
+      html.match(/<meta itemprop="(?:channelId|identifier)" content="(UC[a-zA-Z0-9_-]{20,})"/)?.[1] ||
+      html.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{20,})"/)?.[1] ||
+      html.match(/browse_id=(UC[a-zA-Z0-9_-]{20,})/)?.[1] ||
+      null;
   }
 
-  const feedRes = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`, {
-    headers: { "User-Agent": "Mozilla/5.0 SkyStudioBot/1.0", Accept: "application/xml,text/xml" },
-  });
+  if (!channelId) {
+    throw new Error("Could not detect YouTube channel id from URL or page");
+  }
+
+  const feedRes = await fetch(
+    `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`,
+    { headers: browserHeaders },
+  );
 
   if (!feedRes.ok) {
     throw new Error(`YouTube feed returned ${feedRes.status}`);
   }
 
   const xml = await feedRes.text();
-  return [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].slice(0, 10).map(([, entry]) => {
+  const safeLimit = Math.max(1, Math.min(limit, 50));
+  return [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].slice(0, safeLimit).map(([, entry]) => {
     const videoId = entry.match(/<yt:videoId>(.*?)<\/yt:videoId>/)?.[1]?.trim();
     const title = decodeXml(entry.match(/<title>([\s\S]*?)<\/title>/)?.[1] || "Untitled video");
     const publishedAt = entry.match(/<published>(.*?)<\/published>/)?.[1]?.trim() || null;
@@ -145,10 +162,22 @@ JSON schema:
 }
 Always ensure summary_points has at least 5-7 key takeaways.`;
 
-export const runIdeaEngine = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ sourceId: z.string().uuid().optional() }).optional())
-  .handler(async ({ data: inputData }) => {
-    console.log("Starting Idea Engine run...");
+export async function runIdeaEngineCore(inputData?: { sourceId?: string; videosLimit?: number }) {
+    console.log("Starting Idea Engine run...", inputData);
+
+
+
+    // Resolve videos-per-run: explicit arg → setting → default 10
+    let videosLimit = inputData?.videosLimit;
+    if (!videosLimit) {
+      const { data: cfg } = await supabaseAdmin
+        .from("app_settings")
+        .select("value")
+        .eq("key", "engine_auto_run")
+        .maybeSingle();
+      const v = (cfg?.value as any)?.videos_per_run;
+      videosLimit = typeof v === "number" ? v : 10;
+    }
 
     let sourceQuery = supabaseAdmin
       .from("sources_master")
@@ -162,20 +191,24 @@ export const runIdeaEngine = createServerFn({ method: "POST" })
     const { data: sources, error: sourceError } = await sourceQuery;
     if (sourceError) {
       console.error("Failed to load sources for Idea Engine:", sourceError);
-      return { processed: 0, failed: 1, message: sourceError.message };
+      return { processed: 0, failed: 1, message: sourceError.message, perChannel: [] as any[] };
     }
 
     if (!sources?.length) {
-      return { processed: 0, failed: 0, message: "No sources configured. Add YouTube sources first." };
+      return { processed: 0, failed: 0, message: "No sources configured. Add YouTube sources first.", perChannel: [] };
     }
 
     let processed = 0;
     const failures: string[] = [];
+    const perChannel: { channel: string; inserted: number; error?: string }[] = [];
 
     for (const source of sources) {
       try {
-        const videos = await scrapeYoutubeRss(source.source_url);
-        if (!videos.length) continue;
+        const videos = await scrapeYoutubeRss(source.source_url, videosLimit);
+        if (!videos.length) {
+          perChannel.push({ channel: source.channel_name, inserted: 0 });
+          continue;
+        }
 
         const videoIds = videos.map((video) => video.videoId).filter(Boolean);
         const { data: existing, error: existingError } = await supabaseAdmin
@@ -200,15 +233,21 @@ export const runIdeaEngine = createServerFn({ method: "POST" })
             status: "Pending",
           }));
 
-        if (!rows.length) continue;
+        if (!rows.length) {
+          perChannel.push({ channel: source.channel_name, inserted: 0 });
+          continue;
+        }
 
         const { error: insertError } = await supabaseAdmin.from("raw_content").insert(rows);
         if (insertError) throw insertError;
 
         processed += rows.length;
+        perChannel.push({ channel: source.channel_name, inserted: rows.length });
       } catch (error: any) {
-        const message = `${source.channel_name}: ${error?.message || "scrape failed"}`;
+        const errMsg = error?.message || "scrape failed";
+        const message = `${source.channel_name}: ${errMsg}`;
         failures.push(message);
+        perChannel.push({ channel: source.channel_name, inserted: 0, error: errMsg });
         console.warn("Idea Engine source failed:", message);
       }
     }
@@ -216,11 +255,24 @@ export const runIdeaEngine = createServerFn({ method: "POST" })
     return {
       processed,
       failed: failures.length,
+      perChannel,
+      videosLimit,
       message: failures.length
-        ? `Processed ${processed} ideas. ${failures.length} source(s) failed: ${failures.slice(0, 3).join("; ")}`
-        : `Processed ${processed} new ideas.`,
+        ? `Processed ${processed} new ideas from ${sources.length - failures.length}/${sources.length} channels. ${failures.length} failed.`
+        : `Processed ${processed} new ideas from ${sources.length} channel(s).`,
     };
-  });
+}
+
+export const runIdeaEngine = createServerFn({ method: "POST" })
+  .inputValidator(
+    z
+      .object({
+        sourceId: z.string().uuid().optional(),
+        videosLimit: z.number().int().min(1).max(50).optional(),
+      })
+      .optional(),
+  )
+  .handler(async ({ data }) => runIdeaEngineCore(data));
 
 
 const SourceInput = z.object({
@@ -299,19 +351,44 @@ export const getAutoRunSettings = createServerFn({ method: "GET" })
       .eq("key", "engine_auto_run")
       .maybeSingle();
     if (error) throw error;
-    return (data?.value || { enabled: false, interval_hrs: 1, last_run: null }) as {
+    const v = (data?.value || {}) as any;
+    return {
+      enabled: v.enabled ?? false,
+      interval_hrs: v.interval_hrs ?? 1,
+      videos_per_run: v.videos_per_run ?? 10,
+      last_run: v.last_run ?? null,
+    } as {
       enabled: boolean;
       interval_hrs: number;
+      videos_per_run: number;
       last_run: string | null;
     };
   });
 
 export const updateAutoRunSettings = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ enabled: z.boolean(), interval_hrs: z.number() }))
+  .inputValidator(
+    z.object({
+      enabled: z.boolean(),
+      interval_hrs: z.number().min(1).max(24),
+      videos_per_run: z.number().int().min(1).max(50).optional(),
+    }),
+  )
   .handler(async ({ data }) => {
+    // Merge with existing to preserve last_run and other fields
+    const { data: current } = await supabaseAdmin
+      .from("app_settings")
+      .select("value")
+      .eq("key", "engine_auto_run")
+      .maybeSingle();
+    const merged = {
+      ...((current?.value as any) || {}),
+      enabled: data.enabled,
+      interval_hrs: data.interval_hrs,
+      ...(data.videos_per_run !== undefined ? { videos_per_run: data.videos_per_run } : {}),
+    };
     const { error } = await supabaseAdmin
       .from("app_settings")
-      .upsert({ key: "engine_auto_run", value: data }, { onConflict: "key" });
+      .upsert({ key: "engine_auto_run", value: merged }, { onConflict: "key" });
     if (error) throw error;
     return { ok: true };
   });
