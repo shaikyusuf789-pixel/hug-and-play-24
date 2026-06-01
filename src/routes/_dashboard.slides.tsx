@@ -404,17 +404,21 @@ function SlideChunkCard({
 
       <div className="flex flex-col space-y-2">
         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Gamma Slide</span>
-        <div className="aspect-video bg-white rounded-lg border border-slate-200 overflow-hidden relative shadow-sm">
-          {chunk.slide_url ? (
-            <iframe 
-              src={chunk.slide_url} 
-              className="w-full h-full border-none"
-              title={`Slide ${idx + 1}`}
-            />
+        <div className="aspect-video bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg border border-slate-200 overflow-hidden relative shadow-sm flex items-center justify-center">
+          {chunk.slide_url && chunk.slide_url !== "https://gamma.app/placeholder" ? (
+            <a
+              href={chunk.slide_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center justify-center gap-2 w-full h-full hover:bg-orange-100/40 transition-colors p-3 text-center"
+            >
+              <Layout className="h-8 w-8 text-orange-500" />
+              <span className="text-[10px] font-bold text-orange-700 uppercase tracking-wider">Gamma Slide Ready</span>
+              <span className="text-[9px] text-slate-500 underline break-all line-clamp-2">{chunk.slide_url}</span>
+              <span className="text-[8px] text-slate-400">Click to open in new tab ↗</span>
+            </a>
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-[9px] text-slate-400 font-bold uppercase bg-slate-50/30">
-              No slide yet
-            </div>
+            <div className="text-[9px] text-slate-400 font-bold uppercase">No slide yet</div>
           )}
         </div>
         <Button 
