@@ -170,6 +170,39 @@ function ChunksPage() {
     setChunks(updated);
   };
 
+  const startEdit = (chunk: any) => {
+    setEditingId(chunk.id);
+    setEditDraft(chunk.content || "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditDraft("");
+  };
+
+  const saveEdit = async (chunk: any, index: number) => {
+    const content = editDraft;
+    // temp (unsaved) chunk → just update local state, user can Save All
+    if (String(chunk.id).startsWith("temp-")) {
+      handleUpdateChunkContent(index, content);
+      setEditingId(null);
+      toast.success("Chunk updated (click Save All to persist)");
+      return;
+    }
+    setSavingId(chunk.id);
+    try {
+      await updateChunkFn({ data: { id: chunk.id, content } });
+      handleUpdateChunkContent(index, content);
+      setEditingId(null);
+      toast.success("Chunk saved");
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Failed to save chunk");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 md:space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
