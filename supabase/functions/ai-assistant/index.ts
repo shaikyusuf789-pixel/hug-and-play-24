@@ -101,6 +101,55 @@ Always be professional, concise, and incredibly helpful.`;
         return JSON.stringify({ success: true, message: "Chat memory cleared." });
       }
 
+      if (name === "web_search") {
+        try {
+          const q = encodeURIComponent(args.query);
+          // DuckDuckGo Instant Answer + HTML fallback (no API key required)
+          const ddg = await fetch(`https://api.duckduckgo.com/?q=${q}&format=json&no_html=1&skip_disambig=1`);
+          const ddgJson = await ddg.json();
+          const results: any[] = [];
+          if (ddgJson.AbstractText) {
+            results.push({ title: ddgJson.Heading, snippet: ddgJson.AbstractText, url: ddgJson.AbstractURL });
+          }
+          for (const r of (ddgJson.RelatedTopics || []).slice(0, 8)) {
+            if (r.Text && r.FirstURL) results.push({ title: r.Text.slice(0, 100), snippet: r.Text, url: r.FirstURL });
+          }
+          if (results.length === 0) {
+            // Fallback: scrape DDG HTML results
+            const html = await (await fetch(`https://html.duckduckgo.com/html/?q=${q}`, {
+              headers: { "User-Agent": "Mozilla/5.0" }
+            })).text();
+            const matches = [...html.matchAll(/<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g)];
+            for (const m of matches.slice(0, 8)) {
+              results.push({
+                title: m[2].replace(/<[^>]+>/g, "").trim(),
+                url: decodeURIComponent(m[1].replace(/^.*uddg=/, "").split("&")[0]),
+                snippet: m[3].replace(/<[^>]+>/g, "").trim()
+              });
+            }
+          }
+          return JSON.stringify({ query: args.query, results });
+        } catch (e) {
+          return JSON.stringify({ error: String(e) });
+        }
+      }
+      if (name === "fetch_url") {
+        try {
+          const r = await fetch(args.url, { headers: { "User-Agent": "Mozilla/5.0 (SKYStudioBot)" } });
+          const html = await r.text();
+          const text = html
+            .replace(/<script[\s\S]*?<\/script>/gi, "")
+            .replace(/<style[\s\S]*?<\/style>/gi, "")
+            .replace(/<[^>]+>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 8000);
+          return JSON.stringify({ url: args.url, content: text });
+        } catch (e) {
+          return JSON.stringify({ error: String(e) });
+        }
+      }
+
       return "Tool not found";
     };
 
