@@ -1337,6 +1337,32 @@ function ScriptGenerator() {
           )}
         </div>
       </div>
+      <AlertDialog open={regenConfirmOpen} onOpenChange={setRegenConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Regenerate script?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will replace the existing script for this topic with a fresh
+              generation using the current word count, special instructions, and
+              model settings. The previous version will be overwritten.
+              <br /><br />
+              Are you sure you want to proceed?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setRegenConfirmOpen(false);
+                handleGenerate();
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Proceed
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
