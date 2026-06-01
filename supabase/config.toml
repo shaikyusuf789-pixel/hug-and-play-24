@@ -9,6 +9,9 @@ verify_jwt = false
 [functions.generate-script-async]
 verify_jwt = false
 
+[functions.generate-script-stream]
+verify_jwt = false
+
 [functions.fact-check-script]
 verify_jwt = false
 
