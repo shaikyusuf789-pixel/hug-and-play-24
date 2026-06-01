@@ -18,42 +18,35 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch App Metadata for context
+    // Fetch App Metadata for context (trimmed to keep latency low)
     const { data: metadata } = await supabase
       .from("app_metadata")
-      .select("key, value");
+      .select("key, value")
+      .in("key", ["app_biography", "neural_scheme"]);
 
-    const biography = metadata?.find(m => m.key === "app_biography")?.value;
-    const neuralScheme = metadata?.find(m => m.key === "neural_scheme")?.value;
+    const truncate = (v: any, n = 1500) => {
+      const s = typeof v === "string" ? v : JSON.stringify(v);
+      return s && s.length > n ? s.slice(0, n) + "…[truncated]" : s;
+    };
+    const biography = truncate(metadata?.find(m => m.key === "app_biography")?.value);
+    const neuralScheme = truncate(metadata?.find(m => m.key === "neural_scheme")?.value);
 
-    const systemPrompt = `You are the SKY Studio AI Assistant, the "Second Brain" of this YouTube production pipeline.
-You have absolute knowledge of the app's biography, neural scheme, and data structures.
+    const systemPrompt = `You are the SKY Studio AI Assistant ("Second Brain") for a YouTube production pipeline.
 
-APP BIOGRAPHY:
-${JSON.stringify(biography, null, 2)}
+APP BIOGRAPHY: ${biography}
+NEURAL SCHEME: ${neuralScheme}
 
-NEURAL SCHEME:
-${JSON.stringify(neuralScheme, null, 2)}
+CAPABILITIES:
+- Read/write app DB via tools (sources, ideas, scripts, notes).
+- Internet: web_search + fetch_url. Cite source URLs.
+- Image gen via generate_image (DALL·E 3). Embed result as ![alt](url).
+- save_app_note to store notes; clear_chat_memory to wipe history.
 
-YOUR MISSION:
-1. Act as a second brain. You know every button, every page, and every table.
-2. Provide answers based on the current state of the app.
-3. You have READ and WRITE access to the database using the tools provided.
-4. Help the user manage their pipeline by approving ideas, adding sources, and cleaning up scripts.
-5. If a user asks to "store" something, use 'save_app_note'.
-6. If they ask to clear history, use 'clear_chat_memory'.
-
-7. You have INTERNET ACCESS via 'web_search' (search the web) and 'fetch_url' (fetch a specific page's text). Use them to fact-check scripts/ideas, pull news updates, verify claims, or look up anything the user asks. Always cite the source URLs in your reply.
-
-8. You can GENERATE IMAGES (thumbnails, illustrations, concept art) using 'generate_image' (DALL·E 3). When the user asks for a thumbnail or image, call this tool with a vivid descriptive prompt and then embed the returned URL in markdown: ![alt](url).
-
-RESPONSE FORMATTING (CRITICAL):
-- Always reply in clean GitHub-flavored Markdown.
-- Use ## headings, **bold**, numbered lists, and bullet points. Never reply as a single long paragraph.
-- For lists of items (channels, ideas, sources), use numbered lists where each item has its own line with bolded title, then sub-bullets for Description / Link / Source.
-- Keep links as proper [Title](url) markdown.
-
-Always be professional, concise, and incredibly helpful.`;
+RESPONSE FORMAT (CRITICAL):
+- Always reply in clean GitHub-flavored Markdown — never one long paragraph.
+- Use ## headings, **bold**, numbered/bulleted lists, [text](url) links.
+- For lists of channels/ideas/sources: numbered, each item bold title + sub-bullets (Description / Link / Source).
+- Be concise. Only call tools when necessary.`;
 
     const handleToolCall = async (call: any) => {
       const { name, arguments: argsJson } = call.function;
@@ -344,16 +337,18 @@ Always be professional, concise, and incredibly helpful.`;
     let message = responseData.choices[0].message;
 
     while (message.tool_calls) {
-      const toolResults = [];
-      for (const toolCall of message.tool_calls) {
-        const result = await handleToolCall(toolCall);
-        toolResults.push({
-          tool_call_id: toolCall.id,
-          role: "tool",
-          name: toolCall.function.name,
-          content: result
-        });
-      }
+      // Run all tool calls in parallel for speed
+      const toolResults = await Promise.all(
+        message.tool_calls.map(async (toolCall: any) => {
+          const result = await handleToolCall(toolCall);
+          return {
+            tool_call_id: toolCall.id,
+            role: "tool",
+            name: toolCall.function.name,
+            content: result,
+          };
+        })
+      );
 
       const nextResponse = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -379,13 +374,18 @@ Always be professional, concise, and incredibly helpful.`;
       message = nextData.choices[0].message;
     }
 
-    // Save history to memory table
+    // Save history to memory table (fire-and-forget so we don't block the response)
     const lastUserMsg = messages[messages.length - 1];
     if (lastUserMsg && lastUserMsg.role === "user") {
-      await supabase.from("ai_chat_memory").insert([
+      EdgeRuntime?.waitUntil?.(
+        supabase.from("ai_chat_memory").insert([
+          { role: "user", content: lastUserMsg.content, session_id: session_id },
+          { role: "assistant", content: message.content, session_id: session_id }
+        ]).then(({ error }) => { if (error) console.error("memory save error:", error); })
+      ) ?? supabase.from("ai_chat_memory").insert([
         { role: "user", content: lastUserMsg.content, session_id: session_id },
         { role: "assistant", content: message.content, session_id: session_id }
-      ]);
+      ]).then(({ error }) => { if (error) console.error("memory save error:", error); });
     }
 
     return new Response(JSON.stringify(message), {
