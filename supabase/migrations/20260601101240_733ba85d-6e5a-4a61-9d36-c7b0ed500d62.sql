@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Allow all access to authenticated" ON public.ai_chat_memory;
