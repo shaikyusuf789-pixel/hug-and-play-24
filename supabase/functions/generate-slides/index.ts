@@ -15,7 +15,7 @@ function readPngDimensions(bytes: Uint8Array) {
   return { width: view.getUint32(16), height: view.getUint32(20) }
 }
 
-async function callGamma(inputText: string, themeName: string, supabase: ReturnType<typeof createClient>, chunkId: string) {
+async function callGamma(inputText: string, themeName: string, supabase: ReturnType<typeof createClient>, scriptId: string, chunkIndex: number) {
   const apiKey = Deno.env.get("GAMMA_API_KEY")
   if (!apiKey) throw new Error("GAMMA_API_KEY is not configured")
 
