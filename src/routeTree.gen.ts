@@ -29,6 +29,7 @@ import { Route as DashboardContentPreviewRouteImport } from './routes/_dashboard
 import { Route as DashboardChunksRouteImport } from './routes/_dashboard.chunks'
 import { Route as DashboardAudioRouteImport } from './routes/_dashboard.audio'
 import { Route as DashboardAnnotationsRouteImport } from './routes/_dashboard.annotations'
+import { Route as ApiPublicHooksAutoRunEngineRouteImport } from './routes/api/public/hooks/auto-run-engine'
 
 const DashboardRoute = DashboardRouteImport.update({
   id: '/_dashboard',
@@ -130,6 +131,12 @@ const DashboardAnnotationsRoute = DashboardAnnotationsRouteImport.update({
   path: '/annotations',
   getParentRoute: () => DashboardRoute,
 } as any)
+const ApiPublicHooksAutoRunEngineRoute =
+  ApiPublicHooksAutoRunEngineRouteImport.update({
+    id: '/api/public/hooks/auto-run-engine',
+    path: '/api/public/hooks/auto-run-engine',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/tables': typeof DashboardTablesRoute
   '/uploads': typeof DashboardUploadsRoute
   '/youtube': typeof DashboardYoutubeRoute
+  '/api/public/hooks/auto-run-engine': typeof ApiPublicHooksAutoRunEngineRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -172,6 +180,7 @@ export interface FileRoutesByTo {
   '/tables': typeof DashboardTablesRoute
   '/uploads': typeof DashboardUploadsRoute
   '/youtube': typeof DashboardYoutubeRoute
+  '/api/public/hooks/auto-run-engine': typeof ApiPublicHooksAutoRunEngineRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -195,6 +204,7 @@ export interface FileRoutesById {
   '/_dashboard/tables': typeof DashboardTablesRoute
   '/_dashboard/uploads': typeof DashboardUploadsRoute
   '/_dashboard/youtube': typeof DashboardYoutubeRoute
+  '/api/public/hooks/auto-run-engine': typeof ApiPublicHooksAutoRunEngineRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/tables'
     | '/uploads'
     | '/youtube'
+    | '/api/public/hooks/auto-run-engine'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/tables'
     | '/uploads'
     | '/youtube'
+    | '/api/public/hooks/auto-run-engine'
   id:
     | '__root__'
     | '/'
@@ -261,11 +273,13 @@ export interface FileRouteTypes {
     | '/_dashboard/tables'
     | '/_dashboard/uploads'
     | '/_dashboard/youtube'
+    | '/api/public/hooks/auto-run-engine'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  ApiPublicHooksAutoRunEngineRoute: typeof ApiPublicHooksAutoRunEngineRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -410,6 +424,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardAnnotationsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/api/public/hooks/auto-run-engine': {
+      id: '/api/public/hooks/auto-run-engine'
+      path: '/api/public/hooks/auto-run-engine'
+      fullPath: '/api/public/hooks/auto-run-engine'
+      preLoaderRoute: typeof ApiPublicHooksAutoRunEngineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -462,6 +483,7 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  ApiPublicHooksAutoRunEngineRoute: ApiPublicHooksAutoRunEngineRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
