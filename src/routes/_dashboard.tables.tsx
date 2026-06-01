@@ -183,9 +183,8 @@ function SupabaseTable({ tableName }: { tableName: string }) {
     insertMutation.mutate(cleanData);
   };
 
+  const c = TABLE_COLORS[tableName] || TABLE_COLORS.app_settings;
   return (
-    const c = TABLE_COLORS[tableName] || TABLE_COLORS.app_settings;
-    return (
     <Card className={cn("rounded-[2.5rem] border shadow-2xl shadow-black/40 overflow-hidden bg-white/5 backdrop-blur-2xl transition-all duration-300 hover:border-white/20", c.border)}>
       <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0 p-6 bg-white/[0.01] border-b border-white/5">
         <div className="flex items-center gap-4">
