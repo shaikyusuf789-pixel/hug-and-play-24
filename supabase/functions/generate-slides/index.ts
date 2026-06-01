@@ -132,7 +132,7 @@ serve(async (req) => {
 
     const { data: chunk, error: fetchError } = await supabase
       .from('script_chunks')
-      .select('content, slide_prompt, annotations')
+      .select('content, slide_prompt, annotations, script_id, chunk_index')
       .eq('id', chunkId)
       .single()
 
@@ -162,7 +162,7 @@ serve(async (req) => {
       if (!inputText) throw new Error("Chunk has no outline/content to send to Gamma")
 
       const theme = (themeName && String(themeName).trim()) || "Oasis"
-      const gamma = await callGamma(inputText, theme, supabase, chunkId)
+      const gamma = await callGamma(inputText, theme, supabase, chunk.script_id as string, chunk.chunk_index as number)
 
       const { error: updateError } = await supabase
         .from('script_chunks')
