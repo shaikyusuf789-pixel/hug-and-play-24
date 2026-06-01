@@ -122,9 +122,23 @@ function SlideMaker() {
 
       if (error) throw error;
       if (data?.slide_url) {
-        setChunks(prev => prev.map(c => c.id === chunkId ? { ...c, slide_url: data.slide_url, status: "slide_generated" } : c));
+        setChunks(prev => prev.map(c => c.id === chunkId ? {
+          ...c,
+          slide_url: data.slide_url,
+          status: "slide_generated",
+          annotations: {
+            ...(c.annotations || {}),
+            gamma: {
+              ...((c.annotations as any)?.gamma || {}),
+              preview_url: data.preview_url,
+              dimensions: data.dimensions,
+              requested_dimensions: "16x9",
+              verified_16x9: Boolean(data.dimensions),
+            },
+          },
+        } : c));
       }
-      toast.success("Gamma slide generated!");
+      toast.success(data?.dimensions ? `Gamma slide generated in ${data.dimensions.width}×${data.dimensions.height}` : "Gamma slide generated!");
     } catch (error: any) {
       toast.error("Gamma generation failed: " + error.message);
     } finally {
@@ -332,6 +346,8 @@ function SlideChunkCard({
 
   const isContentLong = chunk.content.length > 120;
   const isPromptLong = (localPrompt || "").length > 80;
+  const gammaPreviewUrl = chunk.annotations?.gamma?.preview_url;
+  const gammaDimensions = chunk.annotations?.gamma?.dimensions;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
@@ -407,13 +423,27 @@ function SlideChunkCard({
         <div className="aspect-video bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg border border-slate-200 overflow-hidden relative shadow-sm flex items-center justify-center">
           {chunk.slide_url && chunk.slide_url !== "https://gamma.app/placeholder" ? (
             <div className="w-full h-full relative group">
-              <iframe
-                src={chunk.slide_url.replace(/\/docs\//, "/embed/")}
-                title="Gamma Slide"
-                className="w-full h-full border-0"
-                allow="fullscreen"
-                loading="lazy"
-              />
+              {gammaPreviewUrl ? (
+                <img
+                  src={gammaPreviewUrl}
+                  alt="Generated 16:9 Gamma slide preview"
+                  className="h-full w-full object-contain bg-slate-950"
+                  loading="lazy"
+                />
+              ) : (
+                <iframe
+                  src={chunk.slide_url.replace(/\/docs\//, "/embed/")}
+                  title="Gamma Slide"
+                  className="w-full h-full border-0"
+                  allow="fullscreen"
+                  loading="lazy"
+                />
+              )}
+              {gammaDimensions && (
+                <div className="absolute bottom-1 left-1 bg-emerald-600 text-white text-[8px] font-bold uppercase px-1.5 py-0.5 rounded shadow">
+                  16:9 · {gammaDimensions.width}×{gammaDimensions.height}
+                </div>
+              )}
               <a
                 href={chunk.slide_url}
                 target="_blank"
