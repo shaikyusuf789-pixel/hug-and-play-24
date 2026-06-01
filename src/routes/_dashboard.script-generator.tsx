@@ -419,64 +419,99 @@ function ScriptGenerator() {
     setFactFindings([]);
     setFactCheckRan(false);
     try {
-      // Kick off async generator — returns immediately with script_id, runs
-      // generation + fact-check in background to avoid 150s edge timeout.
-      const res = await supabase.functions.invoke("generate-script-async", {
-        body: {
-          topic,
-          content,
-          chapterContext,
-          videoType,
-          inputMode,
-          wordCount,
-          specialInstructions,
-          model,
-          idea_id: selectedIdeaId || null,
-          title: topic || "Untitled Script",
+      // Stream tokens live (Gemini-chat style) via SSE from our edge function.
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+      const SUPABASE_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY ||
+        import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) as string;
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token || SUPABASE_KEY;
+
+      const resp = await fetch(
+        `${SUPABASE_URL}/functions/v1/generate-script-stream`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            topic,
+            content,
+            chapterContext,
+            videoType,
+            inputMode,
+            wordCount,
+            specialInstructions,
+            model,
+            idea_id: selectedIdeaId || null,
+            title: topic || "Untitled Script",
+          }),
         },
-      });
-      if (res.error) throw res.error;
-      const scriptId: string | undefined = res.data?.script_id;
-      if (!scriptId) throw new Error("No script_id returned");
+      );
 
-      toast.info("Generation started — this may take 1–3 minutes…");
+      if (!resp.ok || !resp.body) {
+        const errTxt = await resp.text().catch(() => "");
+        throw new Error(`Stream start failed (${resp.status}): ${errTxt.slice(0, 300)}`);
+      }
 
-      // Poll the scripts row until FACT_CHECKED / SCRIPT_DONE / FAILED.
-      const deadline = Date.now() + 6 * 60 * 1000; // 6 min cap
-      let finalRow: any = null;
-      while (Date.now() < deadline) {
-        await new Promise((r) => setTimeout(r, 4000));
-        const { data: row, error: pErr } = await supabase
-          .from("scripts")
-          .select("id, content, word_count, status, script_error, fact_check_findings")
-          .eq("id", scriptId)
-          .single();
-        if (pErr) continue;
-        if (row?.status === "FAILED") {
-          throw new Error(row.script_error || "Generation failed");
-        }
-        if (row?.status === "FACT_CHECKED" || (row?.status === "SCRIPT_DONE" && row?.content)) {
-          finalRow = row;
-          if (row.status === "FACT_CHECKED") break;
+      toast.info("Generating live…");
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let scriptId: string | null = null;
+      let accumulated = "";
+      let streamDone = false;
+
+      while (!streamDone) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        // SSE events separated by blank line
+        const events = buffer.split("\n\n");
+        buffer = events.pop() || "";
+        for (const evt of events) {
+          const lines = evt.split("\n");
+          let eventName = "message";
+          let dataStr = "";
+          for (const ln of lines) {
+            if (ln.startsWith("event:")) eventName = ln.slice(6).trim();
+            else if (ln.startsWith("data:")) dataStr += ln.slice(5).trim();
+          }
+          if (!dataStr) continue;
+          try {
+            const payload = JSON.parse(dataStr);
+            if (eventName === "meta") {
+              scriptId = payload.script_id;
+              if (scriptId) {
+                setExistingScriptId(scriptId);
+                setIsExistingScript(true);
+              }
+            } else if (eventName === "token") {
+              accumulated += payload.t || "";
+              setScriptText(accumulated);
+            } else if (eventName === "done") {
+              streamDone = true;
+            } else if (eventName === "error") {
+              throw new Error(payload.message || "stream error");
+            }
+          } catch (e) {
+            if (eventName === "error") throw e;
+            // ignore parse errors on partial chunks
+          }
         }
       }
-      if (!finalRow) throw new Error("Generation timed out after 6 minutes");
 
-      const fullScriptText: string = finalRow.content || "";
-      setScriptText(fullScriptText);
-
-      const fcf: any = finalRow.fact_check_findings;
-      const findings: FactFinding[] = Array.isArray(fcf?.findings)
-        ? fcf.findings
-        : Array.isArray(fcf)
-          ? fcf
-          : [];
-      setFactFindings(findings);
-      setFactCheckRan(finalRow.status === "FACT_CHECKED");
-      setFactCheckedAgainst(fullScriptText);
-
-      setExistingScriptId(scriptId);
-      setIsExistingScript(true);
+      // Final cleanup of any stray ```json envelope.
+      let finalText = accumulated.trim();
+      finalText = finalText.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "");
+      try {
+        const obj = JSON.parse(finalText);
+        if (typeof obj?.script === "string") finalText = obj.script.trim();
+      } catch (_) {}
+      setScriptText(finalText);
+      setFactCheckedAgainst(finalText);
 
       if (selectedIdeaId) {
         await supabase
@@ -485,12 +520,46 @@ function ScriptGenerator() {
           .eq("id", selectedIdeaId);
       }
       queryClient.invalidateQueries({ queryKey: ["recent-scripts"] });
+      toast.success("Script generated ✓ — fact-checking in background…");
 
-      toast.success(
-        findings.length === 0
-          ? "Script generated ✓ (no fact issues)"
-          : `Script generated ✓ — ${findings.length} fact issue(s) flagged`,
-      );
+      // Poll for fact-check completion (runs in background on the server).
+      if (scriptId) {
+        setIsFactChecking(true);
+        const deadline = Date.now() + 3 * 60 * 1000;
+        (async () => {
+          try {
+            while (Date.now() < deadline) {
+              await new Promise((r) => setTimeout(r, 4000));
+              const { data: row } = await supabase
+                .from("scripts")
+                .select("status, fact_check_findings")
+                .eq("id", scriptId!)
+                .single();
+              if (
+                row?.status === "FACT_CHECKED" ||
+                row?.status === "FACT_CHECK_FAILED"
+              ) {
+                const fcf: any = row.fact_check_findings;
+                const findings: FactFinding[] = Array.isArray(fcf?.findings)
+                  ? fcf.findings
+                  : Array.isArray(fcf)
+                    ? fcf
+                    : [];
+                setFactFindings(findings);
+                setFactCheckRan(true);
+                toast.info(
+                  findings.length === 0
+                    ? "Fact-check: no issues ✓"
+                    : `Fact-check: ${findings.length} issue(s) flagged`,
+                );
+                break;
+              }
+            }
+          } finally {
+            setIsFactChecking(false);
+          }
+        })();
+      }
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to generate script");
