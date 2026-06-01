@@ -60,15 +60,15 @@ interface Props {
 
 function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const COLLAPSED_COUNT = 5;
+  const COLLAPSED_COUNT = 2;
   const summary = Array.isArray(idea.summary_points) 
     ? idea.summary_points 
     : typeof idea.summary_points === 'string' 
       ? JSON.parse(idea.summary_points) 
       : [];
-      
+  
   const hasMore = summary.length > COLLAPSED_COUNT;
-  const visible = (expanded || idea.status === 'Approved' || idea.status === 'Priority') ? summary : summary.slice(0, COLLAPSED_COUNT);
+  const visible = expanded ? summary : summary.slice(0, COLLAPSED_COUNT);
 
   const step = idea.processing_step || (idea.status === "Approved" ? "done" : null);
   const transcriptDone = step === "ai_pending" || step === "done";
