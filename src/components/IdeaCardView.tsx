@@ -129,11 +129,11 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
         </div>
 
         {/* Meta */}
-        <div className="flex flex-wrap items-center gap-3 md:gap-4 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-500">
+        <div className="flex flex-wrap items-center gap-3 md:gap-4 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-600">
           {idea.views && (
-            <span className="inline-flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+            <span className="inline-flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
               <Eye className="size-2.5 md:size-3" />
-              <span className="text-slate-300">{idea.views.toLocaleString()}</span>
+              <span className="text-slate-800">{idea.views.toLocaleString()}</span>
             </span>
           )}
           {idea.published_date && (
