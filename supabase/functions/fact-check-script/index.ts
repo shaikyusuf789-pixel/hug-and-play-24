@@ -30,7 +30,7 @@ For every finding, return:
 
 If you find ZERO factual issues, return an empty findings array.
 
-You MUST respond by calling the report_findings tool. Do not respond with prose.`;
+Return ONLY valid JSON in this shape: {"findings":[...]}. Do not respond with prose.`;
 
 interface Body {
   script?: string;
