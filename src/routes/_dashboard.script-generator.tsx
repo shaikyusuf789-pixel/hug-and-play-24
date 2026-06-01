@@ -1017,6 +1017,121 @@ function ScriptGenerator() {
               )}
             </CardContent>
           </Card>
+
+          {/* Fact-Checking AI panel */}
+          {scriptText && (factCheckRan || isFactChecking || factFindings.length > 0) && (
+            <Card className="border-purple-200">
+              <CardHeader className="border-b py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <ShieldCheck className="w-5 h-5 text-purple-600" />
+                  <CardTitle className="text-lg">Fact-Check Findings</CardTitle>
+                  <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 font-bold">
+                    {isFactChecking ? "scanning…" : `${factFindings.length} issue${factFindings.length === 1 ? "" : "s"}`}
+                  </Badge>
+                  {scriptText !== factCheckedAgainst && factCheckRan && !isFactChecking && (
+                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                      script edited — re-run
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button variant="outline" size="sm" onClick={handleFactCheck} disabled={isFactChecking}>
+                    {isFactChecking ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RotateCcw className="w-4 h-4 mr-1" />}
+                    Re-check
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 md:p-6 space-y-4">
+                {isFactChecking && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Researching facts against authoritative sources…
+                  </div>
+                )}
+
+                {!isFactChecking && factCheckRan && factFindings.length === 0 && (
+                  <div className="flex items-center gap-2 p-4 rounded-xl bg-green-50 border border-green-200 text-green-800">
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span className="font-semibold">All facts verified. Nothing to correct.</span>
+                  </div>
+                )}
+
+                {factFindings.map((f, idx) => (
+                  <div key={idx} className="rounded-xl border border-purple-200 bg-purple-50/40 p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <AlertTriangle className={cn(
+                          "w-4 h-4",
+                          f.severity === "high" ? "text-red-600" : f.severity === "medium" ? "text-amber-600" : "text-yellow-600",
+                        )} />
+                        <span className="text-xs font-bold uppercase tracking-wide text-slate-600">
+                          {f.severity || "issue"} · {f.source}
+                        </span>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => removeFinding(idx)} className="h-7 px-2 text-slate-500 hover:text-red-600">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-600">Claim in script</Label>
+                      <div className="mt-1 p-3 rounded-lg bg-white border border-slate-200 text-sm text-slate-700 italic">
+                        “{f.claim}”
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-600">Issue</Label>
+                      <Textarea
+                        className="mt-1 min-h-[60px] text-sm"
+                        value={f.issue}
+                        onChange={(e) => updateFinding(idx, { issue: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs font-semibold text-green-700">Correction (editable — this is what will be merged)</Label>
+                      <Textarea
+                        className="mt-1 min-h-[70px] text-sm border-green-300 focus-visible:ring-green-400"
+                        value={f.correction}
+                        onChange={(e) => updateFinding(idx, { correction: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs font-semibold text-slate-600">Source</Label>
+                        <Input
+                          className="mt-1 text-sm"
+                          value={f.source}
+                          onChange={(e) => updateFinding(idx, { source: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {factFindings.length > 0 && (
+                  <div className="pt-2 border-t flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <p className="text-xs text-muted-foreground">
+                      Approving will merge ONLY these corrections into the script, preserving original tone & style. Original is otherwise untouched.
+                    </p>
+                    <Button
+                      onClick={handleApproveFacts}
+                      disabled={isApplyingFacts}
+                      className="bg-green-600 hover:bg-green-700 text-white font-bold"
+                    >
+                      {isApplyingFacts ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4 mr-2" />
+                      )}
+                      Facts Approved — Merge into Script
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
