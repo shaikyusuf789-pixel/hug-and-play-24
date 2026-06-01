@@ -91,7 +91,8 @@ async function callGamma(inputText: string, themeName: string, supabase: ReturnT
           throw new Error(`Gamma did not return a 16:9 PNG export (${dimensions.width}x${dimensions.height})`)
         }
 
-        const path = `${chunkId}/${generationId}.png`
+        const slideNumber = String((chunkIndex ?? 0) + 1).padStart(3, "0")
+        const path = `${scriptId}/slide_${slideNumber}.png`
         const { error: uploadError } = await supabase.storage
           .from("slides")
           .upload(path, pngBytes, { contentType: "image/png", upsert: true })
