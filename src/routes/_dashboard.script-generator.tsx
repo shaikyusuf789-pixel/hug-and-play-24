@@ -1031,7 +1031,10 @@ function ScriptGenerator() {
 
               <Button 
                 className="w-full bg-blue-600 hover:bg-blue-700 h-12" 
-                onClick={handleGenerate}
+                onClick={() => {
+                  if (isExistingScript) setRegenConfirmOpen(true);
+                  else handleGenerate();
+                }}
                 disabled={isGenerating}
               >
                 {isGenerating ? (
