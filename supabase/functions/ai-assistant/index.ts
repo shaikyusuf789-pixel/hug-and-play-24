@@ -262,8 +262,103 @@ RESPONSE FORMAT (CRITICAL):
         }
       }
 
+      if (name === "list_training_docs") {
+        const KEYS = [
+          "training:transcript_1",
+          "training:transcript_2",
+          "training:transcript_3",
+          "training:transcript_4",
+          "training:sky_dna_general",
+          "training:sky_dna_subjective",
+        ];
+        const { data } = await supabase
+          .from("app_settings")
+          .select("key, value, updated_at")
+          .in("key", KEYS);
+        const map = new Map((data || []).map((r: any) => [r.key, r]));
+        const docs = KEYS.map((k) => {
+          const row: any = map.get(k);
+          const val = row?.value;
+          const text = typeof val === "string" ? val : (val?.text ?? null);
+          return {
+            key: k,
+            edited: !!text,
+            length: text ? text.length : 0,
+            updated_at: row?.updated_at ?? null,
+            note: text
+              ? "Boss-edited override active. Used by generate-script."
+              : "No override — bundled default in repo is used.",
+          };
+        });
+        return JSON.stringify(docs);
+      }
+      if (name === "get_training_doc") {
+        const { data } = await supabase
+          .from("app_settings")
+          .select("key, value, updated_at")
+          .eq("key", args.key)
+          .maybeSingle();
+        if (!data) {
+          return JSON.stringify({
+            key: args.key,
+            override_exists: false,
+            message:
+              "No override stored yet. Bundled default in repo (supabase/functions/generate-script/) is in use. Use update_training_doc to save a new version.",
+          });
+        }
+        const val: any = data.value;
+        const text = typeof val === "string" ? val : (val?.text ?? "");
+        return JSON.stringify({
+          key: data.key,
+          override_exists: true,
+          updated_at: data.updated_at,
+          length: text.length,
+          content: text,
+        });
+      }
+      if (name === "update_training_doc") {
+        const ALLOWED = new Set([
+          "training:transcript_1",
+          "training:transcript_2",
+          "training:transcript_3",
+          "training:transcript_4",
+          "training:sky_dna_general",
+          "training:sky_dna_subjective",
+        ]);
+        if (!ALLOWED.has(args.key)) {
+          return JSON.stringify({ error: `Key '${args.key}' is not an editable training doc.` });
+        }
+        if (typeof args.content !== "string" || !args.content.trim()) {
+          return JSON.stringify({ error: "content must be a non-empty string." });
+        }
+        const payload = {
+          key: args.key,
+          value: { text: args.content, edited_by: "jerry", edited_at: new Date().toISOString() },
+          updated_at: new Date().toISOString(),
+        };
+        // Upsert by key
+        const { data: existing } = await supabase
+          .from("app_settings")
+          .select("id")
+          .eq("key", args.key)
+          .maybeSingle();
+        let res;
+        if (existing?.id) {
+          res = await supabase.from("app_settings").update(payload).eq("id", existing.id).select();
+        } else {
+          res = await supabase.from("app_settings").insert(payload).select();
+        }
+        if (res.error) return JSON.stringify({ error: res.error.message });
+        return JSON.stringify({
+          success: true,
+          key: args.key,
+          length: args.content.length,
+          message:
+            "Saved. All future script generations will use this new version. Bundled file in repo is untouched (fallback).",
+        });
+      }
+
       return "Tool not found";
-    };
 
     const apiKey = Deno.env.get("OPENAI_API_KEY");
     if (!apiKey) throw new Error("Missing OPENAI_API_KEY");
