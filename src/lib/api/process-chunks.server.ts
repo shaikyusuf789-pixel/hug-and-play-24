@@ -6,8 +6,8 @@ export const processChunks = createServerFn({ method: "POST" })
   .inputValidator(z.object({ scriptContent: z.string() }))
   .handler(async ({ data: { scriptContent } }) => {
     console.log("Splitting chunks via Fallback ServerFn...");
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) throw new Error("OPENAI_API_KEY is not set in project secrets.");
+    const apiKey = process.env.GOOGLE_API_KEY;
+    if (!apiKey) throw new Error("GOOGLE_API_KEY is not set in project secrets.");
 
     const systemPrompt = `
 You are an expert script editor for SKY Academy. Your task is to split a long Telugu script into smaller chunks for video production.
@@ -19,14 +19,14 @@ Rules:
 Example: ["chunk 1 text...", "chunk 2 text...", ...]
 `;
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gemini-2.5-pro",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Split this script into chunks of 170-200 words each:\n\n${scriptContent}` },
@@ -37,7 +37,7 @@ Example: ["chunk 1 text...", "chunk 2 text...", ...]
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
+      throw new Error(`Google AI error: ${response.status} ${errorText}`);
     }
 
     const aiData = await response.json();

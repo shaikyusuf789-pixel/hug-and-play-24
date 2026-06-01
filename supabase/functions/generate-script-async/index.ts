@@ -131,7 +131,7 @@ async function runBackground(
   try {
     // 1) Generate script
     const aiRes = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
+      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
       {
         method: "POST",
         headers: {
@@ -175,7 +175,7 @@ async function runBackground(
     );
 
     const fcRes = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
+      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
       {
         method: "POST",
         headers: {
@@ -247,8 +247,8 @@ serve(async (req) => {
       150,
       Math.min(5000, Number(body.wordCount) || 1800),
     );
-    const model = body.model || "google/gemini-2.5-flash";
-    const factCheckModel = body.factCheckModel || "google/gemini-3-pro-preview";
+    const model = body.model || "gemini-2.5-flash";
+    const factCheckModel = body.factCheckModel || "gemini-2.5-pro";
 
     const parts: string[] = [];
     if (body.topic) parts.push(`TOPIC / TITLE:\n${body.topic}`);
@@ -272,10 +272,10 @@ serve(async (req) => {
     );
     const userPrompt = parts.join("\n\n");
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       return new Response(
-        JSON.stringify({ error: "LOVABLE_API_KEY missing" }),
+        JSON.stringify({ error: "GOOGLE_API_KEY missing" }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },

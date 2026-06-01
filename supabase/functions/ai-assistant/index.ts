@@ -263,7 +263,7 @@ RESPONSE FORMAT (CRITICAL):
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
+              "Authorization": `Bearer ${Deno.env.get("GOOGLE_API_KEY")}`,
             },
             body: JSON.stringify({
               model: "dall-e-3",
@@ -383,11 +383,11 @@ RESPONSE FORMAT (CRITICAL):
 
 
 
-    const apiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!apiKey) throw new Error("Missing OPENAI_API_KEY");
+    const apiKey = Deno.env.get("GOOGLE_API_KEY");
+    if (!apiKey) throw new Error("Missing GOOGLE_API_KEY");
 
     const requestBody: any = {
-      model: "gpt-4o-mini",
+      model: "gemini-2.5-pro",
       max_tokens: 4096,
       messages: [
         { role: "system", content: systemPrompt },
@@ -620,7 +620,7 @@ RESPONSE FORMAT (CRITICAL):
       ]
     };
 
-    let response = await fetch("https://api.openai.com/v1/chat/completions", {
+    let response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -648,7 +648,7 @@ RESPONSE FORMAT (CRITICAL):
         })
       );
 
-      const nextResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+      const nextResponse = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -64,10 +64,10 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       return new Response(
-        JSON.stringify({ error: "LOVABLE_API_KEY is not configured" }),
+        JSON.stringify({ error: "GOOGLE_API_KEY is not configured" }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -75,7 +75,7 @@ serve(async (req) => {
       );
     }
 
-    const chosenModel = model || "google/gemini-2.5-pro";
+    const chosenModel = model || "gemini-2.5-pro";
 
     const fixesBlock = findings
       .map(
@@ -87,7 +87,7 @@ serve(async (req) => {
       .join("\n\n");
 
     const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
+      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
       {
         method: "POST",
         headers: {
@@ -132,7 +132,7 @@ serve(async (req) => {
 
     if (!response.ok) {
       const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
+      console.error("Google AI error:", response.status, t);
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limited. Please retry shortly." }),
@@ -155,7 +155,7 @@ serve(async (req) => {
         );
       }
       return new Response(
-        JSON.stringify({ error: "AI gateway error", details: t }),
+        JSON.stringify({ error: "Google AI error", details: t }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
