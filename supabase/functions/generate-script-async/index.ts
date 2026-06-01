@@ -196,8 +196,8 @@ serve(async (req) => {
       150,
       Math.min(5000, Number(body.wordCount) || 1800),
     );
-    const model = ||;
-    const factCheckModel = body.factCheckModel || "gemini-2.5-pro";
+    const model = normalizeGeminiModel(body.model, "gemini-2.5-pro");
+    const factCheckModel = normalizeGeminiModel(body.factCheckModel, "gemini-2.5-pro");
 
     const parts: string[] = [];
     if (body.topic) parts.push(`TOPIC / TITLE:\n${body.topic}`);
@@ -221,8 +221,10 @@ serve(async (req) => {
     );
     const userPrompt = parts.join("\n\n");
 
-    const LOVABLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    let googleApiKey = "";
+    try {
+      googleApiKey = requireGoogleApiKey();
+    } catch (_) {
       return new Response(
         JSON.stringify({ error: "GOOGLE_API_KEY missing" }),
         {
@@ -309,7 +311,7 @@ serve(async (req) => {
         userPrompt,
         model,
         factCheckModel,
-        LOVABLE_API_KEY,
+        googleApiKey,
       ),
     );
 
