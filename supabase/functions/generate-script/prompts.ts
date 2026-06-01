@@ -22,7 +22,8 @@ function buildStyleReferenceBlock(overrides?: TrainingOverrides) {
   )
   .join("\n\n");
 
-export const STYLE_REFERENCE_INSTRUCTIONS = `
+function buildStyleReferenceInstructions(overrides?: TrainingOverrides) {
+  return `
 ================================================================
 STYLE REFERENCE -- HIGHEST PRIORITY (HOW to speak)
 ================================================================
@@ -47,11 +48,15 @@ These 4 transcripts OVERRIDE any tonal hint that may appear elsewhere.
 For language, styling, word formation, filler words and toning -- copy
 this voice. Do NOT invent a new tone.
 
-${STYLE_REFERENCE_BLOCK}
+${buildStyleReferenceBlock(overrides)}
 ================================================================
 END STYLE REFERENCE
 ================================================================
 `;
+}
+
+// Back-compat export (uses bundled fallback only).
+export const STYLE_REFERENCE_INSTRUCTIONS = buildStyleReferenceInstructions();
 
 export const TELUGU_TTS_MASTER_PROMPT = `
 ================================================================
@@ -122,8 +127,15 @@ MANDATORY READING ORDER before you write a single character:
   Step 3: Then -- and only then -- start generating the script.
 `;
 
-function buildSystem(taskLine: string, videoType: "GENERAL" | "SUBJECTIVE") {
-  const dna = videoType === "SUBJECTIVE" ? DNA_SUBJECTIVE : DNA_GENERAL;
+function buildSystem(
+  taskLine: string,
+  videoType: "GENERAL" | "SUBJECTIVE",
+  overrides?: TrainingOverrides,
+) {
+  const dnaDefault = videoType === "SUBJECTIVE" ? DNA_SUBJECTIVE : DNA_GENERAL;
+  const dna =
+    (videoType === "SUBJECTIVE" ? overrides?.dna_subjective : overrides?.dna_general) ||
+    dnaDefault;
   return `
 You are an expert Telugu video script writer for SKY Academy.
 ${taskLine}
@@ -141,7 +153,7 @@ CRITICAL RULES:
 4. Each segment MUST be 150-180 words.
 5. Output must be a complete, valid JSON array.
 
-${STYLE_REFERENCE_INSTRUCTIONS}
+${buildStyleReferenceInstructions(overrides)}
 
 ${OUTPUT_FORMAT}
 `.trim();
@@ -150,21 +162,26 @@ ${OUTPUT_FORMAT}
 export function systemPromptFor(
   mode: "topic" | "transcript" | "pdf",
   videoType: "GENERAL" | "SUBJECTIVE",
+  overrides?: TrainingOverrides,
 ) {
   if (mode === "transcript") {
     return buildSystem(
       "Your task is to REWRITE the provided video transcript into a SKY Academy voiceover script. Keep technical facts and core information; change the delivery to match SKY Academy.",
       videoType,
+      overrides,
     );
   }
   if (mode === "pdf") {
     return buildSystem(
       "Your task is to CREATE a SKY Academy video script based on the provided text from a book or PDF section. Translate and adapt the educational content into a clear, teaching-focused voiceover.",
       videoType,
+      overrides,
     );
   }
   return buildSystem(
     "Write a COMPLETE, ORIGINAL SKY Academy voiceover script on the given topic.",
     videoType,
+    overrides,
   );
 }
+
