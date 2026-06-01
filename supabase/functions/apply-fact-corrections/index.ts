@@ -3,6 +3,7 @@
 // tone, style, code-mix, sentence rhythm. Only the wrong facts are swapped.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { geminiGenerateJson, normalizeGeminiModel, requireGoogleApiKey } from "../_shared/google-ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,7 +26,7 @@ Your job:
 6. If a claim cannot be found verbatim in the script, find the closest matching sentence and apply the correction there with the same minimal-edit rule.
 7. The total word count of the output should remain within ±5% of the original.
 
-You MUST respond by calling the return_corrected_script tool with the full corrected script.`;
+Return ONLY valid JSON in this shape: {"corrected_script":"<full corrected script>"}.`;
 
 interface Finding {
   claim: string;
@@ -64,8 +65,10 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    let apiKey = "";
+    try {
+      apiKey = requireGoogleApiKey();
+    } catch (_) {
       return new Response(
         JSON.stringify({ error: "GOOGLE_API_KEY is not configured" }),
         {
@@ -75,7 +78,7 @@ serve(async (req) => {
       );
     }
 
-    const chosenModel = model || "gemini-2.5-pro";
+    const chosenModel = normalizeGeminiModel(model, "gemini-2.5-pro");
 
     const fixesBlock = findings
       .map(
