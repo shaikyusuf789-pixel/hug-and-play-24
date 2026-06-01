@@ -40,13 +40,26 @@ function ChunksPage() {
       .from("scripts")
       .select("*")
       .eq("status", "SCRIPT_DONE")
-      .order("created_at", { ascending: false });
-    
+      .not("content", "is", null)
+      .neq("content", "")
+      .order("updated_at", { ascending: false })
+      .limit(50);
+
     if (error) {
       toast.error("Failed to fetch scripts");
       return;
     }
-    setScripts(data || []);
+    // Dedupe by idea_id (keep latest), fall back to id when idea_id is null
+    const seen = new Set<string>();
+    const deduped: any[] = [];
+    for (const s of data || []) {
+      const key = s.idea_id ?? `__noidea_${s.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(s);
+      if (deduped.length >= 15) break;
+    }
+    setScripts(deduped);
   };
 
   useEffect(() => {
