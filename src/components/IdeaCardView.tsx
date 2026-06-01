@@ -133,6 +133,18 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
               </>
             ) : "—"}
           </h2>
+          {idea.published_date && (
+            <div className="text-[10px] md:text-[11px] font-bold text-slate-500 mt-1 flex items-center gap-1">
+              <Calendar className="size-3" />
+              {(() => {
+                const d = new Date(idea.published_date);
+                const day = String(d.getDate()).padStart(2, '0');
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const year = d.getFullYear();
+                return `${day}/${month}/${year}`;
+              })()}
+            </div>
+          )}
         </div>
 
         {/* Meta */}
