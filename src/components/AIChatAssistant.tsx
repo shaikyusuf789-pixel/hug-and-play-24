@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bot, Send, X, MessageSquare, Loader2, User, ChevronDown, Trash2, History, Plus, Menu, Pencil, Check } from "lucide-react";
@@ -33,6 +34,15 @@ export function AIChatAssistant() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const adjustTextareaHeight = () => {
+    const el = textareaRef.current;
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = Math.min(el.scrollHeight, 200) + "px";
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -54,6 +64,14 @@ export function AIChatAssistant() {
       }
     }
   }, [messages, isLoading, isOpen, showSessions]);
+
+  useEffect(() => {
+    if (!input && textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    } else {
+      adjustTextareaHeight();
+    }
+  }, [input]);
 
   const loadSessions = async () => {
     try {
@@ -457,13 +475,24 @@ export function AIChatAssistant() {
                 e.preventDefault();
                 handleSendMessage();
               }}
-              className="flex w-full items-center space-x-2"
+              className="flex w-full items-end space-x-2"
             >
-              <Input
+              <Textarea
+                ref={textareaRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  adjustTextareaHeight();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
                 placeholder="Talk to your second brain..."
-                className="rounded-lg bg-background border-muted h-10 text-sm"
+                className="rounded-lg bg-background border-muted min-h-[40px] max-h-[200px] resize-none text-sm py-2.5"
+                rows={1}
               />
               <Button 
                 type="submit" 
