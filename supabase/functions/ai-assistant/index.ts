@@ -252,6 +252,30 @@ Always be professional, concise, and incredibly helpful.`;
             description: "Wipe the entire chat history and memory.",
             parameters: { type: "object", properties: {} }
           }
+        },
+        {
+          type: "function",
+          function: {
+            name: "web_search",
+            description: "Search the public internet for current information, news, facts, or anything not in the app database. Returns a list of results with title, snippet, and URL.",
+            parameters: {
+              type: "object",
+              properties: { query: { type: "string", description: "The search query" } },
+              required: ["query"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "fetch_url",
+            description: "Fetch the readable text content of a specific web page URL. Use after web_search to read a result in detail.",
+            parameters: {
+              type: "object",
+              properties: { url: { type: "string", description: "Full https URL to fetch" } },
+              required: ["url"]
+            }
+          }
         }
       ]
     };
