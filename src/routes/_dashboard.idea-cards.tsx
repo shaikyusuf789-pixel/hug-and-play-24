@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 import { toast } from "sonner";
-import { getIdeas, updateIdeaStatus, approveAndProcessIdea } from "@/lib/engine.functions";
+import { getIdeas, updateIdeaStatus, approveAndProcessIdea, processApprovedIdeaStep } from "@/lib/engine.functions";
 import { IdeaCardView, type ActionKey, type IdeaCard } from "@/components/IdeaCardView";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,7 +50,9 @@ function RawContentPage() {
   const fetchFn = useServerFn(getIdeas);
   const updateFn = useServerFn(updateIdeaStatus);
   const approveFn = useServerFn(approveAndProcessIdea);
+  const processStepFn = useServerFn(processApprovedIdeaStep);
   const qc = useQueryClient();
+  const processingRef = useRef<Set<string>>(new Set());
 
   const [activeTab, setActiveTab] = useState("Pending");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -116,6 +118,33 @@ function RawContentPage() {
     });
   };
 
+  const processApprovedIdea = async (ideaId: string) => {
+    if (processingRef.current.has(ideaId)) return;
+    processingRef.current.add(ideaId);
+    try {
+      for (let attempt = 0; attempt < 90; attempt++) {
+        const result = await processStepFn({ data: { id: ideaId } });
+        await qc.invalidateQueries({ queryKey: ["ideas"] });
+        if ((result as any)?.status === "done") {
+          toast.success("Transcript and AI analysis completed");
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Processing failed");
+      patchIdea(ideaId, { processing_step: "failed" } as any);
+    } finally {
+      processingRef.current.delete(ideaId);
+    }
+  };
+
+  useEffect(() => {
+    ideas
+      .filter((idea) => idea.status === "Approved" && idea.processing_step && idea.processing_step !== "done" && idea.processing_step !== "failed")
+      .forEach((idea) => processApprovedIdea(idea.id));
+  }, [ideas]);
+
   const mutate = useMutation({
     mutationFn: (vars: { idea: IdeaCard; status: string }) =>
       updateFn({ data: { id: vars.idea.id, status: vars.status } }),
@@ -150,6 +179,7 @@ function RawContentPage() {
       try {
         await approveFn({ data: { id: idea.id } });
         qc.invalidateQueries({ queryKey: ["ideas"] });
+        processApprovedIdea(idea.id);
       } catch (err: any) {
         toast.error(err.message);
         patchIdea(idea.id, { processing_step: "failed" } as any);
