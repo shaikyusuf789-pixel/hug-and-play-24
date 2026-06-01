@@ -426,20 +426,20 @@ export const approveAndProcessIdea = createServerFn({ method: "POST" })
     const token = process.env.APIFY_API_TOKEN;
     if (!token) throw new Error("APIFY_API_TOKEN not configured in project secrets");
 
-    // 1. Set status to Processing
+    // 1. Move to Approved immediately with stage 1 marker
     try {
-      await supabaseAdmin.from("raw_content").update({ 
-        status: "Processing"
+      await supabaseAdmin.from("raw_content").update({
+        status: "Approved",
+        processing_step: "transcript_pending",
       } as any).eq("id", id);
     } catch (e) {
-      console.warn("Failed to update status to Processing, continuing...", e);
+      console.warn("Failed to set initial Approved state, continuing...", e);
     }
 
     try {
-      // Update progress
       console.log(`[${id}] Fetching transcript...`);
 
-      // 2. Fetch the idea details
+      // 2. Fetch idea
       const { data: idea, error: fetchErr } = await supabaseAdmin
         .from("raw_content")
         .select("*, sources_master!fk_raw_content_source(channel_name)")
@@ -447,14 +447,14 @@ export const approveAndProcessIdea = createServerFn({ method: "POST" })
         .single();
       if (fetchErr || !idea) throw new Error("Idea not found");
 
-      // 3. Fetch Transcript
+      // 3. Transcript
       let transcript = "";
       try {
         const tr = await apifyRun(TRANSCRIPT_ACTOR, { urls: [idea.video_url], language: "English" }, token);
         const transcriptData = tr?.[0];
         const rawSummary = transcriptData?.summary || "";
         const rawTranscript = transcriptData?.transcript || "";
-        
+
         if (rawSummary && rawTranscript) {
           transcript = `SUMMARY:\n${rawSummary}\n\nTRANSCRIPT:\n${rawTranscript}`;
         } else {
@@ -465,11 +465,14 @@ export const approveAndProcessIdea = createServerFn({ method: "POST" })
         console.warn(`Transcript failed for ${idea.original_title}`, e);
       }
 
-      // AI Analysis
+      // Mark transcript done, AI pending
+      await supabaseAdmin.from("raw_content").update({
+        processing_step: "ai_pending",
+        original_summary: transcript,
+      } as any).eq("id", id);
+
+      // 4. AI
       console.log(`[${id}] Starting AI analysis...`);
-
-
-      // 4. Call AI for new content
       const aiInput = `Channel: ${idea.sources_master?.channel_name || "Unknown"}
 Original Title: ${idea.original_title}
 Views: ${idea.views ?? "N/A"}
@@ -477,14 +480,14 @@ Views: ${idea.views ?? "N/A"}
 Transcript / Description:
 ${transcript || "(no transcript available)"}`;
 
-      console.log(`Calling AI for detailed analysis: ${idea.original_title}`);
       const ai = await callAI(aiInput, SYSTEM_PROMPT);
 
-      // 5. Update DB
+      // 5. Final update
       const { error: updErr } = await supabaseAdmin
         .from("raw_content")
         .update({
           status: "Approved",
+          processing_step: "done",
           original_summary: transcript,
           proposed_title: ai.proposed_title,
           new_thumbnail_outline: ai.new_thumbnail_outline,
@@ -493,6 +496,7 @@ ${transcript || "(no transcript available)"}`;
           summary_points: ai.summary_points?.slice(0, 7) ?? [],
           video_outline: ai.video_outline ?? {},
         } as any)
+
         .eq("id", id);
 
       if (updErr) throw updErr;
