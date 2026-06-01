@@ -310,6 +310,21 @@ Always be professional, concise, and incredibly helpful.`;
               required: ["url"]
             }
           }
+        },
+        {
+          type: "function",
+          function: {
+            name: "generate_image",
+            description: "Generate an image (YouTube thumbnail, illustration, concept art) using DALL·E 3. Returns a URL to embed in the reply as markdown image.",
+            parameters: {
+              type: "object",
+              properties: {
+                prompt: { type: "string", description: "Detailed visual prompt for the image. Be vivid and specific." },
+                size: { type: "string", enum: ["1024x1024", "1792x1024", "1024x1792"], description: "Image size. Use 1792x1024 for YouTube thumbnails." }
+              },
+              required: ["prompt"]
+            }
+          }
         }
       ]
     };
