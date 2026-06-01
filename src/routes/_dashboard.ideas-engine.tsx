@@ -96,7 +96,7 @@ function IdeasEnginePage() {
             className="h-11 md:h-12 gap-2 rounded-xl px-4 md:px-6 font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 text-sm md:text-base"
           >
             {run.isPending ? <Loader2 className="h-4 w-4 md:h-5 md:w-5 animate-spin" /> : <Rocket className="h-4 w-4 md:h-5 md:w-5" />}
-            Initialize Scraper
+            RUN MANUALLY
           </Button>
         </div>
       </div>
