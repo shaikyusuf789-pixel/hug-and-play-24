@@ -65,7 +65,20 @@ function RawContentPage() {
       if (error) throw error;
       return { ideas: data || [] };
     },
+    // Poll every 4s while any card is mid-processing so checkmarks update live
+    refetchInterval: (q) => {
+      const list = (q.state.data as any)?.ideas as IdeaCard[] | undefined;
+      const inFlight = list?.some(
+        (i) =>
+          i.status === "Approved" &&
+          i.processing_step &&
+          i.processing_step !== "done" &&
+          i.processing_step !== "failed",
+      );
+      return inFlight ? 4000 : false;
+    },
   });
+
 
   const ideas = useMemo(() => {
     const list = (ideasData?.ideas || []) as IdeaCard[];
