@@ -23,12 +23,24 @@ Deno.serve(async (req) => {
 
     const { data: chunk, error: chunkErr } = await supabase
       .from("script_chunks")
-      .select("id, content, chunk_index, script_id")
+      .select("id, content, chunk_index, script_id, audio_url")
       .eq("id", chunkId)
       .maybeSingle();
 
     if (chunkErr || !chunk) return json({ error: "Chunk not found" }, 400);
     if (!chunk.content?.trim()) return json({ error: "Chunk content empty" }, 400);
+
+    // Delete previous audio file (regenerate = replace)
+    if (chunk.audio_url) {
+      try {
+        const marker = `/object/public/${BUCKET}/`;
+        const i = chunk.audio_url.indexOf(marker);
+        if (i !== -1) {
+          const oldPath = decodeURIComponent(chunk.audio_url.substring(i + marker.length).split("?")[0]);
+          await supabase.storage.from(BUCKET).remove([oldPath]);
+        }
+      } catch (_e) { /* ignore cleanup errors */ }
+    }
 
     let audioBytes: Uint8Array;
     let contentType = "audio/mpeg";
