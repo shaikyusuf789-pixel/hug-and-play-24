@@ -392,6 +392,42 @@ RESPONSE FORMAT (CRITICAL):
               required: ["prompt"]
             }
           }
+        },
+        {
+          type: "function",
+          function: {
+            name: "remove_source",
+            description: "Remove a YouTube channel from the sources_master table by id. Call after boss confirms.",
+            parameters: { type: "object", properties: { id: { type: "string" } }, required: ["id"] }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "analyze_source_health",
+            description: "Compute reject/approve ratio for each source. Use to recommend silencing or removing low-ROI channels that waste scraper/Apify credits.",
+            parameters: { type: "object", properties: {} }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "get_app_activity",
+            description: "Summarise current app activity: total sources, ideas grouped by status, chunks by status, recent scripts. Use for watchdog status reports.",
+            parameters: { type: "object", properties: {} }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "analyze_youtube_channel",
+            description: "Fetch a YouTube channel page and extract title/description/subs/recent video titles so you can judge whether it fits SKY Academy. Suggest add_source ONLY after boss approves.",
+            parameters: {
+              type: "object",
+              properties: { url: { type: "string", description: "Full YouTube channel URL" } },
+              required: ["url"]
+            }
+          }
         }
       ]
     };
