@@ -139,17 +139,100 @@ HARD RULES for all 3 promos:
   - Do NOT add any new promo, link or product beyond A, B and C above.
 `;
 
+const CONTENT_MIX_BLOCK = `
+================================================================
+CONTENT COMPOSITION -- INGREDIENT MIX (HARD QUOTA)
+================================================================
+The script must be a MIX of ingredients, NOT a juice of one fruit.
+Across the FULL script (sum of all segments), the word-budget MUST be
+distributed approximately as follows. Treat this as a hard quota; if you
+exceed motivation, CUT motivation -- never cut facts.
+
+  ~55-65%  HARD FACTS from the INPUT (dates, numbers, names, places,
+           records, schemes, amounts, ranks, captains, venues, winners,
+           runner-ups, awards, statistics). The original transcript /
+           summary / topic input is the PRIMARY source. Do not invent
+           facts. If unsure, skip.
+
+  ~15-20%  PYQs + likely MCQs. Frame at least 3-5 exam-style questions
+           inside the script ("ఈ ప్రశ్న 2022 SSC లో అడిగారు...",
+           "ఇది ఇలా అడగొచ్చు: ఎవరు...?" then immediately answer).
+           Cover SSC, Banking, Group 1, Group 2, RRB style framings.
+
+  ~10-15%  Memory hooks / coding tricks / mnemonics / short one-line
+           analogies linking facts -- NOT long motivational stories.
+
+  ~5-7%    Motivation / mentorship voice. STRICTLY capped at 7%.
+           No long "war strategy", "life balance", "6-month plan",
+           "you are not alone" monologues. Motivation must be short,
+           sharp, embedded between facts -- never a full paragraph.
+
+  ~5-8%    The 3 mandatory promos (A Telegram, B WhatsApp, C SKY app +
+           360 degree strong hold). These are SEPARATE from the 7%
+           motivation budget.
+
+FORBIDDEN PATTERNS (what bloated the IPL script -- do NOT repeat):
+  - Closing 3-5 paragraphs of pure motivation/philosophy.
+  - Generic "ప్రిపరేషన్ ఒక యుద్ధం", "లైఫ్ బ్యాలెన్స్", "ఆరు నెలల
+    ప్రణాళిక", "మీరు ఒంటరిగా లేరు", "ధైర్యంగా ముందుకు సాగాలి"-style
+    filler when the topic itself has more facts left to teach.
+  - Repeating the same motivational point in different words.
+  - Ending the script without a dense final-recap of facts/PYQs.
+
+LAST 2 SEGMENTS RULE:
+  Final 2 segments = FACT-DENSE recap + rapid-fire PYQ/MCQ framing on
+  the topic. Only the LAST 30-40 seconds may carry a short sign-off +
+  one promo CTA. No multi-paragraph motivational closing.
+`;
+
+const REPLICA_RULES = `
+================================================================
+ANCHOR REPLICA RULE -- EXACT VOICE CLONE
+================================================================
+You are NOT writing a polished AI script. You are a VOICE CLONE of the
+SKY anchor in the 4 reference transcripts. Strict requirements:
+
+  - Use ONLY words, phrases, fillers and sentence shapes that actually
+    appear in the 4 reference transcripts. If a word feels bookish,
+    literary or "AI-translated" -- replace it with how the anchor
+    actually says it in the references.
+  - BAN bookish / formal Telugu: "నిరంతరం", "జవాబుదారీతనం",
+    "పర్యవేక్షణ", "సాకారం", "పునాది", "అధిగమించాలి", "సవాల్",
+    "వ్యూహాలు", "ఆయుధాలు", "శత్రువులు", "మార్గదర్శకత్వం",
+    "క్రమశిక్షణ" -- UNLESS the same word appears verbatim in the
+    reference transcripts.
+  - Prefer the anchor's actual fillers: "సో", "అయితే", "మరి",
+    "చూడండి", "అంటే ఏంటంటే", "ఓకే వచ్చేద్దాం", "ఇప్పుడు చూడండి",
+    "ఒకసారి చూసుకుందాము", "గుర్తుపెట్టుకోండి", "నోట్ చేసుకోండి".
+  - Code-mix English exam words inside Telugu sentences exactly like the
+    anchor (SSC, Banking, Group one, mains, prelims, current affairs,
+    revision, mock test, PYQ, MCQ).
+  - Sentence rhythm: short bursts separated by "--". Avoid long literary
+    sentences. If a sentence sounds like a textbook, rewrite it.
+  - Self-check before output: re-read every segment and ask "would the
+    SKY anchor in the reference transcripts actually say this exact
+    sentence?" -- if no, rewrite it.
+`;
+
 export const DNA_GENERAL = `
 VIDEO TYPE: GENERAL -- STRATEGY / GUIDANCE / MOTIVATION
 
 SKY DNA RULES (content only -- no tone):
-1. Hook (Seg 1): Open with a relatable problem or burning ambition.
-2. The 'Why': Explain why this strategy matters for Group 1 / Group 2 exams.
-3. Memory Hints: Use max 3-4 strategy memory hints (analogies like
-   "War Strategy", "Life Balance"). Content hooks, not tone.
-4. Community: Reinforce that SKY Academy students are a family.
-5. CTA: Must mention the Telegram group for daily motivation.
-6. Promotions: SKY Academy app + Telegram are the standard CTAs.
+1. Hook (Seg 1): Open with a concrete fact / number / event from the
+   INPUT -- NOT a generic motivational line.
+2. The 'Why': One short line on exam relevance (SSC / Banking / Group 1
+   / Group 2). Not a paragraph.
+3. Body: Pack facts, names, dates, numbers, records FROM THE INPUT.
+   Frame PYQs / MCQs around each major fact.
+4. Memory Hints: Max 2-3 short coding tricks / mnemonics. No long
+   analogies.
+5. Community: ONE short line max -- handled inside the promos.
+6. Final Segments: Fact-dense recap + rapid-fire MCQ framing. NO long
+   motivational closing.
+
+${CONTENT_MIX_BLOCK}
+
+${REPLICA_RULES}
 
 ${PROMOTIONS_BLOCK}
 `;
@@ -158,12 +241,19 @@ export const DNA_SUBJECTIVE = `
 VIDEO TYPE: SUBJECTIVE -- DEEP SUBJECT TEACHING
 
 SKY DNA RULES (content only -- no tone):
-1. Logic First: Explain the concept simply before adding complexity.
-2. The "Link": Connect current topic to previous topics for a holistic view.
-3. PYQ Alert: Explicitly mention if this concept was asked in 2022 or 2023 exams.
-4. Memory Key: At least ONE memory hint per major concept
-   (mnemonics, funny stories, coding images). Content device, not tone.
-5. Final Seg: Summarize, then SKY Academy app CTA + Telegram study-notes CTA.
+1. Logic First: Explain the concept in the anchor's own simple words,
+   then layer complexity.
+2. The "Link": Connect to related concepts / previous topics.
+3. PYQ Alert: For EVERY major sub-topic, state if/when it was asked
+   (year + exam) and frame the likely MCQ.
+4. Memory Key: ONE short mnemonic / coding image per major concept.
+   Not a story.
+5. Final Seg: Fact + PYQ recap. Short sign-off. No motivational
+   monologue.
+
+${CONTENT_MIX_BLOCK}
+
+${REPLICA_RULES}
 
 ${PROMOTIONS_BLOCK}
 `;
