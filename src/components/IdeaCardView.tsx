@@ -155,12 +155,6 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
               <span className="text-slate-800">{idea.views.toLocaleString()}</span>
             </span>
           )}
-          {idea.published_date && (
-            <span className="inline-flex items-center gap-1">
-              <Calendar className="size-2.5 md:size-3" />
-              {new Date(idea.published_date).toLocaleDateString()}
-            </span>
-          )}
           {idea.duration && (
             <span className="inline-flex items-center gap-1">
               <Clock className="size-2.5 md:size-3" />
