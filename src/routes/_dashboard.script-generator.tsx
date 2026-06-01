@@ -160,7 +160,7 @@ function ScriptGenerator() {
           .select("id, idea_id, updated_at")
           .in("idea_id", ids);
         for (const s of scripts || []) {
-          if (s.idea_id) scriptMap[s.idea_id] = { id: s.id, updated_at: s.updated_at };
+          if (s.idea_id) scriptMap[s.idea_id] = { id: s.id, updated_at: s.updated_at ?? "" };
         }
       }
       return { ideas: ideas || [], scriptMap };
