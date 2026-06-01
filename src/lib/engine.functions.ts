@@ -504,9 +504,13 @@ ${transcript || "(no transcript available)"}`;
       return { ok: true };
     } catch (e: any) {
       console.error(`Failed to process approved idea ${id}:`, e);
-      await supabaseAdmin.from("raw_content").update({ status: "Pending" }).eq("id", id);
+      await supabaseAdmin
+        .from("raw_content")
+        .update({ processing_step: "failed" } as any)
+        .eq("id", id);
       throw e;
     }
+
   });
 
 
