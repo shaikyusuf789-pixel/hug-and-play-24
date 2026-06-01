@@ -1152,7 +1152,7 @@ function ScriptGenerator() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleGenerate}
+                    onClick={() => setRegenConfirmOpen(true)}
                     disabled={isGenerating}
                   >
                     <RotateCcw className={cn("w-4 h-4 mr-1", isGenerating && "animate-spin")} />
