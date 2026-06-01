@@ -55,6 +55,15 @@ function AudioEngine() {
     }
   }, [selectedScriptId]);
 
+  // Auto-refresh while any audio job is queued/processing in background
+  useEffect(() => {
+    if (!selectedScriptId) return;
+    const hasActive = chunks.some(c => c.audio_job_status === "queued" || c.audio_job_status === "processing");
+    if (!hasActive) return;
+    const t = setInterval(() => fetchChunks(selectedScriptId), 4000);
+    return () => clearInterval(t);
+  }, [selectedScriptId, chunks]);
+
   // Auto-fill default voice when switching providers (user can still edit)
   useEffect(() => {
     if (model === "elevenlabs") {
@@ -120,16 +129,34 @@ function AudioEngine() {
   };
 
   const generateAllAudio = async () => {
+    if (!selectedScriptId || chunks.length === 0) return;
     setLoading(true);
     try {
-      for (const chunk of chunks) {
-        if (!chunk.audio_url) {
-          await generateAudio(chunk.id);
-        }
+      const eligibleIds = chunks
+        .filter(c => !c.audio_url && c.audio_job_status !== "processing")
+        .map(c => c.id);
+      if (eligibleIds.length === 0) {
+        toast.info("All chunks already have audio.");
+        return;
       }
-      toast.success("Batch processing complete.");
+      const { error: upErr } = await supabase
+        .from("script_chunks")
+        .update({
+          audio_job_status: "queued",
+          audio_job_provider: model,
+          audio_job_voice_id: voiceId,
+          audio_job_error: null,
+        })
+        .in("id", eligibleIds);
+      if (upErr) throw upErr;
+
+      // Fire-and-forget the background worker
+      supabase.functions.invoke("process-queue", { body: { scriptId: selectedScriptId } }).catch(() => {});
+
+      toast.success(`Queued ${eligibleIds.length} audio clips — running in background. You can leave this page.`);
+      await fetchChunks(selectedScriptId);
     } catch (error: any) {
-      console.error(error);
+      toast.error("Failed to queue: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -284,9 +311,22 @@ function AudioEngine() {
               chunks.map((chunk, idx) => (
                 <div key={chunk.id} className="p-4 rounded-xl border bg-slate-50/50 space-y-3">
                   <div className="flex justify-between items-start">
-                    <span className="text-xs font-bold px-2 py-1 bg-slate-200 rounded text-slate-600">
-                      CHUNK {idx + 1}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold px-2 py-1 bg-slate-200 rounded text-slate-600">
+                        CHUNK {idx + 1}
+                      </span>
+                      {chunk.audio_job_status === "queued" && (
+                        <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded uppercase">Queued</span>
+                      )}
+                      {chunk.audio_job_status === "processing" && (
+                        <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded uppercase flex items-center gap-1">
+                          <Loader2 className="h-2.5 w-2.5 animate-spin" /> Running
+                        </span>
+                      )}
+                      {chunk.audio_job_status === "failed" && (
+                        <span className="text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded uppercase" title={chunk.audio_job_error || ""}>Failed</span>
+                      )}
+                    </div>
                     <div className="flex gap-2">
                       <Button 
                         size="sm" 
