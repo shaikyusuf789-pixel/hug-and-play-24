@@ -38,9 +38,9 @@ function ScriptGenerator() {
   const updateScriptFn = useServerFn(updateScript);
   const queryClient = useQueryClient();
 
-  const [videoType, setVideoType] = useState<"subjective" | "general">("subjective");
+  const [videoType, setVideoType] = useState<"subjective" | "general">("general");
   const [inputMode, setInputMode] = useState<"topic" | "transcript" | "pdf" | "idea">(
-    search.ideaId ? "idea" : search.transcript ? "transcript" : "topic"
+    search.ideaId ? "idea" : search.transcript ? "transcript" : "idea"
   );
   const [topic, setTopic] = useState(search.topic || "");
   const [chapterContext, setChapterContext] = useState("");
