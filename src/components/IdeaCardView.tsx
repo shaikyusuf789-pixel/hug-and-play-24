@@ -152,10 +152,10 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
 
         {/* summary points */}
         {summary.length > 0 && (
-          <div className="bg-indigo-500/[0.03] rounded-2xl md:rounded-3xl p-4 md:p-5 border border-indigo-500/10 relative overflow-hidden group/summary">
-            <div className="absolute inset-0 bg-linear-to-br from-indigo-500/5 to-transparent opacity-0 group-hover/summary:opacity-100 transition-opacity" />
-            <div className="text-[8px] md:text-[9px] uppercase tracking-[0.2em] md:tracking-[0.25em] text-indigo-400 font-black mb-3 md:mb-4 flex items-center gap-2 relative z-10">
-              <div className="size-1 md:size-1.5 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.8)] animate-pulse" />
+          <div className="bg-indigo-50/60 rounded-2xl md:rounded-3xl p-4 md:p-5 border border-indigo-100 relative overflow-hidden group/summary">
+            <div className="absolute inset-0 bg-linear-to-br from-indigo-100/40 to-transparent opacity-0 group-hover/summary:opacity-100 transition-opacity" />
+            <div className="text-[8px] md:text-[9px] uppercase tracking-[0.2em] md:tracking-[0.25em] text-indigo-600 font-black mb-3 md:mb-4 flex items-center gap-2 relative z-10">
+              <div className="size-1 md:size-1.5 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.6)] animate-pulse" />
               Strategy Intelligence
             </div>
 
@@ -165,10 +165,10 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
                   visible.map((s: string, i: number) => (
                     <li
                       key={i}
-                      className="text-[12px] md:text-[13px] text-slate-400 leading-relaxed flex gap-2 md:gap-3 group/item"
+                      className="text-[12px] md:text-[13px] text-slate-700 leading-relaxed flex gap-2 md:gap-3 group/item"
                     >
-                      <span className="text-indigo-500 mt-[5px] md:mt-[6px] shrink-0 text-[9px] md:text-[10px] font-black group-hover/item:scale-110 transition-transform">0{i+1}</span>
-                      <span className="group-hover/item:text-slate-200 transition-colors font-medium">{s}</span>
+                      <span className="text-indigo-600 mt-[5px] md:mt-[6px] shrink-0 text-[9px] md:text-[10px] font-black group-hover/item:scale-110 transition-transform">0{i+1}</span>
+                      <span className="group-hover/item:text-slate-900 transition-colors font-medium">{s}</span>
                     </li>
                   ))
                 ) : (
