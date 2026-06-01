@@ -359,6 +359,9 @@ RESPONSE FORMAT (CRITICAL):
       }
 
       return "Tool not found";
+    };
+
+
 
     const apiKey = Deno.env.get("OPENAI_API_KEY");
     if (!apiKey) throw new Error("Missing OPENAI_API_KEY");
