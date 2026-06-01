@@ -11,8 +11,9 @@ import {
   DNA_SUBJECTIVE,
   TELUGU_TTS_MASTER_PROMPT,
   type TrainingOverrides,
-} from "../generate-script-async/prompts.ts";
-import { SKY_STYLE_TRANSCRIPTS } from "../generate-script-async/transcripts.ts";
+} from "./prompts.ts";
+import { SKY_STYLE_TRANSCRIPTS } from "./transcripts.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -74,9 +75,45 @@ function buildSystemPrompt(
   const max = targetWords + 50;
   // NOTE: streaming mode -> ask for PLAIN Telugu text (no JSON envelope) so
   // partial tokens are immediately renderable.
+  const today = new Date().toISOString().slice(0, 10);
   return `
 You are an expert Telugu video script writer for SKY Academy.
 ${taskLine}
+
+================================================================
+THREE-LAYER RULE (DO NOT VIOLATE -- READ TWICE)
+================================================================
+1. WHAT to speak  -> comes ONLY from the USER INPUT below
+     (TOPIC / TITLE, CHAPTER / IDEA CONTEXT, SOURCE MATERIAL,
+      SPECIAL INSTRUCTIONS). This is the idea-engine output.
+2. HOW to speak   -> comes ONLY from the 4 STYLE REFERENCE
+     transcripts (tone, Telugu+English code-mix, fillers,
+     pauses, rhythm, teacher voice).
+3. WHERE to place which point -> comes ONLY from the SKY DNA
+     block (structure, ordering, promo placement, CTAs,
+     PYQ/MCQ slots, motivation %).
+
+HARD CONTENT BOUNDARY (most common failure -- avoid):
+- The 4 reference transcripts are NOT a source of facts, topics,
+  examples, names, dates, exams, departments or domain words.
+  They are voice samples only.
+- NEVER lift content from the transcripts. Do NOT mention
+  "railway", "RRB", "IPL", "auction", a specific exam, a
+  specific year, a specific scheme, a specific person or any
+  example UNLESS that exact thing appears in the USER INPUT.
+- If the user input is about SSC / Banking, the script must be
+  about SSC / Banking only -- zero spillover from transcript
+  topics.
+- Do not invent stats, ranks, cut-offs, vacancy numbers, dates,
+  winners, results, scores, prize money. If the user input does
+  not give a number, do not write one.
+
+TIME / RECENCY RULE:
+- Today's date is ${today}. Treat anything dated before today as
+  ALREADY HAPPENED (past tense). Do not say a completed event
+  "is going to happen" or "మెగా ఆక్షన్ జరగబోతుంది" for an event
+  that is already over. If unsure, speak generally without a
+  year.
 
 ABSOLUTE WORD-COUNT TARGET: approximately ${targetWords} Telugu words. Acceptable range: ${min}-${max}.
 
@@ -85,14 +122,18 @@ OUTPUT: Return ONLY the Telugu voiceover script as PLAIN TEXT (no JSON, no markd
 - Telugu Unicode only. ZERO Roman transliteration.
 - ZERO emojis. ALL numbers as English words. Use "--" for pauses.
 
-SKY DNA:
+SKY DNA (WHERE / structure -- WHAT-to-place-WHERE):
 ${dna}
 
 ${TELUGU_TTS_MASTER_PROMPT}
 
-STYLE REFERENCE (HOW to speak):
+STYLE REFERENCE (HOW to speak ONLY -- NOT a content source):
+The blocks below are voice samples. Mimic the rhythm, fillers,
+code-mix and teacher tone EXACTLY. Do NOT copy their topics,
+facts, examples, names, numbers or domain words into this script.
 ${buildStyleRefs(overrides)}
 `.trim();
+
 }
 
 function countWords(s: string): number {
