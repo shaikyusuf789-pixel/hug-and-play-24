@@ -64,6 +64,20 @@ function TablesPage() {
   );
 }
 
+const TABLE_COLORS: Record<string, { bg: string; border: string; text: string; iconBg: string; iconBorder: string; glow: string }> = {
+  raw_content: { bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-400", iconBg: "bg-emerald-500/10", iconBorder: "border-emerald-500/20", glow: "shadow-[0_0_8px_rgba(16,185,129,0.6)]" },
+  scripts: { bg: "bg-amber-500/10", border: "border-amber-500/20", text: "text-amber-400", iconBg: "bg-amber-500/10", iconBorder: "border-amber-500/20", glow: "shadow-[0_0_8px_rgba(245,158,11,0.6)]" },
+  sources_master: { bg: "bg-sky-500/10", border: "border-sky-500/20", text: "text-sky-400", iconBg: "bg-sky-500/10", iconBorder: "border-sky-500/20", glow: "shadow-[0_0_8px_rgba(14,165,233,0.6)]" },
+  script_chunks: { bg: "bg-violet-500/10", border: "border-violet-500/20", text: "text-violet-400", iconBg: "bg-violet-500/10", iconBorder: "border-violet-500/20", glow: "shadow-[0_0_8px_rgba(139,92,246,0.6)]" },
+  youtube_seo: { bg: "bg-orange-500/10", border: "border-orange-500/20", text: "text-orange-400", iconBg: "bg-orange-500/10", iconBorder: "border-orange-500/20", glow: "shadow-[0_0_8px_rgba(249,115,22,0.6)]" },
+  app_settings: { bg: "bg-slate-500/10", border: "border-slate-500/20", text: "text-slate-400", iconBg: "bg-slate-500/10", iconBorder: "border-slate-500/20", glow: "shadow-[0_0_8px_rgba(148,163,184,0.6)]" },
+  notifications: { bg: "bg-rose-500/10", border: "border-rose-500/20", text: "text-rose-400", iconBg: "bg-rose-500/10", iconBorder: "border-rose-500/20", glow: "shadow-[0_0_8px_rgba(244,63,94,0.6)]" },
+  daily_backup_logs: { bg: "bg-zinc-500/10", border: "border-zinc-500/20", text: "text-zinc-400", iconBg: "bg-zinc-500/10", iconBorder: "border-zinc-500/20", glow: "shadow-[0_0_8px_rgba(161,161,170,0.6)]" },
+  ai_chat_memory: { bg: "bg-teal-500/10", border: "border-teal-500/20", text: "text-teal-400", iconBg: "bg-teal-500/10", iconBorder: "border-teal-500/20", glow: "shadow-[0_0_8px_rgba(20,184,166,0.6)]" },
+  chat_sessions: { bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-400", iconBg: "bg-indigo-500/10", iconBorder: "border-indigo-500/20", glow: "shadow-[0_0_8px_rgba(99,102,241,0.6)]" },
+  app_metadata: { bg: "bg-cyan-500/10", border: "border-cyan-500/20", text: "text-cyan-400", iconBg: "bg-cyan-500/10", iconBorder: "border-cyan-500/20", glow: "shadow-[0_0_8px_rgba(6,182,212,0.6)]" },
+};
+
 function SupabaseTable({ tableName }: { tableName: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [search, setSearch] = useState("");
@@ -169,19 +183,20 @@ function SupabaseTable({ tableName }: { tableName: string }) {
     insertMutation.mutate(cleanData);
   };
 
+  const c = TABLE_COLORS[tableName] || TABLE_COLORS.app_settings;
   return (
-    <Card className="rounded-[2.5rem] border border-white/10 shadow-2xl shadow-black/40 overflow-hidden bg-white/5 backdrop-blur-2xl transition-all duration-300 hover:border-white/20">
+    <Card className={cn("rounded-[2.5rem] border shadow-2xl shadow-black/40 overflow-hidden bg-white/5 backdrop-blur-2xl transition-all duration-300 hover:border-white/20", c.border)}>
       <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0 p-6 bg-white/[0.01] border-b border-white/5">
         <div className="flex items-center gap-4">
-          <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 shadow-inner">
-            <TableIcon className="h-5 w-5 text-indigo-400" />
+          <div className={cn("p-2.5 rounded-xl shadow-inner", c.iconBg, c.iconBorder, "border")}>
+            <TableIcon className={cn("h-5 w-5", c.text)} />
           </div>
           <div>
             <CardTitle className="text-lg font-black text-white uppercase tracking-widest">
               {tableName.replace(/_/g, " ")}
             </CardTitle>
             <div className="flex items-center gap-1.5 mt-1">
-              <div className="h-1 w-1 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+              <div className={cn("h-1 w-1 rounded-full", c.bg.replace("/10", ""), c.glow)} />
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">
                 {rows?.length || 0} Records Found
               </span>
