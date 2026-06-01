@@ -24,13 +24,31 @@ export function normalizeGeminiModel(model: string | undefined, fallback = "gemi
 export function requireGoogleApiKey() {
   const key = Deno.env.get("GOOGLE_API_KEY")?.trim();
   if (!key) throw new Error("GOOGLE_API_KEY is not configured");
+  if (key.startsWith("ya29.") || key.startsWith("AQ.")) {
+    throw new Error("GOOGLE_API_KEY is currently a Google OAuth token, not a Google AI Studio API key. Replace it with an AI Studio API key that starts with AIza.");
+  }
+  if (!key.startsWith("AIza")) {
+    throw new Error("GOOGLE_API_KEY is not a valid Google AI Studio API key format. It must start with AIza.");
+  }
+  return key;
+}
+
+export function assertGoogleAiStudioApiKey(apiKey: string) {
+  const key = apiKey.trim();
+  if (!key) throw new Error("GOOGLE_API_KEY is not configured");
+  if (key.startsWith("ya29.") || key.startsWith("AQ.")) {
+    throw new Error("GOOGLE_API_KEY is currently a Google OAuth token, not a Google AI Studio API key. Replace it with an AI Studio API key that starts with AIza.");
+  }
+  if (!key.startsWith("AIza")) {
+    throw new Error("GOOGLE_API_KEY is not a valid Google AI Studio API key format. It must start with AIza.");
+  }
   return key;
 }
 
 function googleUrl(model: string, apiKey: string, stream = false) {
   const action = stream ? "streamGenerateContent?alt=sse" : "generateContent";
   const join = stream ? "&" : "?";
-  return `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:${action}${join}key=${encodeURIComponent(apiKey)}`;
+  return `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:${action}${join}key=${encodeURIComponent(assertGoogleAiStudioApiKey(apiKey))}`;
 }
 
 export function buildGeminiBody(options: GeminiTextOptions) {
