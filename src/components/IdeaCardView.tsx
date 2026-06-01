@@ -308,6 +308,37 @@ function ActionButton({
   );
 }
 
+function ProgressPill({ label, done, active, failed }: { label: string; done: boolean; active: boolean; failed?: boolean }) {
+  return (
+    <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
+      <span className={cn(
+        "h-5 w-5 md:h-6 md:w-6 rounded-full flex items-center justify-center border",
+        done && "bg-emerald-600 border-emerald-600 text-white",
+        active && "bg-white border-indigo-400 text-indigo-600",
+        failed && "bg-rose-600 border-rose-600 text-white",
+        !done && !active && !failed && "bg-white border-slate-300 text-slate-400",
+      )}>
+        {done ? (
+          <Check className="size-3 md:size-3.5" strokeWidth={3} />
+        ) : active ? (
+          <Loader2 className="size-3 md:size-3.5 animate-spin" />
+        ) : failed ? (
+          <span className="text-[10px] font-black">!</span>
+        ) : (
+          <span className="size-1.5 rounded-full bg-current" />
+        )}
+      </span>
+      <span className={cn(
+        "text-[9px] md:text-[10px] font-black uppercase tracking-widest",
+        done ? "text-emerald-700" : active ? "text-indigo-700" : failed ? "text-rose-700" : "text-slate-500",
+      )}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+
 function StatusBadge({
   status,
   className,
