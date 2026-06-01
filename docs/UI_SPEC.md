@@ -62,7 +62,7 @@ Sky Studio is a premium, autonomous AI video production pipeline designed for SK
   - **Provider Settings**: Choice of OpenAI, Google, or Poe models.
 - **Logic**: Triggers `generate-script` Edge Function to produce 150-180 word segments.
 
-### 2.4 Chunks (/chunks)
+### 2.5 Chunks (/chunks)
 ![Chunks](screenshots/chunks.png)
 - **Purpose**: Smart segmentation of scripts into production-ready blocks.
 - **Logic**: Calls `process-chunks` Edge Function to split long text at natural boundaries.
