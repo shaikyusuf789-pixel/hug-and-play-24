@@ -103,6 +103,36 @@ export type Database = {
         }
         Relationships: []
       }
+      audio_timestamps: {
+        Row: {
+          chunk_id: string
+          chunk_number: number
+          created_at: string
+          id: string
+          script_id: string
+          updated_at: string
+          words: string | null
+        }
+        Insert: {
+          chunk_id: string
+          chunk_number: number
+          created_at?: string
+          id?: string
+          script_id: string
+          updated_at?: string
+          words?: string | null
+        }
+        Update: {
+          chunk_id?: string
+          chunk_number?: number
+          created_at?: string
+          id?: string
+          script_id?: string
+          updated_at?: string
+          words?: string | null
+        }
+        Relationships: []
+      }
       chat_sessions: {
         Row: {
           created_at: string
@@ -127,6 +157,39 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      clip_annotations: {
+        Row: {
+          annotations: string | null
+          chunk_id: string
+          chunk_number: number
+          created_at: string
+          id: string
+          script_id: string
+          slide_source: string
+          updated_at: string
+        }
+        Insert: {
+          annotations?: string | null
+          chunk_id: string
+          chunk_number: number
+          created_at?: string
+          id?: string
+          script_id: string
+          slide_source?: string
+          updated_at?: string
+        }
+        Update: {
+          annotations?: string | null
+          chunk_id?: string
+          chunk_number?: number
+          created_at?: string
+          id?: string
+          script_id?: string
+          slide_source?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -184,6 +247,39 @@ export type Database = {
           title?: string
           type?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ocr_results: {
+        Row: {
+          chunk_id: string
+          chunk_number: number
+          created_at: string
+          id: string
+          script_id: string
+          slide_source: string
+          updated_at: string
+          words: string | null
+        }
+        Insert: {
+          chunk_id: string
+          chunk_number: number
+          created_at?: string
+          id?: string
+          script_id: string
+          slide_source?: string
+          updated_at?: string
+          words?: string | null
+        }
+        Update: {
+          chunk_id?: string
+          chunk_number?: number
+          created_at?: string
+          id?: string
+          script_id?: string
+          slide_source?: string
+          updated_at?: string
+          words?: string | null
         }
         Relationships: []
       }
@@ -440,6 +536,51 @@ export type Database = {
           source_url?: string
           type?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      video_clips: {
+        Row: {
+          chunk_id: string
+          chunk_number: number
+          created_at: string
+          duration: number | null
+          error_msg: string | null
+          file_name: string | null
+          file_url: string | null
+          id: string
+          script_id: string
+          slide_source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          chunk_id: string
+          chunk_number: number
+          created_at?: string
+          duration?: number | null
+          error_msg?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          script_id: string
+          slide_source?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          chunk_id?: string
+          chunk_number?: number
+          created_at?: string
+          duration?: number | null
+          error_msg?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          script_id?: string
+          slide_source?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
