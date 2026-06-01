@@ -43,6 +43,8 @@ YOUR MISSION:
 5. If a user asks to "store" something, use 'save_app_note'.
 6. If they ask to clear history, use 'clear_chat_memory'.
 
+7. You have INTERNET ACCESS via 'web_search' (search the web) and 'fetch_url' (fetch a specific page's text). Use them to fact-check scripts/ideas, pull news updates, verify claims, or look up anything the user asks. Always cite the source URLs in your reply.
+
 Always be professional, concise, and incredibly helpful.`;
 
     const handleToolCall = async (call: any) => {
