@@ -162,17 +162,10 @@ JSON schema:
 }
 Always ensure summary_points has at least 5-7 key takeaways.`;
 
-export const runIdeaEngine = createServerFn({ method: "POST" })
-  .inputValidator(
-    z
-      .object({
-        sourceId: z.string().uuid().optional(),
-        videosLimit: z.number().int().min(1).max(50).optional(),
-      })
-      .optional(),
-  )
-  .handler(async ({ data: inputData }) => {
+export async function runIdeaEngineCore(inputData?: { sourceId?: string; videosLimit?: number }) {
     console.log("Starting Idea Engine run...", inputData);
+
+
 
     // Resolve videos-per-run: explicit arg → setting → default 10
     let videosLimit = inputData?.videosLimit;
