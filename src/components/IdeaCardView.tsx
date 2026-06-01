@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { Eye, Calendar, Clock, ExternalLink, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { Eye, Calendar, Clock, ExternalLink, ChevronDown, ChevronUp, Loader2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type ActionKey = "approve" | "reject" | "priority" | "done" | "generate";
@@ -45,6 +45,7 @@ export interface IdeaCard {
   original_summary: string | null;
   status: string;
   processing_step?: string | null;
+
   sources_master?: {
     channel_name: string;
   };
@@ -69,22 +70,17 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
   const hasMore = summary.length > COLLAPSED_COUNT;
   const visible = (expanded || idea.status === 'Approved' || idea.status === 'Priority') ? summary : summary.slice(0, COLLAPSED_COUNT);
 
-  const isProcessing = idea.status === "Processing";
+  const step = idea.processing_step || (idea.status === "Approved" ? "done" : null);
+  const transcriptDone = step === "ai_pending" || step === "done";
+  const aiDone = step === "done";
+  const failed = step === "failed";
+  const showProgress = idea.status === "Approved" && step && step !== "done";
 
   return (
     <article className={cn(
       "rounded-[2rem] md:rounded-[2.5rem] bg-white border border-slate-200 shadow-xl shadow-slate-900/5 overflow-hidden flex flex-col animate-fade-in relative group transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 hover:border-indigo-300",
-      isProcessing && "opacity-70 grayscale-[0.5]"
     )}>
 
-      {isProcessing && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]">
-          <Loader2 className="size-8 md:size-10 animate-spin text-indigo-400 mb-4 shadow-white-lg" />
-          <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white bg-indigo-600 px-3 md:px-4 py-1.5 rounded-full shadow-white-lg">
-            AI Engine Running
-          </span>
-        </div>
-      )}
       {/* Thumbnail */}
       <div className="relative w-full aspect-video bg-black/40 overflow-hidden">
         {idea.thumbnail_url ? (
@@ -125,6 +121,19 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
 
       {/* Body */}
       <div className="px-5 md:px-6 py-5 md:py-6 space-y-4 md:space-y-5">
+        {showProgress && (
+          <div className={cn(
+            "flex items-center gap-2 md:gap-3 rounded-2xl px-3 md:px-4 py-2.5 md:py-3 border",
+            failed
+              ? "bg-rose-50 border-rose-200"
+              : "bg-indigo-50 border-indigo-100"
+          )}>
+            <ProgressPill label="Transcript" done={transcriptDone} active={!transcriptDone && !failed} failed={failed && !transcriptDone} />
+            <div className="h-px flex-1 bg-slate-300/70" />
+            <ProgressPill label="AI Analysis" done={aiDone} active={transcriptDone && !aiDone && !failed} failed={failed && transcriptDone && !aiDone} />
+          </div>
+        )}
+
         <div className="space-y-1">
           <div className="text-[8px] md:text-[9px] uppercase tracking-[0.15em] md:tracking-[0.2em] text-slate-500 font-black flex items-center gap-2">
             <div className="h-1 w-1 rounded-full bg-slate-700" />
@@ -298,6 +307,37 @@ function ActionButton({
     </button>
   );
 }
+
+function ProgressPill({ label, done, active, failed }: { label: string; done: boolean; active: boolean; failed?: boolean }) {
+  return (
+    <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
+      <span className={cn(
+        "h-5 w-5 md:h-6 md:w-6 rounded-full flex items-center justify-center border",
+        done && "bg-emerald-600 border-emerald-600 text-white",
+        active && "bg-white border-indigo-400 text-indigo-600",
+        failed && "bg-rose-600 border-rose-600 text-white",
+        !done && !active && !failed && "bg-white border-slate-300 text-slate-400",
+      )}>
+        {done ? (
+          <Check className="size-3 md:size-3.5" strokeWidth={3} />
+        ) : active ? (
+          <Loader2 className="size-3 md:size-3.5 animate-spin" />
+        ) : failed ? (
+          <span className="text-[10px] font-black">!</span>
+        ) : (
+          <span className="size-1.5 rounded-full bg-current" />
+        )}
+      </span>
+      <span className={cn(
+        "text-[9px] md:text-[10px] font-black uppercase tracking-widest",
+        done ? "text-emerald-700" : active ? "text-indigo-700" : failed ? "text-rose-700" : "text-slate-500",
+      )}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
 
 function StatusBadge({
   status,

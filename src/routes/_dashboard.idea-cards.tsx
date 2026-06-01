@@ -65,7 +65,20 @@ function RawContentPage() {
       if (error) throw error;
       return { ideas: data || [] };
     },
+    // Poll every 4s while any card is mid-processing so checkmarks update live
+    refetchInterval: (q) => {
+      const list = (q.state.data as any)?.ideas as IdeaCard[] | undefined;
+      const inFlight = list?.some(
+        (i) =>
+          i.status === "Approved" &&
+          i.processing_step &&
+          i.processing_step !== "done" &&
+          i.processing_step !== "failed",
+      );
+      return inFlight ? 4000 : false;
+    },
   });
+
 
   const ideas = useMemo(() => {
     const list = (ideasData?.ideas || []) as IdeaCard[];
@@ -81,34 +94,41 @@ function RawContentPage() {
       Rejected: 0,
       Done: 0,
     };
-    
     ideas.forEach(i => {
-      let status = i.status;
-      if (status === "Processing") status = "Approved";
-      if (c[status] !== undefined) {
-        c[status]++;
-      }
+      if (c[i.status] !== undefined) c[i.status]++;
     });
-    
     return c;
   }, [ideas]);
 
   const filtered = useMemo(
-    () => ideas.filter((i) => {
-      if (activeTab === "Approved") return i.status === "Approved" || i.status === "Processing";
-      return i.status === activeTab;
-    }),
+    () => ideas.filter((i) => i.status === activeTab),
     [ideas, activeTab]
   );
+
+  // Helper: optimistically patch an idea in the cache
+  const patchIdea = (id: string, patch: Partial<IdeaCard>) => {
+    qc.setQueryData(["ideas"], (old: any) => {
+      if (!old?.ideas) return old;
+      return {
+        ...old,
+        ideas: old.ideas.map((i: IdeaCard) => (i.id === id ? { ...i, ...patch } : i)),
+      };
+    });
+  };
 
   const mutate = useMutation({
     mutationFn: (vars: { idea: IdeaCard; status: string }) =>
       updateFn({ data: { id: vars.idea.id, status: vars.status } }),
+    onMutate: (vars) => {
+      patchIdea(vars.idea.id, { status: vars.status } as any);
+    },
     onSuccess: () => {
       toast.success("Updated status successfully");
+    },
+    onError: (e: any) => {
+      toast.error(e.message);
       qc.invalidateQueries({ queryKey: ["ideas"] });
     },
-    onError: (e: any) => toast.error(e.message),
   });
 
   const handleAction = async (action: ActionKey, idea: IdeaCard) => {
@@ -123,14 +143,16 @@ function RawContentPage() {
       });
       return;
     }
-    
+
     if (action === "approve") {
-      toast.info("Processing idea...");
+      // Move card instantly to Approved with stage 1 marker
+      patchIdea(idea.id, { status: "Approved", processing_step: "transcript_pending" } as any);
       try {
         await approveFn({ data: { id: idea.id } });
         qc.invalidateQueries({ queryKey: ["ideas"] });
       } catch (err: any) {
         toast.error(err.message);
+        patchIdea(idea.id, { processing_step: "failed" } as any);
       }
       return;
     }
@@ -138,6 +160,7 @@ function RawContentPage() {
     const status = ACTION_TO_STATUS[action];
     mutate.mutate({ idea, status });
   };
+
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 md:space-y-8 p-4 md:p-6">
