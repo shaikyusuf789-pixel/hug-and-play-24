@@ -32,6 +32,14 @@ export const Route = createFileRoute("/_dashboard/slides")({
   component: SlideMaker,
 });
 
+const GAMMA_THEMES = [
+  "Oasis","Aurora","Night Sky","Bubble Gum","Marina","Stargazer","Atmosphere",
+  "Sketch","Sleek","Sapphire","Vintage","Blueberry","Chisel","Chalkboard",
+  "Crimson","Daydream","Dynamic","Finesse","Flow","Icebreaker","Keynote",
+  "Linen","Lux","Mint","Mocha","Moss","Nightfall","Peach","Piano","Prism",
+  "Rose","Serene","Slate","Stellar","Sunset","Verdant","Vortex"
+];
+
 function SlideMaker() {
   const [scripts, setScripts] = useState<any[]>([]);
   const [selectedScriptId, setSelectedScriptId] = useState<string>("");
@@ -39,6 +47,7 @@ function SlideMaker() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [isProcessingAll, setIsProcessingAll] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [gammaTheme, setGammaTheme] = useState<string>("Oasis");
 
   useEffect(() => {
     fetchScripts();
