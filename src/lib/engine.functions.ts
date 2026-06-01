@@ -347,19 +347,44 @@ export const getAutoRunSettings = createServerFn({ method: "GET" })
       .eq("key", "engine_auto_run")
       .maybeSingle();
     if (error) throw error;
-    return (data?.value || { enabled: false, interval_hrs: 1, last_run: null }) as {
+    const v = (data?.value || {}) as any;
+    return {
+      enabled: v.enabled ?? false,
+      interval_hrs: v.interval_hrs ?? 1,
+      videos_per_run: v.videos_per_run ?? 10,
+      last_run: v.last_run ?? null,
+    } as {
       enabled: boolean;
       interval_hrs: number;
+      videos_per_run: number;
       last_run: string | null;
     };
   });
 
 export const updateAutoRunSettings = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ enabled: z.boolean(), interval_hrs: z.number() }))
+  .inputValidator(
+    z.object({
+      enabled: z.boolean(),
+      interval_hrs: z.number().min(1).max(24),
+      videos_per_run: z.number().int().min(1).max(50).optional(),
+    }),
+  )
   .handler(async ({ data }) => {
+    // Merge with existing to preserve last_run and other fields
+    const { data: current } = await supabaseAdmin
+      .from("app_settings")
+      .select("value")
+      .eq("key", "engine_auto_run")
+      .maybeSingle();
+    const merged = {
+      ...((current?.value as any) || {}),
+      enabled: data.enabled,
+      interval_hrs: data.interval_hrs,
+      ...(data.videos_per_run !== undefined ? { videos_per_run: data.videos_per_run } : {}),
+    };
     const { error } = await supabaseAdmin
       .from("app_settings")
-      .upsert({ key: "engine_auto_run", value: data }, { onConflict: "key" });
+      .upsert({ key: "engine_auto_run", value: merged }, { onConflict: "key" });
     if (error) throw error;
     return { ok: true };
   });
