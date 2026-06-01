@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// Tabs removed — page now shows a single full script with no segments.
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, Wand2, FileText, CheckCircle2, X, Save, Edit3, RotateCcw, StickyNote, History } from "lucide-react";
 import { toast } from "sonner";
