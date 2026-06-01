@@ -289,7 +289,7 @@ function ChunksPage() {
           </div>
           <div className="max-w-xs mx-auto space-y-2">
             <h3 className="text-lg font-bold text-white">No Chunks Segmented</h3>
-            <p className="text-slate-500">Select a finished script from the dropdown and click "Auto Chunk Script" to split it into 170-200 word segments using AI.</p>
+            <p className="text-slate-500">Select a finished script, pick your target words per chunk above, then click "Auto Chunk" to split it using AI.</p>
           </div>
         </div>
       )}
