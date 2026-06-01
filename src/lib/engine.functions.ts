@@ -124,17 +124,17 @@ async function apifyRun(actorId: string, input: unknown, token: string, timeoutM
 
 
 async function callAI(prompt: string, system: string) {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error("OPENAI_API_KEY not configured in project secrets");
+  const key = process.env.GOOGLE_API_KEY;
+  if (!key) throw new Error("GOOGLE_API_KEY not configured in project secrets");
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  const res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${key}`,
     },
     body: JSON.stringify({
-      model: "gpt-4o",
+      model: "gemini-2.5-pro",
       messages: [
         { role: "system", content: system },
         { role: "user", content: prompt },
@@ -145,7 +145,7 @@ async function callAI(prompt: string, system: string) {
   
   if (!res.ok) {
     const errorText = await res.text();
-    throw new Error(`OpenAI error ${res.status}: ${errorText.slice(0, 300)}`);
+    throw new Error(`Google AI error ${res.status}: ${errorText.slice(0, 300)}`);
   }
   
   const data = await res.json();
