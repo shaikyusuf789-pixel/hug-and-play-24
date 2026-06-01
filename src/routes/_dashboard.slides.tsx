@@ -116,13 +116,15 @@ function SlideMaker() {
   const generateGammaSlide = async (chunkId: string) => {
     setProcessingId(`${chunkId}-slide`);
     try {
-      const { error } = await supabase.functions.invoke("generate-slides", {
-        body: { chunkId, action: "generate-slide" },
+      const { data, error } = await supabase.functions.invoke("generate-slides", {
+        body: { chunkId, action: "generate-slide", themeName: gammaTheme },
       });
 
       if (error) throw error;
-      toast.success("Gamma slide generated successfully!");
-      fetchChunks(selectedScriptId);
+      if (data?.slide_url) {
+        setChunks(prev => prev.map(c => c.id === chunkId ? { ...c, slide_url: data.slide_url, status: "slide_generated" } : c));
+      }
+      toast.success("Gamma slide generated!");
     } catch (error: any) {
       toast.error("Gamma generation failed: " + error.message);
     } finally {
