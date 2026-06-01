@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
+import JSZip from "https://esm.sh/jszip@3.10.1"
 import { geminiGenerateText, requireGoogleApiKey } from "../_shared/google-ai.ts"
 
 const corsHeaders = {
@@ -9,9 +10,23 @@ const corsHeaders = {
 
 const GAMMA_API = "https://public-api.gamma.app/v1.0/generations"
 
-async function callGamma(inputText: string, themeName: string) {
+function readPngDimensions(bytes: Uint8Array) {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+  return { width: view.getUint32(16), height: view.getUint32(20) }
+}
+
+async function callGamma(inputText: string, themeName: string, supabase: ReturnType<typeof createClient>, chunkId: string) {
   const apiKey = Deno.env.get("GAMMA_API_KEY")
   if (!apiKey) throw new Error("GAMMA_API_KEY is not configured")
+
+  const strictInstructions = [
+    "STRICT OUTPUT: create exactly one 16:9 widescreen presentation slide, not a document, webpage, social post, square card, or vertical card.",
+    "The card canvas must be fixed widescreen 16:9, suitable for YouTube and PowerPoint (1920x1080). Do not use fluid/tall/scrolling layout.",
+    "Use a traditional PowerPoint-style slide: title at top, compact 3x2 grid or balanced two-column card layout below.",
+    "Preserve the provided English heading and bullet text exactly. Do not rewrite, summarize, translate, add, or remove text.",
+    "Fit all preserved text within the 16:9 canvas by reducing font size, tightening spacing, and using compact content blocks. Never increase card height.",
+    `Apply a polished ${themeName} inspired visual style if available.`,
+  ].join(" ")
 
   // Kick off generation
   const startRes = await fetch(GAMMA_API, {
@@ -25,8 +40,10 @@ async function callGamma(inputText: string, themeName: string) {
       textMode: "preserve",
       format: "presentation",
       numCards: 1,
-      cardSplit: "auto",
-      additionalInstructions: `Render as a full-bleed 16:9 widescreen slide (1920x1080), traditional PowerPoint-style layout matching a standard YouTube slideshow. Do NOT use square (1:1) or vertical framing. Preserve the input text verbatim — do not rewrite, summarize, or translate. Apply the "${themeName}" visual theme.`,
+      cardSplit: "inputTextBreaks",
+      exportAs: "png",
+      textOptions: { language: "en" },
+      additionalInstructions: strictInstructions,
       cardOptions: { dimensions: "16x9" },
       imageOptions: { source: "noImages" },
     }),
@@ -36,7 +53,8 @@ async function callGamma(inputText: string, themeName: string) {
     const t = await startRes.text()
     throw new Error(`Gamma start failed (${startRes.status}): ${t}`)
   }
-  const { generationId } = await startRes.json()
+  const { generationId, warnings } = await startRes.json()
+  if (warnings) console.warn("Gamma generation warnings:", warnings)
   if (!generationId) throw new Error("Gamma: no generationId returned")
 
   // Poll for completion (max ~3 min)
@@ -48,7 +66,41 @@ async function callGamma(inputText: string, themeName: string) {
     if (!pollRes.ok) continue
     const data = await pollRes.json()
     if (data.status === "completed" && data.gammaUrl) {
-      return data.gammaUrl as string
+      let previewUrl: string | null = null
+      let dimensions: { width: number; height: number } | null = null
+
+      if (data.exportUrl) {
+        const exportRes = await fetch(data.exportUrl)
+        if (!exportRes.ok) throw new Error(`Gamma PNG export download failed (${exportRes.status})`)
+        const zip = await JSZip.loadAsync(await exportRes.arrayBuffer())
+        const pngFile = Object.values(zip.files).find((file) => !file.dir && file.name.toLowerCase().endsWith(".png"))
+        if (!pngFile) throw new Error("Gamma PNG export did not contain a PNG slide")
+
+        const pngBytes = new Uint8Array(await pngFile.async("uint8array"))
+        dimensions = readPngDimensions(pngBytes)
+        const ratio = dimensions.width / dimensions.height
+        if (Math.abs(ratio - 16 / 9) > 0.02) {
+          throw new Error(`Gamma did not return a 16:9 PNG export (${dimensions.width}x${dimensions.height})`)
+        }
+
+        const path = `${chunkId}/${generationId}.png`
+        const { error: uploadError } = await supabase.storage
+          .from("slides")
+          .upload(path, pngBytes, { contentType: "image/png", upsert: true })
+        if (uploadError) throw uploadError
+
+        const { data: publicData } = supabase.storage.from("slides").getPublicUrl(path)
+        previewUrl = publicData.publicUrl
+      }
+
+      return {
+        gammaUrl: data.gammaUrl as string,
+        gammaId: data.gammaId as string | undefined,
+        generationId,
+        exportUrl: data.exportUrl as string | undefined,
+        previewUrl,
+        dimensions,
+      }
     }
     if (data.status === "failed") {
       throw new Error(`Gamma generation failed: ${data.error || "unknown"}`)
