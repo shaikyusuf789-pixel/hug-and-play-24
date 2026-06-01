@@ -217,10 +217,11 @@ function ScriptGenerator() {
   };
 
   const handleSaveScript = async () => {
-    if (segments.length === 0) return;
+    if (!scriptText.trim()) return;
     setIsSaving(true);
     try {
-      const fullScript = segments.map(s => s.telugu_text || s.voiceover).join("\n\n");
+      const fullScript = scriptText;
+      
       
       if (isFromHistory && selectedHistoryScriptId) {
         await updateScriptFn({ 
