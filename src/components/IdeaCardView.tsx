@@ -48,7 +48,7 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
 
   return (
     <article className={cn(
-      "rounded-[2rem] md:rounded-[2.5rem] bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/40 overflow-hidden flex flex-col animate-fade-in relative group transition-all duration-500 hover:shadow-white-lg hover:-translate-y-1 hover:border-white/20",
+      "rounded-[2rem] md:rounded-[2.5rem] bg-white border border-slate-200 shadow-xl shadow-slate-900/5 overflow-hidden flex flex-col animate-fade-in relative group transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 hover:border-indigo-300",
       isProcessing && "opacity-70 grayscale-[0.5]"
     )}>
 
@@ -105,11 +105,11 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
             <div className="h-1 w-1 rounded-full bg-slate-700" />
             Original Intelligence
           </div>
-          <p className="text-xs md:text-sm font-medium text-slate-300 leading-snug line-clamp-2 italic">
+          <p className="text-xs md:text-sm font-semibold text-slate-900 leading-snug line-clamp-2 italic">
             {idea.original_title ? (
               <>
                 "{idea.original_title}" {idea.sources_master?.channel_name && (
-                  <span className="text-indigo-400 font-black px-1.5 md:px-2 py-0.5 rounded-lg bg-indigo-500/10 ml-1 border border-indigo-500/10 uppercase text-[8px] md:text-[9px] tracking-widest">
+                  <span className="text-indigo-700 font-black px-1.5 md:px-2 py-0.5 rounded-lg bg-indigo-50 ml-1 border border-indigo-200 uppercase text-[8px] md:text-[9px] tracking-widest">
                     {idea.sources_master.channel_name}
                   </span>
                 )}
@@ -119,21 +119,21 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
         </div>
 
         <div className="space-y-1">
-          <div className="text-[8px] md:text-[9px] uppercase tracking-[0.15em] md:tracking-[0.2em] text-indigo-400 font-black flex items-center gap-2">
-            <div className="h-1 w-1 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+          <div className="text-[8px] md:text-[9px] uppercase tracking-[0.15em] md:tracking-[0.2em] text-indigo-600 font-black flex items-center gap-2">
+            <div className="h-1 w-1 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
             Proposed Direction
           </div>
-          <h2 className="text-sm sm:text-base md:text-lg font-black leading-tight text-white group-hover:text-indigo-300 transition-colors tracking-tight">
+          <h2 className="text-sm sm:text-base md:text-lg font-black leading-tight text-slate-900 group-hover:text-indigo-700 transition-colors tracking-tight">
             {idea.proposed_title || "—"}
           </h2>
         </div>
 
         {/* Meta */}
-        <div className="flex flex-wrap items-center gap-3 md:gap-4 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-500">
+        <div className="flex flex-wrap items-center gap-3 md:gap-4 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-600">
           {idea.views && (
-            <span className="inline-flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+            <span className="inline-flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
               <Eye className="size-2.5 md:size-3" />
-              <span className="text-slate-300">{idea.views.toLocaleString()}</span>
+              <span className="text-slate-800">{idea.views.toLocaleString()}</span>
             </span>
           )}
           {idea.published_date && (
@@ -152,10 +152,10 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
 
         {/* summary points */}
         {summary.length > 0 && (
-          <div className="bg-indigo-500/[0.03] rounded-2xl md:rounded-3xl p-4 md:p-5 border border-indigo-500/10 relative overflow-hidden group/summary">
-            <div className="absolute inset-0 bg-linear-to-br from-indigo-500/5 to-transparent opacity-0 group-hover/summary:opacity-100 transition-opacity" />
-            <div className="text-[8px] md:text-[9px] uppercase tracking-[0.2em] md:tracking-[0.25em] text-indigo-400 font-black mb-3 md:mb-4 flex items-center gap-2 relative z-10">
-              <div className="size-1 md:size-1.5 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.8)] animate-pulse" />
+          <div className="bg-indigo-50/60 rounded-2xl md:rounded-3xl p-4 md:p-5 border border-indigo-100 relative overflow-hidden group/summary">
+            <div className="absolute inset-0 bg-linear-to-br from-indigo-100/40 to-transparent opacity-0 group-hover/summary:opacity-100 transition-opacity" />
+            <div className="text-[8px] md:text-[9px] uppercase tracking-[0.2em] md:tracking-[0.25em] text-indigo-600 font-black mb-3 md:mb-4 flex items-center gap-2 relative z-10">
+              <div className="size-1 md:size-1.5 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.6)] animate-pulse" />
               Strategy Intelligence
             </div>
 
@@ -165,10 +165,10 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
                   visible.map((s: string, i: number) => (
                     <li
                       key={i}
-                      className="text-[12px] md:text-[13px] text-slate-400 leading-relaxed flex gap-2 md:gap-3 group/item"
+                      className="text-[12px] md:text-[13px] text-slate-700 leading-relaxed flex gap-2 md:gap-3 group/item"
                     >
-                      <span className="text-indigo-500 mt-[5px] md:mt-[6px] shrink-0 text-[9px] md:text-[10px] font-black group-hover/item:scale-110 transition-transform">0{i+1}</span>
-                      <span className="group-hover/item:text-slate-200 transition-colors font-medium">{s}</span>
+                      <span className="text-indigo-600 mt-[5px] md:mt-[6px] shrink-0 text-[9px] md:text-[10px] font-black group-hover/item:scale-110 transition-transform">0{i+1}</span>
+                      <span className="group-hover/item:text-slate-900 transition-colors font-medium">{s}</span>
                     </li>
                   ))
                 ) : (
@@ -184,7 +184,7 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
             {hasMore && (
               <button
                 onClick={() => setExpanded((v) => !v)}
-                className="mt-3 md:mt-4 inline-flex items-center gap-1.5 md:gap-2 text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-indigo-400 hover:text-white transition-all relative z-10"
+                className="mt-3 md:mt-4 inline-flex items-center gap-1.5 md:gap-2 text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-indigo-600 hover:text-indigo-800 transition-all relative z-10"
               >
                 {expanded ? (
                   <>
@@ -232,7 +232,7 @@ const ACTION_META: Record<
   { label: string; className: string }
 > = {
   approve: { label: "Approve", className: "bg-emerald-600 hover:bg-emerald-500 text-white" },
-  reject: { label: "Reject", className: "bg-white/5 border border-white/10 hover:bg-rose-600 hover:border-transparent text-slate-400 hover:text-white" },
+  reject: { label: "Reject", className: "bg-slate-100 border border-slate-200 hover:bg-rose-600 hover:border-transparent text-slate-700 hover:text-white" },
   priority: { label: "Priority", className: "bg-amber-600 hover:bg-amber-500 text-white" },
   done: { label: "Done", className: "bg-indigo-600 hover:bg-indigo-500 text-white" },
   generate: { label: "Generate", className: "bg-indigo-600 hover:bg-indigo-500 text-white shadow-button" },
