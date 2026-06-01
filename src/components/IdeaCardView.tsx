@@ -70,22 +70,17 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
   const hasMore = summary.length > COLLAPSED_COUNT;
   const visible = (expanded || idea.status === 'Approved' || idea.status === 'Priority') ? summary : summary.slice(0, COLLAPSED_COUNT);
 
-  const isProcessing = idea.status === "Processing";
+  const step = idea.processing_step || (idea.status === "Approved" ? "done" : null);
+  const transcriptDone = step === "ai_pending" || step === "done";
+  const aiDone = step === "done";
+  const failed = step === "failed";
+  const showProgress = idea.status === "Approved" && step && step !== "done";
 
   return (
     <article className={cn(
       "rounded-[2rem] md:rounded-[2.5rem] bg-white border border-slate-200 shadow-xl shadow-slate-900/5 overflow-hidden flex flex-col animate-fade-in relative group transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 hover:border-indigo-300",
-      isProcessing && "opacity-70 grayscale-[0.5]"
     )}>
 
-      {isProcessing && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]">
-          <Loader2 className="size-8 md:size-10 animate-spin text-indigo-400 mb-4 shadow-white-lg" />
-          <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white bg-indigo-600 px-3 md:px-4 py-1.5 rounded-full shadow-white-lg">
-            AI Engine Running
-          </span>
-        </div>
-      )}
       {/* Thumbnail */}
       <div className="relative w-full aspect-video bg-black/40 overflow-hidden">
         {idea.thumbnail_url ? (
