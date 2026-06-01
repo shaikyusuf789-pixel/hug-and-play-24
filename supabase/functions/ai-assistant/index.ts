@@ -337,16 +337,18 @@ RESPONSE FORMAT (CRITICAL):
     let message = responseData.choices[0].message;
 
     while (message.tool_calls) {
-      const toolResults = [];
-      for (const toolCall of message.tool_calls) {
-        const result = await handleToolCall(toolCall);
-        toolResults.push({
-          tool_call_id: toolCall.id,
-          role: "tool",
-          name: toolCall.function.name,
-          content: result
-        });
-      }
+      // Run all tool calls in parallel for speed
+      const toolResults = await Promise.all(
+        message.tool_calls.map(async (toolCall: any) => {
+          const result = await handleToolCall(toolCall);
+          return {
+            tool_call_id: toolCall.id,
+            role: "tool",
+            name: toolCall.function.name,
+            content: result,
+          };
+        })
+      );
 
       const nextResponse = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -372,13 +374,18 @@ RESPONSE FORMAT (CRITICAL):
       message = nextData.choices[0].message;
     }
 
-    // Save history to memory table
+    // Save history to memory table (fire-and-forget so we don't block the response)
     const lastUserMsg = messages[messages.length - 1];
     if (lastUserMsg && lastUserMsg.role === "user") {
-      await supabase.from("ai_chat_memory").insert([
+      EdgeRuntime?.waitUntil?.(
+        supabase.from("ai_chat_memory").insert([
+          { role: "user", content: lastUserMsg.content, session_id: session_id },
+          { role: "assistant", content: message.content, session_id: session_id }
+        ]).then(({ error }) => { if (error) console.error("memory save error:", error); })
+      ) ?? supabase.from("ai_chat_memory").insert([
         { role: "user", content: lastUserMsg.content, session_id: session_id },
         { role: "assistant", content: message.content, session_id: session_id }
-      ]);
+      ]).then(({ error }) => { if (error) console.error("memory save error:", error); });
     }
 
     return new Response(JSON.stringify(message), {
