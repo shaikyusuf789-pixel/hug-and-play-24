@@ -15,7 +15,7 @@ function readPngDimensions(bytes: Uint8Array) {
   return { width: view.getUint32(16), height: view.getUint32(20) }
 }
 
-async function callGamma(inputText: string, themeName: string, supabase: ReturnType<typeof createClient>, chunkId: string) {
+async function callGamma(inputText: string, themeName: string, supabase: ReturnType<typeof createClient>, scriptId: string, chunkIndex: number) {
   const apiKey = Deno.env.get("GAMMA_API_KEY")
   if (!apiKey) throw new Error("GAMMA_API_KEY is not configured")
 
@@ -91,7 +91,8 @@ async function callGamma(inputText: string, themeName: string, supabase: ReturnT
           throw new Error(`Gamma did not return a 16:9 PNG export (${dimensions.width}x${dimensions.height})`)
         }
 
-        const path = `${chunkId}/${generationId}.png`
+        const slideNumber = String((chunkIndex ?? 0) + 1).padStart(3, "0")
+        const path = `${scriptId}/slide_${slideNumber}.png`
         const { error: uploadError } = await supabase.storage
           .from("slides")
           .upload(path, pngBytes, { contentType: "image/png", upsert: true })
@@ -131,7 +132,7 @@ serve(async (req) => {
 
     const { data: chunk, error: fetchError } = await supabase
       .from('script_chunks')
-      .select('content, slide_prompt, annotations')
+      .select('content, slide_prompt, annotations, script_id, chunk_index')
       .eq('id', chunkId)
       .single()
 
@@ -161,7 +162,7 @@ serve(async (req) => {
       if (!inputText) throw new Error("Chunk has no outline/content to send to Gamma")
 
       const theme = (themeName && String(themeName).trim()) || "Oasis"
-      const gamma = await callGamma(inputText, theme, supabase, chunkId)
+      const gamma = await callGamma(inputText, theme, supabase, chunk.script_id as string, chunk.chunk_index as number)
 
       const { error: updateError } = await supabase
         .from('script_chunks')
