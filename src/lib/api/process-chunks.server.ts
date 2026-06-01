@@ -26,7 +26,7 @@ Example: ["chunk 1 text...", "chunk 2 text...", ...]
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gemini-2.5-pro",
+        model: "gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Split this script into chunks of 170-200 words each:\n\n${scriptContent}` },
