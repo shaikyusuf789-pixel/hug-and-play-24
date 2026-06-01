@@ -10,8 +10,8 @@ import {
   DNA_SUBJECTIVE,
   TELUGU_TTS_MASTER_PROMPT,
   type TrainingOverrides,
-} from "../generate-script/prompts.ts";
-import { SKY_STYLE_TRANSCRIPTS } from "../generate-script/transcripts.ts";
+} from "./prompts.ts";
+import { SKY_STYLE_TRANSCRIPTS } from "./transcripts.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
