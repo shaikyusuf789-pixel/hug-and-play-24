@@ -124,7 +124,14 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
             Proposed Direction
           </div>
           <h2 className="text-sm sm:text-base md:text-lg font-black leading-tight text-slate-900 group-hover:text-indigo-700 transition-colors tracking-tight">
-            {idea.proposed_title || "—"}
+            {idea.proposed_title ? (
+              <>
+                {idea.proposed_title}
+                {idea.sources_master?.channel_name && (
+                  <span className="text-indigo-600"> - {idea.sources_master.channel_name}</span>
+                )}
+              </>
+            ) : "—"}
           </h2>
         </div>
 
