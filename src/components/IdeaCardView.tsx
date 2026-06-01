@@ -184,7 +184,7 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
             {hasMore && (
               <button
                 onClick={() => setExpanded((v) => !v)}
-                className="mt-3 md:mt-4 inline-flex items-center gap-1.5 md:gap-2 text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-indigo-400 hover:text-white transition-all relative z-10"
+                className="mt-3 md:mt-4 inline-flex items-center gap-1.5 md:gap-2 text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-indigo-600 hover:text-indigo-800 transition-all relative z-10"
               >
                 {expanded ? (
                   <>
