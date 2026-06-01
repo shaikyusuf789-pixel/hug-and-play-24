@@ -60,7 +60,43 @@ serve(async (req) => {
       });
     }
 
-    const systemPrompt = systemPromptFor(mode, videoType).replace(
+    // Fetch any boss-edited overrides from app_settings (training:* keys).
+    const supabaseForSettings = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const overrideKeys = [
+      "training:transcript_1",
+      "training:transcript_2",
+      "training:transcript_3",
+      "training:transcript_4",
+      "training:sky_dna_general",
+      "training:sky_dna_subjective",
+    ];
+    const { data: settingsRows } = await supabaseForSettings
+      .from("app_settings")
+      .select("key, value")
+      .in("key", overrideKeys);
+    const settingsMap = new Map((settingsRows ?? []).map((r: any) => [r.key, r.value]));
+    const readVal = (k: string): string | null => {
+      const v = settingsMap.get(k);
+      if (!v) return null;
+      if (typeof v === "string") return v;
+      if (typeof v === "object" && typeof v.text === "string") return v.text;
+      return null;
+    };
+    const overrides = {
+      transcripts: [
+        readVal("training:transcript_1"),
+        readVal("training:transcript_2"),
+        readVal("training:transcript_3"),
+        readVal("training:transcript_4"),
+      ],
+      dna_general: readVal("training:sky_dna_general"),
+      dna_subjective: readVal("training:sky_dna_subjective"),
+    };
+
+    const systemPrompt = systemPromptFor(mode, videoType, overrides).replace(
       "{NUM_SEGS}",
       String(numSegs),
     );
