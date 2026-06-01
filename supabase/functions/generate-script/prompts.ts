@@ -1,13 +1,24 @@
 // Deno-side mirror of src/lib/script-generator-prompts.ts
 // Style transcripts are ALWAYS injected in full (no truncation).
 // SKY DNA decides WHAT to say; transcripts decide HOW to say it.
+//
+// At runtime, generate-script/index.ts may pass `overrides` fetched from the
+// `app_settings` table (keys: training:transcript_1..4, training:sky_dna_general,
+// training:sky_dna_subjective) so Jerry / boss can edit them live.
 
 import { SKY_STYLE_TRANSCRIPTS } from "./transcripts.ts";
 
-const STYLE_REFERENCE_BLOCK = SKY_STYLE_TRANSCRIPTS
+export type TrainingOverrides = {
+  transcripts?: (string | null | undefined)[]; // index 0..3 -> transcript 1..4
+  dna_general?: string | null;
+  dna_subjective?: string | null;
+};
+
+function buildStyleReferenceBlock(overrides?: TrainingOverrides) {
+  return SKY_STYLE_TRANSCRIPTS
   .map(
     (t, i) =>
-      `--- REFERENCE TRANSCRIPT ${i + 1}: ${t.name} ---\n${t.text}\n--- END REFERENCE ${i + 1} ---`,
+      `--- REFERENCE TRANSCRIPT ${i + 1}: ${t.name} ---\n${overrides?.transcripts?.[i] || t.text}\n--- END REFERENCE ${i + 1} ---`,
   )
   .join("\n\n");
 
