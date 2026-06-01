@@ -3,6 +3,7 @@
 // Does NOT modify the original script.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { geminiGenerateJson, normalizeGeminiModel, requireGoogleApiKey } from "../_shared/google-ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,8 +52,10 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    let apiKey = "";
+    try {
+      apiKey = requireGoogleApiKey();
+    } catch (_) {
       return new Response(
         JSON.stringify({ error: "GOOGLE_API_KEY is not configured" }),
         {
@@ -62,7 +65,7 @@ serve(async (req) => {
       );
     }
 
-    const chosenModel = model || "gemini-2.5-pro";
+    const chosenModel = normalizeGeminiModel(model, "gemini-2.5-pro");
 
     const response = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
