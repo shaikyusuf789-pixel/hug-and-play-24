@@ -36,34 +36,51 @@ function extractChannelId(url: string, html: string) {
   );
 }
 
-async function scrapeYoutubeRss(sourceUrl: string): Promise<ScrapedVideo[]> {
-  const pageRes = await fetch(sourceUrl, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 SkyStudioBot/1.0",
-      Accept: "text/html,application/xhtml+xml",
-    },
-  });
+async function scrapeYoutubeRss(sourceUrl: string, limit: number = 10): Promise<ScrapedVideo[]> {
+  // Browser-like headers + consent cookie so EU/region gates don't bounce us to a consent page
+  const browserHeaders = {
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Cookie": "CONSENT=YES+cb.20210328-17-p0.en+FX+000",
+  };
 
-  if (!pageRes.ok) {
-    throw new Error(`YouTube source returned ${pageRes.status}`);
-  }
+  // 1) Try to extract channel id directly from URL
+  let channelId = sourceUrl.match(/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{20,})/)?.[1] || null;
 
-  const html = await pageRes.text();
-  const channelId = extractChannelId(sourceUrl, html);
+  // 2) Otherwise fetch the channel page and extract from HTML
   if (!channelId) {
-    throw new Error("Could not detect YouTube channel id");
+    const pageRes = await fetch(sourceUrl, { headers: browserHeaders, redirect: "follow" });
+    if (!pageRes.ok) {
+      throw new Error(`YouTube page returned ${pageRes.status}`);
+    }
+    const html = await pageRes.text();
+    channelId =
+      html.match(/"channelId":"(UC[a-zA-Z0-9_-]{20,})"/)?.[1] ||
+      html.match(/"externalId":"(UC[a-zA-Z0-9_-]{20,})"/)?.[1] ||
+      html.match(/<meta itemprop="(?:channelId|identifier)" content="(UC[a-zA-Z0-9_-]{20,})"/)?.[1] ||
+      html.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{20,})"/)?.[1] ||
+      html.match(/browse_id=(UC[a-zA-Z0-9_-]{20,})/)?.[1] ||
+      null;
   }
 
-  const feedRes = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`, {
-    headers: { "User-Agent": "Mozilla/5.0 SkyStudioBot/1.0", Accept: "application/xml,text/xml" },
-  });
+  if (!channelId) {
+    throw new Error("Could not detect YouTube channel id from URL or page");
+  }
+
+  const feedRes = await fetch(
+    `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`,
+    { headers: browserHeaders },
+  );
 
   if (!feedRes.ok) {
     throw new Error(`YouTube feed returned ${feedRes.status}`);
   }
 
   const xml = await feedRes.text();
-  return [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].slice(0, 10).map(([, entry]) => {
+  const safeLimit = Math.max(1, Math.min(limit, 50));
+  return [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].slice(0, safeLimit).map(([, entry]) => {
     const videoId = entry.match(/<yt:videoId>(.*?)<\/yt:videoId>/)?.[1]?.trim();
     const title = decodeXml(entry.match(/<title>([\s\S]*?)<\/title>/)?.[1] || "Untitled video");
     const publishedAt = entry.match(/<published>(.*?)<\/published>/)?.[1]?.trim() || null;
