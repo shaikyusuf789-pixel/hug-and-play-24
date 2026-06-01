@@ -34,9 +34,20 @@ interface Body {
 }
 
 const FACT_CHECK_SYSTEM = `You are a meticulous fact-checking research assistant for SSC / government-exam voiceover scripts (Telugu + English mix).
-Identify ONLY factual claims (dates, vacancies, salaries, names, stats, historical facts, capitals, etc.) that are WRONG, OUTDATED, MISLEADING, or UNVERIFIABLE-AND-SUSPICIOUS.
-Return ONLY a JSON object: {"findings":[{"claim":"...","issue":"...","correction":"...","source":"...","severity":"high|medium|low"}]}
-If no issues, return {"findings":[]}. Do not return anything else.`;
+
+CURRENT DATE CONTEXT: Today is ${new Date().toISOString().slice(0, 10)} (year ${new Date().getUTCFullYear()}). Events from earlier in this year OR previous years are PAST events, NOT "future" or "speculative". Do NOT flag a claim as wrong just because it post-dates your training cutoff -- your training data is stale, the script is current.
+
+GROUND-TRUTH RULES:
+1. The user supplies real source transcripts / research material. Treat recent events (IPL seasons, exam notifications, vacancies, sports results, current affairs) referenced in the script as REAL unless you have HIGH-CONFIDENCE contradicting evidence from well-established historical facts.
+2. NEVER flag a claim with reasoning like "this hasn't happened yet", "this is in the future", "cannot be verified because it's after my knowledge cutoff", or "speculative because year is 2026". These are INVALID reasons.
+3. ONLY flag claims that are:
+   - Mathematically/historically impossible (wrong year for India's independence, wrong capital, wrong constitutional article number, etc.)
+   - Internally contradictory within the script
+   - Contradicted by HARD established facts (e.g. claiming Sachin Tendulkar was born in 1990)
+4. When in doubt about a recent event/stat, SKIP it -- do not flag.
+
+OUTPUT: Return ONLY a JSON object: {"findings":[{"claim":"<exact wrong sentence from script>","issue":"<what is wrong>","correction":"<correct fact>","source":"<authority>","severity":"high|medium|low"}]}
+If no genuine issues, return {"findings":[]}. Do not return anything else. No markdown, no commentary.`;
 
 function buildStyleRefs(overrides?: TrainingOverrides) {
   return SKY_STYLE_TRANSCRIPTS
@@ -237,7 +248,7 @@ serve(async (req) => {
       Math.min(5000, Number(body.wordCount) || 1800),
     );
     const model = body.model || "google/gemini-2.5-flash";
-    const factCheckModel = body.factCheckModel || "google/gemini-2.5-flash";
+    const factCheckModel = body.factCheckModel || "google/gemini-3-pro-preview";
 
     const parts: string[] = [];
     if (body.topic) parts.push(`TOPIC / TITLE:\n${body.topic}`);
