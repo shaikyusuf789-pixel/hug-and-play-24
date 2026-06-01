@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bot, Send, X, MessageSquare, Loader2, User, ChevronDown, Trash2, History, Plus, Menu } from "lucide-react";
+import { Bot, Send, X, MessageSquare, Loader2, User, ChevronDown, Trash2, History, Plus, Menu, Pencil, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
