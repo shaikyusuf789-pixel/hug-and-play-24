@@ -538,6 +538,64 @@ RESPONSE FORMAT (CRITICAL):
               required: ["url"]
             }
           }
+        },
+        {
+          type: "function",
+          function: {
+            name: "list_training_docs",
+            description: "List all editable script-generator training docs (4 SKY transcripts + SKY DNA general/subjective). Shows which have boss-edited overrides and which still use the bundled defaults.",
+            parameters: { type: "object", properties: {} }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "get_training_doc",
+            description: "Read the full text of one training doc by key. If no override is stored, says so (the bundled default is in use).",
+            parameters: {
+              type: "object",
+              properties: {
+                key: {
+                  type: "string",
+                  enum: [
+                    "training:transcript_1",
+                    "training:transcript_2",
+                    "training:transcript_3",
+                    "training:transcript_4",
+                    "training:sky_dna_general",
+                    "training:sky_dna_subjective"
+                  ],
+                  description: "Which training doc to load"
+                }
+              },
+              required: ["key"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "update_training_doc",
+            description: "Overwrite a training doc with new content. Affects ALL future script generations immediately. Always show boss a short preview/diff and ask for confirmation before calling this.",
+            parameters: {
+              type: "object",
+              properties: {
+                key: {
+                  type: "string",
+                  enum: [
+                    "training:transcript_1",
+                    "training:transcript_2",
+                    "training:transcript_3",
+                    "training:transcript_4",
+                    "training:sky_dna_general",
+                    "training:sky_dna_subjective"
+                  ]
+                },
+                content: { type: "string", description: "Full new content for this training doc" }
+              },
+              required: ["key", "content"]
+            }
+          }
         }
       ]
     };
