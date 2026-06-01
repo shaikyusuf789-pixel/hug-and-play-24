@@ -248,7 +248,7 @@ serve(async (req) => {
       Math.min(5000, Number(body.wordCount) || 1800),
     );
     const model = body.model || "google/gemini-2.5-flash";
-    const factCheckModel = body.factCheckModel || "google/gemini-2.5-flash";
+    const factCheckModel = body.factCheckModel || "google/gemini-3-pro-preview";
 
     const parts: string[] = [];
     if (body.topic) parts.push(`TOPIC / TITLE:\n${body.topic}`);
