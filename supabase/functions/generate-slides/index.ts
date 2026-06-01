@@ -26,8 +26,8 @@ async function callGamma(inputText: string, themeName: string) {
       format: "presentation",
       numCards: 1,
       cardSplit: "auto",
-      additionalInstructions: `Use a traditional card layout in strict 16:9 widescreen aspect ratio (1920x1080), matching a standard YouTube slideshow. Do NOT use square (1:1) or vertical layouts. Preserve the input text exactly as provided — do not rewrite, summarize, or translate. Apply the "${themeName}" visual theme.`,
-      cardOptions: { dimensions: "16x9" },
+      additionalInstructions: `Render as a full-bleed 16:9 widescreen slide (1920x1080), traditional PowerPoint-style layout matching a standard YouTube slideshow. Do NOT use square (1:1) or vertical framing. Preserve the input text verbatim — do not rewrite, summarize, or translate. Apply the "${themeName}" visual theme.`,
+      cardOptions: { dimensions: "16x9", cardStyle: "traditional" },
       imageOptions: { source: "noImages" },
     }),
   })
