@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const GAMMA_API = "https://public-api.gamma.app/v0.2/generations"
+const GAMMA_API = "https://public-api.gamma.app/v1.0/generations"
 
 async function callGamma(inputText: string, themeName: string) {
   const apiKey = Deno.env.get("GAMMA_API_KEY")
