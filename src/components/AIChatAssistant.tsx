@@ -467,13 +467,24 @@ export function AIChatAssistant() {
                 e.preventDefault();
                 handleSendMessage();
               }}
-              className="flex w-full items-center space-x-2"
+              className="flex w-full items-end space-x-2"
             >
-              <Input
+              <Textarea
+                ref={textareaRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  adjustTextareaHeight();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
                 placeholder="Talk to your second brain..."
-                className="rounded-lg bg-background border-muted h-10 text-sm"
+                className="rounded-lg bg-background border-muted min-h-[40px] max-h-[200px] resize-none text-sm py-2.5"
+                rows={1}
               />
               <Button 
                 type="submit" 
