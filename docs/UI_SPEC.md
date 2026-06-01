@@ -81,6 +81,12 @@ Sky Studio is a premium, autonomous AI video production pipeline designed for SK
 - **Logic**: Triggers `generate-audio` using ElevenLabs or Google TTS.
 - **Storage**: Resulting MP3s are stored in the `audio-outputs` Supabase bucket.
 
+### 2.7 Slides (/slides)
+![Slides](screenshots/slides.png)
+- **Purpose**: Chunk-wise Gamma slide generation for YouTube-ready video slides.
+- **Logic**: Generates English-only slide outlines, sends each outline to Gamma as a strict one-card `presentation` with `cardOptions.dimensions = 16x9`, exports the result as PNG, verifies the PNG dimensions, stores the verified preview in the `slides` bucket, and shows the verified 16:9 image in the page instead of relying on Gamma's tall embed rendering.
+- **Preview guarantee**: The page displays a green `16:9 · width×height` badge when the exported slide has been verified as widescreen; generation fails instead of saving if Gamma returns a non-16:9 export.
+
 ---
 
 ## 3. Configuration & Security
