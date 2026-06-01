@@ -365,7 +365,7 @@ function ScriptGenerator() {
           } 
         });
         toast.success("Script updated successfully!");
-        queryClient.invalidateQueries({ queryKey: ["recent-scripts"] });
+        queryClient.invalidateQueries({ queryKey: ["recent-scripts"] }); queryClient.invalidateQueries({ queryKey: ["priority-ideas-recent-15"] });
       } else {
         await saveScriptFn({ 
           data: {
@@ -389,7 +389,7 @@ function ScriptGenerator() {
         } else {
           toast.success("Script saved to database!");
         }
-        queryClient.invalidateQueries({ queryKey: ["recent-scripts"] });
+        queryClient.invalidateQueries({ queryKey: ["recent-scripts"] }); queryClient.invalidateQueries({ queryKey: ["priority-ideas-recent-15"] });
       }
     } catch (err: any) {
       toast.error("Failed to save script: " + err.message);
@@ -558,7 +558,7 @@ function ScriptGenerator() {
           .update({ status: "Script Done" })
           .eq("id", selectedIdeaId);
       }
-      queryClient.invalidateQueries({ queryKey: ["recent-scripts"] });
+      queryClient.invalidateQueries({ queryKey: ["recent-scripts"] }); queryClient.invalidateQueries({ queryKey: ["priority-ideas-recent-15"] });
       toast.success("Script generated ✓ — fact-checking in background…");
 
       // Poll for fact-check completion (runs in background on the server).
