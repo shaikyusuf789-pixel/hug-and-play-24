@@ -449,7 +449,20 @@ function SlideChunkCard({
       </div>
 
       <div className="flex flex-col space-y-2">
-        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Gamma Slide</span>
+        <div className="flex items-center justify-between">
+          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Gamma Slide</span>
+          {chunk.slide_job_status === "queued" && (
+            <span className="text-[8px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase">Queued</span>
+          )}
+          {chunk.slide_job_status === "processing" && (
+            <span className="text-[8px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded uppercase flex items-center gap-1">
+              <Loader2 className="h-2 w-2 animate-spin" /> Running
+            </span>
+          )}
+          {chunk.slide_job_status === "failed" && (
+            <span className="text-[8px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded uppercase" title={chunk.slide_job_error || ""}>Failed</span>
+          )}
+        </div>
         <div className="aspect-video bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg border border-slate-200 overflow-hidden relative shadow-sm flex items-center justify-center">
           {chunk.slide_url && chunk.slide_url !== "https://gamma.app/placeholder" ? (
             <div className="w-full h-full relative group">
