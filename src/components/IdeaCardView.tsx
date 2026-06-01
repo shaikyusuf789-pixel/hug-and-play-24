@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { Eye, Calendar, Clock, ExternalLink, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { Eye, Calendar, Clock, ExternalLink, ChevronDown, ChevronUp, Loader2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type ActionKey = "approve" | "reject" | "priority" | "done" | "generate";
@@ -45,6 +45,7 @@ export interface IdeaCard {
   original_summary: string | null;
   status: string;
   processing_step?: string | null;
+
   sources_master?: {
     channel_name: string;
   };
