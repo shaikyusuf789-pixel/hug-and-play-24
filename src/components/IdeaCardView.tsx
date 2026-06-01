@@ -105,11 +105,11 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
             <div className="h-1 w-1 rounded-full bg-slate-700" />
             Original Intelligence
           </div>
-          <p className="text-xs md:text-sm font-medium text-slate-300 leading-snug line-clamp-2 italic">
+          <p className="text-xs md:text-sm font-semibold text-slate-900 leading-snug line-clamp-2 italic">
             {idea.original_title ? (
               <>
                 "{idea.original_title}" {idea.sources_master?.channel_name && (
-                  <span className="text-indigo-400 font-black px-1.5 md:px-2 py-0.5 rounded-lg bg-indigo-500/10 ml-1 border border-indigo-500/10 uppercase text-[8px] md:text-[9px] tracking-widest">
+                  <span className="text-indigo-700 font-black px-1.5 md:px-2 py-0.5 rounded-lg bg-indigo-50 ml-1 border border-indigo-200 uppercase text-[8px] md:text-[9px] tracking-widest">
                     {idea.sources_master.channel_name}
                   </span>
                 )}
