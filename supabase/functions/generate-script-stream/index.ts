@@ -443,6 +443,24 @@ serve(async (req) => {
 
         const wc = countWords(finalText);
 
+        if (!finalText || wc === 0) {
+          // Stream produced nothing usable -- delete the placeholder row so
+          // the priority dropdown / preview don't load an empty script later.
+          await supa.from("scripts").update({
+            status: "FAILED",
+            script_error: "Empty stream output",
+          }).eq("id", scriptId);
+          controller.enqueue(
+            encoder.encode(
+              `event: error\ndata: ${
+                JSON.stringify({ message: "Empty script returned by model" })
+              }\n\n`,
+            ),
+          );
+          controller.close();
+          return;
+        }
+
         // Save the final script row.
         await supa.from("scripts").update({
           content: finalText,
