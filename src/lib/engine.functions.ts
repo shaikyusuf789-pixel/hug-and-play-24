@@ -163,9 +163,28 @@ JSON schema:
 Always ensure summary_points has at least 5-7 key takeaways.`;
 
 export const runIdeaEngine = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ sourceId: z.string().uuid().optional() }).optional())
+  .inputValidator(
+    z
+      .object({
+        sourceId: z.string().uuid().optional(),
+        videosLimit: z.number().int().min(1).max(50).optional(),
+      })
+      .optional(),
+  )
   .handler(async ({ data: inputData }) => {
-    console.log("Starting Idea Engine run...");
+    console.log("Starting Idea Engine run...", inputData);
+
+    // Resolve videos-per-run: explicit arg → setting → default 10
+    let videosLimit = inputData?.videosLimit;
+    if (!videosLimit) {
+      const { data: cfg } = await supabaseAdmin
+        .from("app_settings")
+        .select("value")
+        .eq("key", "engine_auto_run")
+        .maybeSingle();
+      const v = (cfg?.value as any)?.videos_per_run;
+      videosLimit = typeof v === "number" ? v : 10;
+    }
 
     let sourceQuery = supabaseAdmin
       .from("sources_master")
@@ -179,20 +198,24 @@ export const runIdeaEngine = createServerFn({ method: "POST" })
     const { data: sources, error: sourceError } = await sourceQuery;
     if (sourceError) {
       console.error("Failed to load sources for Idea Engine:", sourceError);
-      return { processed: 0, failed: 1, message: sourceError.message };
+      return { processed: 0, failed: 1, message: sourceError.message, perChannel: [] as any[] };
     }
 
     if (!sources?.length) {
-      return { processed: 0, failed: 0, message: "No sources configured. Add YouTube sources first." };
+      return { processed: 0, failed: 0, message: "No sources configured. Add YouTube sources first.", perChannel: [] };
     }
 
     let processed = 0;
     const failures: string[] = [];
+    const perChannel: { channel: string; inserted: number; error?: string }[] = [];
 
     for (const source of sources) {
       try {
-        const videos = await scrapeYoutubeRss(source.source_url);
-        if (!videos.length) continue;
+        const videos = await scrapeYoutubeRss(source.source_url, videosLimit);
+        if (!videos.length) {
+          perChannel.push({ channel: source.channel_name, inserted: 0 });
+          continue;
+        }
 
         const videoIds = videos.map((video) => video.videoId).filter(Boolean);
         const { data: existing, error: existingError } = await supabaseAdmin
@@ -217,15 +240,21 @@ export const runIdeaEngine = createServerFn({ method: "POST" })
             status: "Pending",
           }));
 
-        if (!rows.length) continue;
+        if (!rows.length) {
+          perChannel.push({ channel: source.channel_name, inserted: 0 });
+          continue;
+        }
 
         const { error: insertError } = await supabaseAdmin.from("raw_content").insert(rows);
         if (insertError) throw insertError;
 
         processed += rows.length;
+        perChannel.push({ channel: source.channel_name, inserted: rows.length });
       } catch (error: any) {
-        const message = `${source.channel_name}: ${error?.message || "scrape failed"}`;
+        const errMsg = error?.message || "scrape failed";
+        const message = `${source.channel_name}: ${errMsg}`;
         failures.push(message);
+        perChannel.push({ channel: source.channel_name, inserted: 0, error: errMsg });
         console.warn("Idea Engine source failed:", message);
       }
     }
@@ -233,9 +262,11 @@ export const runIdeaEngine = createServerFn({ method: "POST" })
     return {
       processed,
       failed: failures.length,
+      perChannel,
+      videosLimit,
       message: failures.length
-        ? `Processed ${processed} ideas. ${failures.length} source(s) failed: ${failures.slice(0, 3).join("; ")}`
-        : `Processed ${processed} new ideas.`,
+        ? `Processed ${processed} new ideas from ${sources.length - failures.length}/${sources.length} channels. ${failures.length} failed.`
+        : `Processed ${processed} new ideas from ${sources.length} channel(s).`,
     };
   });
 
