@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { geminiGenerateText } from "@/lib/google-ai.server";
 
 export const processChunks = createServerFn({ method: "POST" })
   .inputValidator(
@@ -26,29 +27,13 @@ Rules:
 Example: ["chunk 1 text...", "chunk 2 text...", ...]
 `;
 
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Split this script into chunks of ${min}-${max} words each (target ~${target}):\n\n${scriptContent}` },
-        ],
-        temperature: 0.1,
-      }),
+    const result_content = await geminiGenerateText(apiKey, {
+      model: "gemini-2.5-flash-lite",
+      system: systemPrompt,
+      user: `Split this script into chunks of ${min}-${max} words each (target ~${target}):\n\n${scriptContent}`,
+      temperature: 0.1,
+      responseMimeType: "application/json",
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Google AI error: ${response.status} ${errorText}`);
-    }
-
-    const aiData = await response.json();
-    const result_content = aiData.choices[0].message.content;
 
     let chunks: string[] = [];
     try {
