@@ -90,7 +90,8 @@ function ChunksPage() {
 
       if (error) throw error;
 
-      const newChunks = data.chunks.map((content: string, index: number) => ({
+      const generatedContents: string[] = data.chunks;
+      const newChunks = generatedContents.map((content: string, index: number) => ({
         id: `temp-${index}`,
         chunk_index: index,
         content,
@@ -99,7 +100,22 @@ function ChunksPage() {
       }));
 
       setChunks(newChunks);
-      toast.success(`Generated ${newChunks.length} chunks`);
+
+      // AUTO-SAVE: persist immediately so a revisit shows them.
+      // saveChunks replaces any previous chunks for this script.
+      try {
+        await saveChunksFn({
+          data: {
+            script_id: selectedScriptId,
+            chunks: generatedContents,
+          }
+        });
+        toast.success(`Generated & auto-saved ${newChunks.length} chunks`);
+        fetchExistingChunks(selectedScriptId);
+      } catch (saveErr: any) {
+        console.error("Auto-save chunks failed:", saveErr);
+        toast.warning(`Generated ${newChunks.length} chunks — auto-save failed, click Save All`);
+      }
     } catch (error: any) {
       console.error("Chunking error:", error);
       toast.error(error.message || "Failed to generate chunks");
@@ -107,6 +123,7 @@ function ChunksPage() {
       setGenerating(false);
     }
   };
+
 
   const handleSaveAll = async () => {
     if (!selectedScriptId || chunks.length === 0) return;
