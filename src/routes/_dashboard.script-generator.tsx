@@ -332,25 +332,27 @@ function ScriptGenerator() {
       }
       
       const data = res.data;
-      const newSegments = data.segments || [];
-      setSegments(newSegments);
+      // Prefer new `script` field, fall back to legacy `segments` payload.
+      const fullScriptText: string =
+        (typeof data?.script === "string" && data.script.trim().length > 0)
+          ? data.script
+          : ((data?.segments || []).map((s: any) => s.telugu_text || s.voiceover).join("\n\n"));
+      setScriptText(fullScriptText);
       toast.success("Script generated successfully!");
 
       // Auto-save the generated script
-      if (newSegments.length > 0) {
-        const fullScriptText = newSegments.map((s: any) => s.telugu_text || s.voiceover).join("\n\n");
-        
+      if (fullScriptText.trim()) {
         try {
           if (isExistingScript && existingScriptId) {
-            await updateScriptFn({ 
+            await updateScriptFn({
               data: {
                 id: existingScriptId,
                 content: fullScriptText,
-              } 
+              }
             });
             toast.success("Existing script updated automatically.");
           } else {
-            const saveRes = await saveScriptFn({ 
+            await saveScriptFn({
               data: {
                 idea_id: selectedIdeaId || undefined,
                 title: topic || "Untitled Script",
@@ -358,10 +360,9 @@ function ScriptGenerator() {
                 word_count: wordCount,
                 video_type: videoType,
                 model: model,
-              } 
+              }
             });
-            
-            // Re-fetch the script ID if it's new
+
             if (selectedIdeaId) {
               const { data: latest } = await supabase
                 .from("scripts")
@@ -370,18 +371,17 @@ function ScriptGenerator() {
                 .order("created_at", { ascending: false })
                 .limit(1)
                 .single();
-              
+
               if (latest) {
                 setExistingScriptId(latest.id);
                 setIsExistingScript(true);
               }
 
-              // Update idea status to Script Done
               await supabase
                 .from("raw_content")
                 .update({ status: "Script Done" })
                 .eq("id", selectedIdeaId);
-              
+
               toast.success("Script saved and shifted to script_Done phase!");
             }
           }
