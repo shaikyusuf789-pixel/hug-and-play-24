@@ -25,12 +25,14 @@ export const Route = createFileRoute("/_dashboard/chunks")({
 
 function ChunksPage() {
   const saveChunksFn = useServerFn(saveChunks);
+  const processChunksFn = useServerFn(processChunks);
   const [scripts, setScripts] = useState<any[]>([]);
   const [selectedScriptId, setSelectedScriptId] = useState<string>("");
   const [chunks, setChunks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [targetWords, setTargetWords] = useState<number>(185);
 
 
   useEffect(() => {
