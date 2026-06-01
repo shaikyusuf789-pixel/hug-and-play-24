@@ -1097,7 +1097,7 @@ function ScriptGenerator() {
                         variant="outline"
                         size="sm"
                         className="h-8 text-[10px] font-bold bg-white"
-                        onClick={handleGenerate}
+                        onClick={() => setRegenConfirmOpen(true)}
                         disabled={isGenerating}
                       >
                         {isGenerating ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RotateCcw className="h-3 w-3 mr-1" />}
