@@ -787,7 +787,7 @@ function ScriptGenerator() {
                 )}
               </Button>
 
-              {segments.length > 0 && (
+              {scriptText && (
                 <div className="space-y-4 pt-6 border-t border-slate-100">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -795,21 +795,20 @@ function ScriptGenerator() {
                       <Label className="text-slate-900 font-black uppercase text-[11px] tracking-wider">Generated Full Script</Label>
                     </div>
                     <div className="flex gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="h-8 text-[10px] font-bold"
                         onClick={() => {
-                          const fullScript = segments.map(s => s.telugu_text || s.voiceover).join("\n\n");
-                          navigator.clipboard.writeText(fullScript);
+                          navigator.clipboard.writeText(scriptText);
                           toast.success("Script copied!");
                         }}
                       >
                         Copy
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="h-8 text-[10px] font-bold text-green-600"
                         onClick={handleSaveScript}
                         disabled={isSaving}
@@ -820,7 +819,7 @@ function ScriptGenerator() {
                     </div>
                   </div>
                   <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 leading-relaxed text-sm font-telugu max-h-[500px] overflow-y-auto whitespace-pre-wrap shadow-inner text-slate-700">
-                    {segments.map(s => s.telugu_text || s.voiceover).join("\n\n")}
+                    {scriptText}
                   </div>
                   {isExistingScript && (
                     <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex items-center gap-3">
@@ -831,9 +830,9 @@ function ScriptGenerator() {
                         <p className="text-xs text-indigo-900 font-bold">Previous version found</p>
                         <p className="text-[10px] text-indigo-600 font-medium">This script was already generated and is saved in your pipeline.</p>
                       </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="h-8 text-[10px] font-bold bg-white"
                         onClick={handleGenerate}
                         disabled={isGenerating}
@@ -851,38 +850,54 @@ function ScriptGenerator() {
 
         <div className="space-y-6">
           <Card className="min-h-[600px] flex flex-col">
-            <CardHeader className="flex flex-row items-center justify-between border-b py-4">
-              <div className="flex items-center space-x-2">
+            <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b py-4">
+              <div className="flex items-center flex-wrap gap-2">
                 <CardTitle className="text-lg">Script Preview</CardTitle>
-                {segments.length > 0 && (
-                  <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
-                    {segments.length} Segments
+                <Badge
+                  variant="outline"
+                  className="bg-blue-500/10 text-blue-700 border-blue-500/20 font-bold tabular-nums"
+                  title="Live word and character count of the generated script"
+                >
+                  {liveWordCount.toLocaleString()} words · {liveCharCount.toLocaleString()} chars
+                </Badge>
+                {scriptText && (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "border font-bold tabular-nums",
+                      Math.abs(liveWordCount - wordCount) <= 50
+                        ? "bg-green-500/10 text-green-700 border-green-500/20"
+                        : "bg-amber-500/10 text-amber-700 border-amber-500/20",
+                    )}
+                    title={`Target ${wordCount} ± 50 words`}
+                  >
+                    target {wordCount} · diff {liveWordCount - wordCount >= 0 ? "+" : ""}{liveWordCount - wordCount}
                   </Badge>
                 )}
               </div>
-              {segments.length > 0 && (
-                <div className="flex items-center space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+              {scriptText && (
+                <div className="flex items-center flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => setIsEditing(!isEditing)}
                     className={isEditing ? "bg-blue-50" : ""}
                   >
                     <Edit3 className="w-4 h-4 mr-1" />
                     {isEditing ? "Stop Editing" : "Edit"}
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={handleGenerate}
                     disabled={isGenerating}
                   >
                     <RotateCcw className={cn("w-4 h-4 mr-1", isGenerating && "animate-spin")} />
                     Regenerate
                   </Button>
-                  <Button 
-                    variant="default" 
-                    size="sm" 
+                  <Button
+                    variant="default"
+                    size="sm"
                     className="bg-green-600 hover:bg-green-700"
                     onClick={handleSaveScript}
                     disabled={isSaving}
@@ -898,66 +913,23 @@ function ScriptGenerator() {
               )}
             </CardHeader>
             <CardContent className="flex-1 p-0">
-              {segments.length > 0 ? (
-                <Tabs defaultValue="full-script" className="flex flex-col h-full">
-                  <div className="border-b px-4 overflow-x-auto">
-                    <TabsList className="bg-transparent h-12">
-                      <TabsTrigger 
-                        value="full-script"
-                        className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none h-12 font-bold text-xs"
-                      >
-                        Full Script
-                      </TabsTrigger>
-                      {segments.map((_, i) => (
-                        <TabsTrigger 
-                          key={i} 
-                          value={`seg-${i}`}
-                          className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none h-12 text-xs"
-                        >
-                          Seg {i + 1}
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
+              {scriptText ? (
+                <div className="p-6 space-y-4 h-full">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-black text-xl text-slate-900">Entire Production Script</h3>
                   </div>
-                  <div className="p-6 flex-1">
-                    <TabsContent value="full-script" className="mt-0 space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h3 className="font-black text-xl text-slate-900">Entire Production Script</h3>
-                        <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 border-none font-bold">
-                          {segments.map(s => s.telugu_text || s.voiceover).join("\n\n").split(/\s+/).length} Total Words
-                        </Badge>
-                      </div>
-                      <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 leading-relaxed text-lg font-telugu min-h-[400px] whitespace-pre-wrap text-slate-800">
-                        {segments.map(s => s.telugu_text || s.voiceover).join("\n\n")}
-                      </div>
-                    </TabsContent>
-                    {segments.map((seg, i) => (
-                      <TabsContent key={i} value={`seg-${i}`} className="mt-0 space-y-4">
-                        <div className="flex justify-between items-center">
-                          <h3 className="font-bold text-lg">{seg.title}</h3>
-                          <Badge variant="secondary" className="text-[10px] uppercase">
-                            {(seg.telugu_text || seg.voiceover || "").split(" ").length} words
-                          </Badge>
-                        </div>
-                        {isEditing ? (
-                          <Textarea
-                            className="p-4 bg-white rounded-lg border leading-relaxed text-lg font-telugu min-h-[300px] whitespace-pre-wrap"
-                            value={seg.telugu_text}
-                            onChange={(e) => {
-                              const newSegments = [...segments];
-                              newSegments[i].telugu_text = e.target.value;
-                              setSegments(newSegments);
-                            }}
-                          />
-                        ) : (
-                          <div className="p-4 bg-muted/30 rounded-lg border leading-relaxed text-lg font-telugu min-h-[300px] whitespace-pre-wrap">
-                            {seg.telugu_text || seg.voiceover}
-                          </div>
-                        )}
-                      </TabsContent>
-                    ))}
-                  </div>
-                </Tabs>
+                  {isEditing ? (
+                    <Textarea
+                      className="p-6 bg-white rounded-2xl border border-slate-200 leading-relaxed text-lg font-telugu min-h-[400px] whitespace-pre-wrap text-slate-800"
+                      value={scriptText}
+                      onChange={(e) => setScriptText(e.target.value)}
+                    />
+                  ) : (
+                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 leading-relaxed text-lg font-telugu min-h-[400px] whitespace-pre-wrap text-slate-800">
+                      {scriptText}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-12 text-center space-y-4">
                   <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
