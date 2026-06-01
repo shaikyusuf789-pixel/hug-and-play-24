@@ -60,12 +60,14 @@ Sky Studio is a premium, autonomous AI video production pipeline designed for SK
 - **UI Components**:
   - **Input Modes**: Generate from Topic, Transcript, PDF, or Priority Idea.
   - **Provider Settings**: Choice of OpenAI, Google, or Poe models.
-- **Logic**: Triggers `generate-script` Edge Function to produce 150-180 word segments.
+  - **Fact-Check panel**: Preview box for proofreading AI output + editable original script preview + "FACTS APPROVED" button to merge corrections in the same tone/style.
+- **Logic**: Triggers `generate-script` Edge Function to produce 150-180 word segments. Autosaves to `scripts` table on generate; regenerate/edit + manual Save replaces existing row. Mandatory promos (Telegram channel / WhatsApp mentorship / SKY Academy app + private mentorship "360 degree strong hold preparation") are injected once each at natural spots by the prompt.
+- **Revisit UX**: Selecting a Priority Idea queries `scripts`, `script_chunks`, and `script_audio` and shows a status toast (e.g., `✓ Script already generated | ✓ 12 chunks saved | • audio 4/12`) so the user sees pipeline progress instantly.
 
 ### 2.5 Chunks (/chunks)
 ![Chunks](screenshots/chunks.png)
 - **Purpose**: Smart segmentation of scripts into production-ready blocks.
-- **Logic**: Calls `process-chunks` Edge Function to split long text at natural boundaries.
+- **Logic**: Calls `process-chunks` Edge Function to split long text at natural boundaries. After generation, chunks are auto-saved via `saveChunksFn` (replacing any prior chunks for that script) and a toast confirms the save. Revisits auto-load existing chunks for the selected script.
 
 ### 2.6 Audio (/audio)
 ![Audio](screenshots/audio.png)
