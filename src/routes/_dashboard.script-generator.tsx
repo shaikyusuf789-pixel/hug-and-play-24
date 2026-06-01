@@ -18,6 +18,16 @@ import { cn } from "@/lib/utils";
 // pdfjsLib will be imported dynamically to avoid SSR issues
 let pdfjsLib: any = null;
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const scriptSearchSchema = z.object({
   transcript: z.string().optional(),
