@@ -123,6 +123,57 @@ async function apifyRun(actorId: string, input: unknown, token: string, timeoutM
   }
 }
 
+async function apifyStartRun(actorId: string, input: unknown, token: string) {
+  const res = await fetch(`${APIFY_BASE}/acts/${actorId}/runs?token=${token}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Apify ${actorId} start failed (${res.status}): ${text.slice(0, 300)}`);
+  }
+  return (await res.json()).data as { id: string; status: string; defaultDatasetId?: string };
+}
+
+async function apifyGetRun(runId: string, token: string) {
+  const res = await fetch(`${APIFY_BASE}/actor-runs/${runId}?token=${token}`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Apify run lookup failed (${res.status}): ${text.slice(0, 300)}`);
+  }
+  return (await res.json()).data as { id: string; status: string; defaultDatasetId?: string };
+}
+
+async function apifyDatasetItems(datasetId: string, token: string) {
+  const res = await fetch(`${APIFY_BASE}/datasets/${datasetId}/items?token=${token}&clean=true`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Apify dataset fetch failed (${res.status}): ${text.slice(0, 300)}`);
+  }
+  return (await res.json()) as any[];
+}
+
+function transcriptText(value: any): string {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) return value.map((item) => transcriptText(item)).filter(Boolean).join("\n");
+  if (typeof value === "object") {
+    return transcriptText(value.text ?? value.transcript ?? value.summary ?? value.caption ?? value.subtitle ?? "");
+  }
+  return "";
+}
+
+function extractTranscriptFromItems(items: any[]) {
+  const row = items?.[0] || {};
+  const rawSummary = transcriptText(row.summary).trim();
+  const rawTranscript = transcriptText(row.transcript ?? row.transcripts ?? row.captions ?? row.subtitles ?? row.text).trim();
+  const transcript = rawSummary && rawTranscript
+    ? `SUMMARY:\n${rawSummary}\n\nTRANSCRIPT:\n${rawTranscript}`
+    : rawSummary || rawTranscript;
+  return transcript.trim().slice(0, 30000);
+}
+
 
 async function callAI(prompt: string, system: string) {
   const key = process.env.GOOGLE_API_KEY;
