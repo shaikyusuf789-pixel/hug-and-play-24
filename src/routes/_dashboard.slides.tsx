@@ -229,6 +229,17 @@ function SlideMaker() {
                 ))}
               </SelectContent>
             </Select>
+
+            <Select value={gammaTheme} onValueChange={setGammaTheme}>
+              <SelectTrigger className="w-full md:w-[170px] bg-orange-50 border-orange-200 h-9 text-xs rounded-lg font-bold text-orange-700">
+                <SelectValue placeholder="Gamma Theme" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {GAMMA_THEMES.map(t => (
+                  <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             
             <div className="flex gap-2 shrink-0">
               <Button 
