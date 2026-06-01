@@ -55,6 +55,15 @@ function AudioEngine() {
     }
   }, [selectedScriptId]);
 
+  // Auto-refresh while any audio job is queued/processing in background
+  useEffect(() => {
+    if (!selectedScriptId) return;
+    const hasActive = chunks.some(c => c.audio_job_status === "queued" || c.audio_job_status === "processing");
+    if (!hasActive) return;
+    const t = setInterval(() => fetchChunks(selectedScriptId), 4000);
+    return () => clearInterval(t);
+  }, [selectedScriptId, chunks]);
+
   // Auto-fill default voice when switching providers (user can still edit)
   useEffect(() => {
     if (model === "elevenlabs") {
