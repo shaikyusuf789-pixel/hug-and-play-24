@@ -33,7 +33,14 @@ Sky Studio is a premium, autonomous AI video production pipeline designed for SK
 - **Purpose**: Triage and approve scraped content ideas.
 - **UI Components**:
   - **Tabs**: Filter by Pending, Approved, or Priority.
-  - **Card View**: Thumbnails, titles, and live processing status (e.g., "AI Analysis...").
+  - **Card View**: White cards with shadow on light background. Each card shows:
+    - **Thumbnail** with YouTube preview image.
+    - **Original Title** in dark text (`text-slate-900`) with channel name chip (`text-indigo-700` on `bg-indigo-50`).
+    - **Proposed Direction** title with channel name appended: `"Title - ChannelName"` (e.g., "IPL 2026 Highlights | Most Expected Questions | SSC Bank State PSC - ADDA247").
+    - **Strategy Intelligence** bullets in readable dark text (`text-slate-700`) on subtle indigo tint (`bg-indigo-50/60`).
+    - **Meta row** (views, date, duration) in `text-slate-600` on `bg-slate-100`.
+    - **Reject button** with `bg-slate-100 border-slate-200 text-slate-700`.
+    - **Reveal Strategy** toggle in `text-indigo-600`.
 - **Logic**: "Approve" button triggers `process-idea` Edge Function (Apify transcript -> OpenAI summarizer).
 - **Real-time**: Uses Supabase Realtime to update status as backend steps finish.
 
