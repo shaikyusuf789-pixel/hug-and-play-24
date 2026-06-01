@@ -119,11 +119,11 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
         </div>
 
         <div className="space-y-1">
-          <div className="text-[8px] md:text-[9px] uppercase tracking-[0.15em] md:tracking-[0.2em] text-indigo-400 font-black flex items-center gap-2">
-            <div className="h-1 w-1 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+          <div className="text-[8px] md:text-[9px] uppercase tracking-[0.15em] md:tracking-[0.2em] text-indigo-600 font-black flex items-center gap-2">
+            <div className="h-1 w-1 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
             Proposed Direction
           </div>
-          <h2 className="text-sm sm:text-base md:text-lg font-black leading-tight text-white group-hover:text-indigo-300 transition-colors tracking-tight">
+          <h2 className="text-sm sm:text-base md:text-lg font-black leading-tight text-slate-900 group-hover:text-indigo-700 transition-colors tracking-tight">
             {idea.proposed_title || "—"}
           </h2>
         </div>
