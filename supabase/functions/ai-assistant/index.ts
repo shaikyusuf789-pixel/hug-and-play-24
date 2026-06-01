@@ -259,24 +259,40 @@ RESPONSE FORMAT (CRITICAL):
 
       if (name === "generate_image") {
         try {
-          const r = await fetch("https://api.openai.com/v1/images/generations", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${Deno.env.get("GOOGLE_API_KEY")}`,
+          const GKEY = Deno.env.get("GOOGLE_API_KEY");
+          if (!GKEY) return JSON.stringify({ error: "GOOGLE_API_KEY missing" });
+          // Map old DALL·E sizes -> Imagen aspect ratios
+          const sizeMap: Record<string, string> = {
+            "1024x1024": "1:1",
+            "1792x1024": "16:9",
+            "1024x1792": "9:16",
+          };
+          const aspectRatio = sizeMap[args.size || "1792x1024"] || "16:9";
+          const r = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GKEY}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                instances: [{ prompt: args.prompt }],
+                parameters: { sampleCount: 1, aspectRatio },
+              }),
             },
-            body: JSON.stringify({
-              model: "dall-e-3",
-              prompt: args.prompt,
-              n: 1,
-              size: args.size || "1792x1024",
-              quality: "standard",
-            }),
-          });
+          );
           const j = await r.json();
           if (j.error) return JSON.stringify({ error: j.error.message });
-          const url = j.data?.[0]?.url;
-          return JSON.stringify({ success: true, url, prompt: args.prompt, instructions: "Embed in reply as ![thumbnail](URL)" });
+          const b64 = j.predictions?.[0]?.bytesBase64Encoded;
+          if (!b64) return JSON.stringify({ error: "Imagen returned no image" });
+          // Upload to public storage so the chat can embed a real URL
+          const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+          const filename = `ai-thumbs/${Date.now()}-${crypto.randomUUID()}.png`;
+          const up = await supabase.storage.from("user-uploads").upload(filename, bytes, {
+            contentType: "image/png",
+            upsert: false,
+          });
+          if (up.error) return JSON.stringify({ error: `upload: ${up.error.message}` });
+          const { data: pub } = supabase.storage.from("user-uploads").getPublicUrl(filename);
+          return JSON.stringify({ success: true, url: pub.publicUrl, prompt: args.prompt, instructions: "Embed in reply as ![thumbnail](URL)" });
         } catch (e) {
           return JSON.stringify({ error: String(e) });
         }
