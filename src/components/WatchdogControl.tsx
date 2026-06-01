@@ -23,6 +23,7 @@ interface Props {
 export function WatchdogControl({ className, variant = "full" }: Props) {
   const qc = useQueryClient();
   const [localInterval, setLocalInterval] = useState<number[]>([1]);
+  const [localVideos, setLocalVideos] = useState<number[]>([10]);
 
   const getSettings = useServerFn(getAutoRunSettings);
   const updateSettings = useServerFn(updateAutoRunSettings);
@@ -32,12 +33,13 @@ export function WatchdogControl({ className, variant = "full" }: Props) {
     queryFn: async () => {
       const data = await getSettings();
       setLocalInterval([data.interval_hrs]);
+      setLocalVideos([data.videos_per_run ?? 10]);
       return data;
     },
   });
 
   const update = useMutation({
-    mutationFn: (vars: { enabled: boolean; interval_hrs: number }) =>
+    mutationFn: (vars: { enabled: boolean; interval_hrs: number; videos_per_run?: number }) =>
       updateSettings({ data: vars }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["auto-run-settings"] });
@@ -45,15 +47,15 @@ export function WatchdogControl({ className, variant = "full" }: Props) {
   });
 
   const handleToggle = (val: boolean) => {
-    // Immediate optimistic update or just trigger mutation
     update.mutate({
       enabled: val,
       interval_hrs: settings?.interval_hrs ?? 1,
+      videos_per_run: settings?.videos_per_run ?? 10,
     }, {
       onSuccess: () => {
         if (val) {
           toast.success("Watchdog turned On", {
-            description: `Auto-scraping every ${settings?.interval_hrs ?? 1} hours`,
+            description: `Auto-scraping every ${settings?.interval_hrs ?? 1}h · ${settings?.videos_per_run ?? 10} videos/channel`,
           });
         } else {
           toast.info("Watchdog turned Off");
@@ -69,6 +71,15 @@ export function WatchdogControl({ className, variant = "full" }: Props) {
     update.mutate({
       enabled: settings?.enabled ?? false,
       interval_hrs: hrs,
+      videos_per_run: settings?.videos_per_run ?? 10,
+    });
+  };
+
+  const handleVideosChange = (n: number) => {
+    update.mutate({
+      enabled: settings?.enabled ?? false,
+      interval_hrs: settings?.interval_hrs ?? 1,
+      videos_per_run: n,
     });
   };
 
