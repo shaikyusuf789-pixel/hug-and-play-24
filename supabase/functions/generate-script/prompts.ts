@@ -21,6 +21,7 @@ function buildStyleReferenceBlock(overrides?: TrainingOverrides) {
       `--- REFERENCE TRANSCRIPT ${i + 1}: ${t.name} ---\n${overrides?.transcripts?.[i] || t.text}\n--- END REFERENCE ${i + 1} ---`,
   )
   .join("\n\n");
+}
 
 function buildStyleReferenceInstructions(overrides?: TrainingOverrides) {
   return `
