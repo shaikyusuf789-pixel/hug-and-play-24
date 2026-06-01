@@ -67,7 +67,7 @@ Sky Studio is a premium, autonomous AI video production pipeline designed for SK
 - **Purpose**: Smart segmentation of scripts into production-ready blocks.
 - **Logic**: Calls `process-chunks` Edge Function to split long text at natural boundaries.
 
-### 2.5 Audio (/audio)
+### 2.6 Audio (/audio)
 ![Audio](screenshots/audio.png)
 - **Purpose**: Professional AI voiceover generation.
 - **Logic**: Triggers `generate-audio` using ElevenLabs or Google TTS.
