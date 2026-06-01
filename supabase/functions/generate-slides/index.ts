@@ -24,9 +24,9 @@ async function callGamma(inputText: string, themeName: string) {
       inputText,
       textMode: "preserve",          // <-- PRESERVE TEXT
       format: "presentation",
-      themeName,                     // <-- user-selected theme
       numCards: 1,
       cardSplit: "auto",
+      additionalInstructions: `Use the "${themeName}" visual theme.`,
       cardOptions: { dimensions: "16x9" }, // <-- strict 16:9 traditional
       imageOptions: { source: "noImages" },
     }),
