@@ -158,14 +158,40 @@ Always be professional, concise, and incredibly helpful.`;
         }
       }
 
+      if (name === "generate_image") {
+        try {
+          const r = await fetch("https://api.openai.com/v1/images/generations", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
+            },
+            body: JSON.stringify({
+              model: "dall-e-3",
+              prompt: args.prompt,
+              n: 1,
+              size: args.size || "1792x1024",
+              quality: "standard",
+            }),
+          });
+          const j = await r.json();
+          if (j.error) return JSON.stringify({ error: j.error.message });
+          const url = j.data?.[0]?.url;
+          return JSON.stringify({ success: true, url, prompt: args.prompt, instructions: "Embed in reply as ![thumbnail](URL)" });
+        } catch (e) {
+          return JSON.stringify({ error: String(e) });
+        }
+      }
+
       return "Tool not found";
     };
 
     const apiKey = Deno.env.get("OPENAI_API_KEY");
     if (!apiKey) throw new Error("Missing OPENAI_API_KEY");
 
-    const requestBody = {
+    const requestBody: any = {
       model: "gpt-4o-mini",
+      max_tokens: 4096,
       messages: [
         { role: "system", content: systemPrompt },
         ...messages
