@@ -363,12 +363,14 @@ Always be professional, concise, and incredibly helpful.`;
         },
         body: JSON.stringify({
           model: requestBody.model,
+          max_tokens: 4096,
           messages: [
             { role: "system", content: systemPrompt },
             ...messages,
             message,
             ...toolResults
-          ]
+          ],
+          tools: requestBody.tools,
         }),
       });
 
