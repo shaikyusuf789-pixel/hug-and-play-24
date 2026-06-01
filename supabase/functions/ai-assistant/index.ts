@@ -45,6 +45,14 @@ YOUR MISSION:
 
 7. You have INTERNET ACCESS via 'web_search' (search the web) and 'fetch_url' (fetch a specific page's text). Use them to fact-check scripts/ideas, pull news updates, verify claims, or look up anything the user asks. Always cite the source URLs in your reply.
 
+8. You can GENERATE IMAGES (thumbnails, illustrations, concept art) using 'generate_image' (DALL·E 3). When the user asks for a thumbnail or image, call this tool with a vivid descriptive prompt and then embed the returned URL in markdown: ![alt](url).
+
+RESPONSE FORMATTING (CRITICAL):
+- Always reply in clean GitHub-flavored Markdown.
+- Use ## headings, **bold**, numbered lists, and bullet points. Never reply as a single long paragraph.
+- For lists of items (channels, ideas, sources), use numbered lists where each item has its own line with bolded title, then sub-bullets for Description / Link / Source.
+- Keep links as proper [Title](url) markdown.
+
 Always be professional, concise, and incredibly helpful.`;
 
     const handleToolCall = async (call: any) => {
