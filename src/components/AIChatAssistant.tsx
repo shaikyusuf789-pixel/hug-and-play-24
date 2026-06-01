@@ -340,12 +340,18 @@ export function AIChatAssistant() {
                       {msg.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
                     </div>
                     <div className={cn(
-                      "rounded-2xl px-4 py-2.5 text-sm shadow-sm leading-relaxed",
-                      msg.role === "user" 
-                        ? "rounded-tr-none border bg-secondary text-secondary-foreground" 
+                      "min-w-0 rounded-2xl px-4 py-2.5 text-sm shadow-sm leading-relaxed break-words overflow-hidden",
+                      msg.role === "user"
+                        ? "rounded-tr-none border bg-secondary text-secondary-foreground whitespace-pre-wrap"
                         : "rounded-tl-none border bg-card text-card-foreground"
                     )}>
-                      {msg.content}
+                      {msg.role === "assistant" ? (
+                        <div className="prose prose-sm max-w-none break-words [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_h1]:font-bold [&_h2]:font-bold [&_h3]:font-bold [&_h1]:mt-2 [&_h2]:mt-2 [&_h3]:mt-2 [&_a]:text-primary [&_a]:underline [&_a]:break-all [&_code]:bg-muted [&_code]:px-1 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-2 [&_pre]:rounded [&_pre]:overflow-x-auto [&_img]:rounded-lg [&_img]:my-2 [&_img]:max-w-full">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                        </div>
+                      ) : (
+                        msg.content
+                      )}
                     </div>
                   </div>
                 ))}
