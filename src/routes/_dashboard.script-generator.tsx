@@ -253,6 +253,15 @@ function ScriptGenerator() {
         setIsExistingScript(true);
         setScriptText(script.content || "");
 
+        // Hydrate fact-check findings saved by the async generator so the
+        // user immediately sees the "wrong statements only" preview on revisit.
+        const savedFindings = Array.isArray((script as any).fact_check_findings)
+          ? ((script as any).fact_check_findings as FactFinding[])
+          : [];
+        setFactFindings(savedFindings);
+        setFactCheckRan(savedFindings.length > 0 || (script as any).status === "FACT_CHECKED");
+        setFactCheckedAgainst(script.content || "");
+
         // Also look up chunks + audio progress for this script so the
         // user sees "where they left off" on revisit.
         const { data: chunkRows } = await supabase
@@ -264,6 +273,8 @@ function ScriptGenerator() {
         const audioDone = (chunkRows || []).filter((c: any) => !!c.audio_url).length;
 
         const parts = ["✓ Script already generated"];
+        if (savedFindings.length > 0) parts.push(`⚠ ${savedFindings.length} fact-check issue${savedFindings.length === 1 ? "" : "s"}`);
+        else if ((script as any).status === "FACT_CHECKED") parts.push("✓ facts verified");
         if (totalChunks > 0) parts.push(`✓ ${totalChunks} chunks saved`);
         else parts.push("• chunks not yet generated");
         if (totalChunks > 0) {
@@ -277,7 +288,10 @@ function ScriptGenerator() {
         setExistingScriptId(null);
         setIsExistingScript(false);
         setScriptText("");
+        setFactFindings([]);
+        setFactCheckRan(false);
       }
+
 
     } catch (err) {
       console.error("Error checking for existing script:", err);
@@ -364,14 +378,29 @@ function ScriptGenerator() {
   const handleHistorySelect = (scriptId: string) => {
     const script = recentScripts.find(s => s.id === scriptId);
     if (!script) return;
-    
+
     setSelectedHistoryScriptId(scriptId);
     setTopic(script.title);
     setIsFromHistory(true);
-    
+
     setScriptText(script.content || "");
-    toast.info("Loaded script from history");
+
+    // Hydrate fact-check findings stored by async generator (wrong-statements
+    // preview only — never re-render the full script as findings).
+    const savedFindings: FactFinding[] = Array.isArray((script as any).fact_check_findings)
+      ? (script as any).fact_check_findings
+      : [];
+    setFactFindings(savedFindings);
+    setFactCheckRan(savedFindings.length > 0 || (script as any).status === "FACT_CHECKED");
+    setFactCheckedAgainst(script.content || "");
+
+    if (savedFindings.length > 0) {
+      toast.info(`Loaded script + ${savedFindings.length} fact-check issue${savedFindings.length === 1 ? "" : "s"}`);
+    } else {
+      toast.info("Loaded script from history");
+    }
   };
+
 
   const handleGenerate = async () => {
     if (!topic && inputMode === "topic") {
