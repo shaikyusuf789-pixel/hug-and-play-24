@@ -261,7 +261,18 @@ export async function runIdeaEngineCore(inputData?: { sourceId?: string; videosL
         ? `Processed ${processed} new ideas from ${sources.length - failures.length}/${sources.length} channels. ${failures.length} failed.`
         : `Processed ${processed} new ideas from ${sources.length} channel(s).`,
     };
-  });
+}
+
+export const runIdeaEngine = createServerFn({ method: "POST" })
+  .inputValidator(
+    z
+      .object({
+        sourceId: z.string().uuid().optional(),
+        videosLimit: z.number().int().min(1).max(50).optional(),
+      })
+      .optional(),
+  )
+  .handler(async ({ data }) => runIdeaEngineCore(data));
 
 
 const SourceInput = z.object({
