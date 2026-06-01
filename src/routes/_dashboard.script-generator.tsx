@@ -135,12 +135,41 @@ function ScriptGenerator() {
   const liveWordCount = scriptText.trim() ? scriptText.trim().split(/\s+/).filter(Boolean).length : 0;
   const liveCharCount = scriptText.length;
 
+  // Regenerate confirmation dialog
+  const [regenConfirmOpen, setRegenConfirmOpen] = useState(false);
+
+  // Fetch last 15 priority-marked topics (includes ones already moved to
+  // "Script Done"), most recent first. Then look up which of them already
+  // have a saved script so the dropdown can mark them ✓.
   const { data: priorityIdeasData } = useQuery({
-    queryKey: ["priority-ideas"],
-    queryFn: () => getIdeasFn({ data: { status: "Priority" } }),
+    queryKey: ["priority-ideas-recent-15"],
+    queryFn: async () => {
+      const { data: ideas, error } = await supabase
+        .from("raw_content")
+        .select("*")
+        .in("status", ["Priority", "Script Done"])
+        .order("updated_at", { ascending: false })
+        .limit(15);
+      if (error) throw error;
+
+      const ids = (ideas || []).map((i: any) => i.id);
+      let scriptMap: Record<string, { id: string; updated_at: string }> = {};
+      if (ids.length > 0) {
+        const { data: scripts } = await supabase
+          .from("scripts")
+          .select("id, idea_id, updated_at")
+          .in("idea_id", ids);
+        for (const s of scripts || []) {
+          if (s.idea_id) scriptMap[s.idea_id] = { id: s.id, updated_at: s.updated_at };
+        }
+      }
+      return { ideas: ideas || [], scriptMap };
+    },
+    refetchInterval: 10000,
   });
 
   const approvedIdeas = (priorityIdeasData?.ideas || []) as any[];
+  const scriptMap = (priorityIdeasData?.scriptMap || {}) as Record<string, { id: string; updated_at: string }>;
 
   useEffect(() => {
     if (search.ideaId && approvedIdeas.length > 0) {
