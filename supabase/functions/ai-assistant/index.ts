@@ -77,6 +77,68 @@ RESPONSE FORMAT (CRITICAL):
         if (error) return JSON.stringify({ error: error.message });
         return JSON.stringify({ success: true, data });
       }
+      if (name === "remove_source") {
+        const { error } = await supabase.from("sources_master").delete().eq("id", args.id);
+        if (error) return JSON.stringify({ error: error.message });
+        return JSON.stringify({ success: true, message: "Source removed from monitor list." });
+      }
+      if (name === "analyze_source_health") {
+        // Compute approve/reject ratio per source
+        const { data: sources } = await supabase.from("sources_master").select("id, channel_name");
+        const { data: content } = await supabase.from("raw_content").select("source_id, status");
+        const stats = (sources || []).map((s: any) => {
+          const items = (content || []).filter((c: any) => c.source_id === s.id);
+          const total = items.length;
+          const rejected = items.filter((c: any) => (c.status || "").toLowerCase() === "rejected").length;
+          const approved = items.filter((c: any) => (c.status || "").toLowerCase() === "approved").length;
+          const rejectRate = total ? Math.round((rejected / total) * 100) : 0;
+          const recommend =
+            total >= 5 && rejectRate >= 70
+              ? "REMOVE — wasting credits"
+              : total >= 5 && rejectRate >= 50
+              ? "SILENCE — low ROI"
+              : "KEEP";
+          return { id: s.id, channel: s.channel_name, total, approved, rejected, rejectRate, recommend };
+        }).sort((a: any, b: any) => b.rejectRate - a.rejectRate);
+        return JSON.stringify(stats);
+      }
+      if (name === "get_app_activity") {
+        const [{ data: ideas }, { data: scripts }, { data: chunks }, { count: srcCount }] = await Promise.all([
+          supabase.from("raw_content").select("status").order("created_at", { ascending: false }).limit(200),
+          supabase.from("scripts").select("id, title, status, created_at").order("created_at", { ascending: false }).limit(10),
+          supabase.from("script_chunks").select("status"),
+          supabase.from("sources_master").select("*", { count: "exact", head: true }),
+        ]);
+        const counts = (arr: any[], k = "status") => arr?.reduce((a: any, r: any) => { const v = (r[k] || "unknown").toLowerCase(); a[v] = (a[v] || 0) + 1; return a; }, {}) || {};
+        return JSON.stringify({
+          sources_total: srcCount,
+          ideas_by_status: counts(ideas || []),
+          chunks_by_status: counts(chunks || []),
+          recent_scripts: scripts,
+        });
+      }
+      if (name === "analyze_youtube_channel") {
+        try {
+          // Fetch the channel page and extract basic info
+          const r = await fetch(args.url, { headers: { "User-Agent": "Mozilla/5.0" } });
+          const html = await r.text();
+          const title = (html.match(/<meta property="og:title" content="([^"]+)"/) || [])[1] || "";
+          const desc = (html.match(/<meta property="og:description" content="([^"]+)"/) || [])[1] || "";
+          const subs = (html.match(/"subscriberCountText":\{"simpleText":"([^"]+)"/) || [])[1] || "";
+          // Sample recent video titles
+          const videoTitles = [...html.matchAll(/"title":\{"runs":\[\{"text":"([^"]+)"/g)].slice(0, 15).map(m => m[1]);
+          return JSON.stringify({
+            url: args.url,
+            channel_title: title,
+            description: desc,
+            subscribers: subs,
+            recent_video_titles: videoTitles,
+            instructions: "Judge fit for SKY Academy (educational, motivational, tech/business/self-improvement). Return verdict (FIT / NOT FIT / MAYBE) with reasoning and ask boss to approve before calling add_source.",
+          });
+        } catch (e) {
+          return JSON.stringify({ error: String(e) });
+        }
+      }
       if (name === "get_recent_ideas") {
         const { data } = await supabase.from("raw_content").select("*").order("created_at", { ascending: false }).limit(10);
         return JSON.stringify(data);
