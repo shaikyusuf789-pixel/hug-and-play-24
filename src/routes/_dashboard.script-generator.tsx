@@ -415,12 +415,13 @@ function ScriptGenerator() {
     setIsGenerating(true);
     setIsFromHistory(false);
     setSelectedHistoryScriptId("");
+    setScriptText("");
+    setFactFindings([]);
+    setFactCheckRan(false);
     try {
-      // Fallback to local API logic if Edge Functions are being problematic
-      const openaiKey = (window as any).process?.env?.OPENAI_API_KEY || "";
-      const googleKey = (window as any).process?.env?.GOOGLE_API_KEY || "";
-      
-      const res = await supabase.functions.invoke("generate-script", {
+      // Kick off async generator — returns immediately with script_id, runs
+      // generation + fact-check in background to avoid 150s edge timeout.
+      const res = await supabase.functions.invoke("generate-script-async", {
         body: {
           topic,
           content,
@@ -429,78 +430,67 @@ function ScriptGenerator() {
           inputMode,
           wordCount,
           specialInstructions,
-          provider,
           model,
+          idea_id: selectedIdeaId || null,
+          title: topic || "Untitled Script",
         },
       });
+      if (res.error) throw res.error;
+      const scriptId: string | undefined = res.data?.script_id;
+      if (!scriptId) throw new Error("No script_id returned");
 
-      if (res.error) {
-        console.warn("Edge Function failed, using direct AI call fallback...");
-        // This is a last-resort client-side logic if the user insists on speed
-        // For now, we keep the invoke but handle the error better.
-        throw res.error;
-      }
-      
-      const data = res.data;
-      // Prefer new `script` field, fall back to legacy `segments` payload.
-      const fullScriptText: string =
-        (typeof data?.script === "string" && data.script.trim().length > 0)
-          ? data.script
-          : ((data?.segments || []).map((s: any) => s.telugu_text || s.voiceover).join("\n\n"));
-      setScriptText(fullScriptText);
-      toast.success("Script generated successfully!");
+      toast.info("Generation started — this may take 1–3 minutes…");
 
-      // Auto-save the generated script
-      if (fullScriptText.trim()) {
-        try {
-          if (isExistingScript && existingScriptId) {
-            await updateScriptFn({
-              data: {
-                id: existingScriptId,
-                content: fullScriptText,
-              }
-            });
-            toast.success("Existing script updated automatically.");
-          } else {
-            await saveScriptFn({
-              data: {
-                idea_id: selectedIdeaId || undefined,
-                title: topic || "Untitled Script",
-                content: fullScriptText,
-                word_count: wordCount,
-                video_type: videoType,
-                model: model,
-              }
-            });
-
-            if (selectedIdeaId) {
-              const { data: latest } = await supabase
-                .from("scripts")
-                .select("id")
-                .eq("idea_id", selectedIdeaId)
-                .order("created_at", { ascending: false })
-                .limit(1)
-                .single();
-
-              if (latest) {
-                setExistingScriptId(latest.id);
-                setIsExistingScript(true);
-              }
-
-              await supabase
-                .from("raw_content")
-                .update({ status: "Script Done" })
-                .eq("id", selectedIdeaId);
-
-              toast.success("Script saved and shifted to script_Done phase!");
-            }
-          }
-          queryClient.invalidateQueries({ queryKey: ["recent-scripts"] });
-        } catch (saveErr) {
-          console.error("Auto-save failed:", saveErr);
-          toast.error("Generation succeeded but auto-save failed.");
+      // Poll the scripts row until FACT_CHECKED / SCRIPT_DONE / FAILED.
+      const deadline = Date.now() + 6 * 60 * 1000; // 6 min cap
+      let finalRow: any = null;
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 4000));
+        const { data: row, error: pErr } = await supabase
+          .from("scripts")
+          .select("id, content, word_count, status, script_error, fact_check_findings")
+          .eq("id", scriptId)
+          .single();
+        if (pErr) continue;
+        if (row?.status === "FAILED") {
+          throw new Error(row.script_error || "Generation failed");
+        }
+        if (row?.status === "FACT_CHECKED" || (row?.status === "SCRIPT_DONE" && row?.content)) {
+          finalRow = row;
+          if (row.status === "FACT_CHECKED") break;
         }
       }
+      if (!finalRow) throw new Error("Generation timed out after 6 minutes");
+
+      const fullScriptText: string = finalRow.content || "";
+      setScriptText(fullScriptText);
+
+      const fcf: any = finalRow.fact_check_findings;
+      const findings: FactFinding[] = Array.isArray(fcf?.findings)
+        ? fcf.findings
+        : Array.isArray(fcf)
+          ? fcf
+          : [];
+      setFactFindings(findings);
+      setFactCheckRan(finalRow.status === "FACT_CHECKED");
+      setFactCheckedAgainst(fullScriptText);
+
+      setExistingScriptId(scriptId);
+      setIsExistingScript(true);
+
+      if (selectedIdeaId) {
+        await supabase
+          .from("raw_content")
+          .update({ status: "Script Done" })
+          .eq("id", selectedIdeaId);
+      }
+      queryClient.invalidateQueries({ queryKey: ["recent-scripts"] });
+
+      toast.success(
+        findings.length === 0
+          ? "Script generated ✓ (no fact issues)"
+          : `Script generated ✓ — ${findings.length} fact issue(s) flagged`,
+      );
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to generate script");
@@ -508,6 +498,7 @@ function ScriptGenerator() {
       setIsGenerating(false);
     }
   };
+
 
   return (
     <div className="mx-auto max-w-7xl p-4 md:p-6 space-y-6">

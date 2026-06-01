@@ -5,3 +5,15 @@ verify_jwt = false
 
 [functions.generate-script]
 verify_jwt = false
+
+[functions.generate-script-async]
+verify_jwt = false
+
+[functions.fact-check-script]
+verify_jwt = false
+
+[functions.apply-fact-corrections]
+verify_jwt = false
+
+[functions.clean-script-envelope]
+verify_jwt = false
