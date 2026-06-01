@@ -29,6 +29,7 @@ from pydantic import BaseModel
 from lib.config import config
 from lib.supabase_client import get_supabase
 from lib.storage import (
+    download_slide_to_tmp,
     SLIDES_BUCKET, AUDIO_BUCKET, VIDEO_CLIPS_BUCKET,
     slide_path, audio_path, clip_storage_path,
     download_to_tmp, upload_clip, cleanup,
@@ -206,7 +207,7 @@ def ocr_run(req: OcrRunReq):
     tmp = None
     try:
         print(f"[OCR/run] chunk {req.chunk_number} ({req.chunk_id})")
-        tmp = download_to_tmp(SLIDES_BUCKET, slide_path(req.script_id, req.chunk_number), ".png")
+        tmp = download_slide_to_tmp(req.script_id, req.chunk_number, ".png")
         words = run_ocr(tmp)
         _upsert_ocr(req.script_id, req.chunk_id, req.chunk_number, req.slide_source, words)
         return {"ok": True, "word_count": len(words)}
@@ -225,7 +226,7 @@ def _ocr_all_job(script_id: str, slide_source: str) -> None:
         try:
             chunk_id     = chunk["id"]
             chunk_number = chunk["chunk_index"]
-            tmp = download_to_tmp(SLIDES_BUCKET, slide_path(script_id, chunk_number), ".png")
+            tmp = download_slide_to_tmp(script_id, chunk_number, ".png")
             words = run_ocr(tmp)
             _upsert_ocr(script_id, chunk_id, chunk_number, slide_source, words)
             print(f"[OCR/run-all] chunk {chunk_number} done — {len(words)} words")
@@ -372,7 +373,7 @@ def _render_job(script_id: str, chunk_id: str, chunk_number: int, slide_source: 
         if not ai_row:
             raise ValueError("Annotations not found — run AI step first")
 
-        tmp_slide = download_to_tmp(SLIDES_BUCKET, slide_path(script_id, chunk_number), ".png")
+        tmp_slide = download_slide_to_tmp(script_id, chunk_number, ".png")
         tmp_audio = download_to_tmp(AUDIO_BUCKET, audio_path(script_id, chunk_number), ".mp3")
 
         tmp_out = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4", dir="/tmp/render").name
