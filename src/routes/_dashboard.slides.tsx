@@ -59,6 +59,15 @@ function SlideMaker() {
     }
   }, [selectedScriptId]);
 
+  // Auto-refresh while any slide job is queued/processing in background
+  useEffect(() => {
+    if (!selectedScriptId) return;
+    const hasActive = chunks.some(c => c.slide_job_status === "queued" || c.slide_job_status === "processing");
+    if (!hasActive) return;
+    const t = setInterval(() => fetchChunks(selectedScriptId), 4000);
+    return () => clearInterval(t);
+  }, [selectedScriptId, chunks]);
+
   const fetchScripts = async () => {
     const { data, error } = await supabase
       .from("scripts")
