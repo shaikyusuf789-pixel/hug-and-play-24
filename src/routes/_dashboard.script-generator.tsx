@@ -48,7 +48,7 @@ function ScriptGenerator() {
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [wordCount, setWordCount] = useState(660);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [segments, setSegments] = useState<any[]>([]);
+  const [scriptText, setScriptText] = useState<string>("");
   const [provider, setProvider] = useState("lovable-gemini");
   const [model, setModel] = useState("google/gemini-3.1-pro-preview");
   const [fileName, setFileName] = useState<string | null>(null);
@@ -61,6 +61,9 @@ function ScriptGenerator() {
   const [isFromHistory, setIsFromHistory] = useState(false);
   const [existingScriptId, setExistingScriptId] = useState<string | null>(null);
   const [isExistingScript, setIsExistingScript] = useState(false);
+
+  const liveWordCount = scriptText.trim() ? scriptText.trim().split(/\s+/).filter(Boolean).length : 0;
+  const liveCharCount = scriptText.length;
 
   const { data: priorityIdeasData } = useQuery({
     queryKey: ["priority-ideas"],
