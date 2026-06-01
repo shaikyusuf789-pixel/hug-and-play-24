@@ -33,11 +33,28 @@ Sky Studio is a premium, autonomous AI video production pipeline designed for SK
 - **Purpose**: Triage and approve scraped content ideas.
 - **UI Components**:
   - **Tabs**: Filter by Pending, Approved, or Priority.
-  - **Card View**: Thumbnails, titles, and live processing status (e.g., "AI Analysis...").
+  - **Card View**: White cards with shadow on light background. Each card shows:
+    - **Thumbnail** with YouTube preview image.
+    - **Original Title** in dark text (`text-slate-900`) with channel name chip (`text-indigo-700` on `bg-indigo-50`).
+    - **Proposed Direction** title with channel name appended: `"Title - ChannelName"` (e.g., "IPL 2026 Highlights | Most Expected Questions | SSC Bank State PSC - ADDA247").
+    - **Strategy Intelligence** bullets in readable dark text (`text-slate-700`) on subtle indigo tint (`bg-indigo-50/60`).
+    - **Meta row** (views, date, duration) in `text-slate-600` on `bg-slate-100`.
+    - **Reject button** with `bg-slate-100 border-slate-200 text-slate-700`.
+    - **Reveal Strategy** toggle in `text-indigo-600`.
 - **Logic**: "Approve" button triggers `process-idea` Edge Function (Apify transcript -> OpenAI summarizer).
 - **Real-time**: Uses Supabase Realtime to update status as backend steps finish.
 
-### 2.3 Scripting (/script-generator)
+### 2.3 Content Preview (/content-preview)
+![Content Preview](screenshots/content-preview.png)
+- **Purpose**: Detailed tabular overview of all generated content ideas with full metadata.
+- **UI Components**:
+  - **Table view**: Columns for Status (badge), Proposed Title, Original Title, Channel, Category, Views, Duration, Published Date.
+  - **Proposed Title** now includes channel name appended: `"Title - ChannelName"` (matching the card view format).
+  - **Status badges**: Color-coded — Approved (green), Rejected (red), Priority (yellow), Done (blue), Pending (slate).
+  - **Refresh button**: Triggers refetch of the ideas list.
+- **Logic**: Reads all ideas via `getIdeas` server function; displays in a responsive data table.
+
+### 2.4 Scripting (/script-generator)
 ![Scripting](screenshots/script-generator.png)
 - **Purpose**: Full AI script generation in Telugu Unicode.
 - **UI Components**:
@@ -45,12 +62,12 @@ Sky Studio is a premium, autonomous AI video production pipeline designed for SK
   - **Provider Settings**: Choice of OpenAI, Google, or Poe models.
 - **Logic**: Triggers `generate-script` Edge Function to produce 150-180 word segments.
 
-### 2.4 Chunks (/chunks)
+### 2.5 Chunks (/chunks)
 ![Chunks](screenshots/chunks.png)
 - **Purpose**: Smart segmentation of scripts into production-ready blocks.
 - **Logic**: Calls `process-chunks` Edge Function to split long text at natural boundaries.
 
-### 2.5 Audio (/audio)
+### 2.6 Audio (/audio)
 ![Audio](screenshots/audio.png)
 - **Purpose**: Professional AI voiceover generation.
 - **Logic**: Triggers `generate-audio` using ElevenLabs or Google TTS.
