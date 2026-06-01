@@ -191,21 +191,12 @@ function ScriptGenerator() {
         const script = existingScripts[0];
         setExistingScriptId(script.id);
         setIsExistingScript(true);
-        
-        // Convert plain text script back to segments
-        const textSegments = script.content.split("\n\n");
-        const parsedSegments = textSegments.map((text: string, i: number) => ({
-          seg: i + 1,
-          title: `Segment ${i + 1}`,
-          telugu_text: text,
-        }));
-        
-        setSegments(parsedSegments);
+        setScriptText(script.content || "");
         toast.info("Script already generated for this idea. Loaded from database.");
       } else {
         setExistingScriptId(null);
         setIsExistingScript(false);
-        setSegments([]);
+        setScriptText("");
       }
     } catch (err) {
       console.error("Error checking for existing script:", err);
