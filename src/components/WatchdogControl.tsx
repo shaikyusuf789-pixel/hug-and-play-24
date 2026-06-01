@@ -157,6 +157,24 @@ export function WatchdogControl({ className, variant = "full" }: Props) {
 
       <div className="h-8 w-px bg-white/5" />
 
+      <div className="flex flex-col gap-2 min-w-[110px] sm:min-w-[130px]">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Videos / Channel</span>
+          <span className="text-[10px] font-bold text-indigo-400">{localVideos[0]}</span>
+        </div>
+        <Slider
+          value={localVideos}
+          onValueChange={setLocalVideos}
+          onValueCommit={(v) => handleVideosChange(v[0])}
+          min={1}
+          max={50}
+          step={1}
+          className="w-full"
+        />
+      </div>
+
+      <div className="h-8 w-px bg-white/5" />
+
       <div className="flex flex-col gap-1.5">
         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Auto Run</span>
         <div 
