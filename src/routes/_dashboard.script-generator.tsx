@@ -656,18 +656,32 @@ function ScriptGenerator() {
                   onValueChange={(v: any) => setVideoType(v)}
                   className="grid grid-cols-2 gap-4"
                 >
-                  <div className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent/50 transition-colors">
+                  <div
+                    className={cn(
+                      "flex items-center space-x-2 border rounded-lg p-3 cursor-pointer transition-colors",
+                      videoType === "subjective"
+                        ? "bg-orange-50 border-orange-300 hover:bg-orange-100"
+                        : "hover:bg-accent/50"
+                    )}
+                  >
                     <RadioGroupItem value="subjective" id="subjective" />
                     <Label htmlFor="subjective" className="flex-1 cursor-pointer">
-                      <div className="font-semibold text-sm">Subjective</div>
-                      <div className="text-[10px] text-muted-foreground uppercase">Deep Teaching</div>
+                      <div className={cn("font-semibold text-sm", videoType === "subjective" && "text-orange-700")}>Subjective</div>
+                      <div className={cn("text-[10px] uppercase", videoType === "subjective" ? "text-orange-500" : "text-muted-foreground")}>Deep Teaching</div>
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent/50 transition-colors">
+                  <div
+                    className={cn(
+                      "flex items-center space-x-2 border rounded-lg p-3 cursor-pointer transition-colors",
+                      videoType === "general"
+                        ? "bg-teal-50 border-teal-300 hover:bg-teal-100"
+                        : "hover:bg-accent/50"
+                    )}
+                  >
                     <RadioGroupItem value="general" id="general" />
                     <Label htmlFor="general" className="flex-1 cursor-pointer">
-                      <div className="font-semibold text-sm">General</div>
-                      <div className="text-[10px] text-muted-foreground uppercase">Motivation / Strategy</div>
+                      <div className={cn("font-semibold text-sm", videoType === "general" && "text-teal-700")}>General</div>
+                      <div className={cn("text-[10px] uppercase", videoType === "general" ? "text-teal-600" : "text-muted-foreground")}>Motivation / Strategy</div>
                     </Label>
                   </div>
                 </RadioGroup>
