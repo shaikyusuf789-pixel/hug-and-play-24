@@ -288,16 +288,7 @@ function ScriptGenerator() {
     setTopic(script.title);
     setIsFromHistory(true);
     
-    // Convert plain text script back to segments for the preview
-    // We split by \n\n as used in handleSaveScript
-    const textSegments = script.content.split("\n\n");
-    const parsedSegments = textSegments.map((text: string, i: number) => ({
-      seg: i + 1,
-      title: `Segment ${i + 1}`,
-      telugu_text: text,
-    }));
-    
-    setSegments(parsedSegments);
+    setScriptText(script.content || "");
     toast.info("Loaded script from history");
   };
 
