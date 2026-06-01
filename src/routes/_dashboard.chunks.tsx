@@ -25,6 +25,7 @@ export const Route = createFileRoute("/_dashboard/chunks")({
 
 function ChunksPage() {
   const saveChunksFn = useServerFn(saveChunks);
+  const updateChunkFn = useServerFn(updateChunk);
   const processChunksFn = useServerFn(processChunks);
   const [scripts, setScripts] = useState<any[]>([]);
   const [selectedScriptId, setSelectedScriptId] = useState<string>("");
@@ -33,6 +34,9 @@ function ChunksPage() {
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [targetWords, setTargetWords] = useState<number>(185);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<string>("");
+  const [savingId, setSavingId] = useState<string | null>(null);
 
 
   useEffect(() => {
