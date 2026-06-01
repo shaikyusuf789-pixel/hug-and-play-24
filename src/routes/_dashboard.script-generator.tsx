@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 // Tabs removed — page now shows a single full script with no segments.
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Wand2, FileText, CheckCircle2, X, Save, Edit3, RotateCcw, StickyNote, History } from "lucide-react";
+import { Loader2, Plus, Wand2, FileText, CheckCircle2, X, Save, Edit3, RotateCcw, StickyNote, History, ShieldCheck, AlertTriangle, Trash2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
