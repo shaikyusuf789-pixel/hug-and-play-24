@@ -64,6 +64,20 @@ function TablesPage() {
   );
 }
 
+const TABLE_COLORS: Record<string, { bg: string; border: string; text: string; iconBg: string; iconBorder: string; glow: string }> = {
+  raw_content: { bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-400", iconBg: "bg-emerald-500/10", iconBorder: "border-emerald-500/20", glow: "shadow-[0_0_8px_rgba(16,185,129,0.6)]" },
+  scripts: { bg: "bg-amber-500/10", border: "border-amber-500/20", text: "text-amber-400", iconBg: "bg-amber-500/10", iconBorder: "border-amber-500/20", glow: "shadow-[0_0_8px_rgba(245,158,11,0.6)]" },
+  sources_master: { bg: "bg-sky-500/10", border: "border-sky-500/20", text: "text-sky-400", iconBg: "bg-sky-500/10", iconBorder: "border-sky-500/20", glow: "shadow-[0_0_8px_rgba(14,165,233,0.6)]" },
+  script_chunks: { bg: "bg-violet-500/10", border: "border-violet-500/20", text: "text-violet-400", iconBg: "bg-violet-500/10", iconBorder: "border-violet-500/20", glow: "shadow-[0_0_8px_rgba(139,92,246,0.6)]" },
+  youtube_seo: { bg: "bg-orange-500/10", border: "border-orange-500/20", text: "text-orange-400", iconBg: "bg-orange-500/10", iconBorder: "border-orange-500/20", glow: "shadow-[0_0_8px_rgba(249,115,22,0.6)]" },
+  app_settings: { bg: "bg-slate-500/10", border: "border-slate-500/20", text: "text-slate-400", iconBg: "bg-slate-500/10", iconBorder: "border-slate-500/20", glow: "shadow-[0_0_8px_rgba(148,163,184,0.6)]" },
+  notifications: { bg: "bg-rose-500/10", border: "border-rose-500/20", text: "text-rose-400", iconBg: "bg-rose-500/10", iconBorder: "border-rose-500/20", glow: "shadow-[0_0_8px_rgba(244,63,94,0.6)]" },
+  daily_backup_logs: { bg: "bg-zinc-500/10", border: "border-zinc-500/20", text: "text-zinc-400", iconBg: "bg-zinc-500/10", iconBorder: "border-zinc-500/20", glow: "shadow-[0_0_8px_rgba(161,161,170,0.6)]" },
+  ai_chat_memory: { bg: "bg-teal-500/10", border: "border-teal-500/20", text: "text-teal-400", iconBg: "bg-teal-500/10", iconBorder: "border-teal-500/20", glow: "shadow-[0_0_8px_rgba(20,184,166,0.6)]" },
+  chat_sessions: { bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-400", iconBg: "bg-indigo-500/10", iconBorder: "border-indigo-500/20", glow: "shadow-[0_0_8px_rgba(99,102,241,0.6)]" },
+  app_metadata: { bg: "bg-cyan-500/10", border: "border-cyan-500/20", text: "text-cyan-400", iconBg: "bg-cyan-500/10", iconBorder: "border-cyan-500/20", glow: "shadow-[0_0_8px_rgba(6,182,212,0.6)]" },
+};
+
 function SupabaseTable({ tableName }: { tableName: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [search, setSearch] = useState("");
