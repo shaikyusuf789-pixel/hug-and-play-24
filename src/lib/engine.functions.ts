@@ -456,95 +456,64 @@ export const updateLastRunTimestamp = createServerFn({ method: "POST" })
 export const approveAndProcessIdea = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data: { id } }) => {
-    console.log(`Approving and processing idea (Fallback to ServerFn): ${id}`);
+    const { error } = await supabaseAdmin.from("raw_content").update({
+      status: "Approved",
+      processing_step: "transcript_pending",
+    } as any).eq("id", id);
+    if (error) throw error;
+    return { ok: true, queued: true };
+  });
+
+export const processApprovedIdeaStep = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ id: z.string().uuid() }))
+  .handler(async ({ data: { id } }) => {
     const token = process.env.APIFY_API_TOKEN;
     if (!token) throw new Error("APIFY_API_TOKEN not configured in project secrets");
 
-    // 1. Move to Approved immediately with stage 1 marker
-    try {
+    const { data: idea, error: fetchErr } = await supabaseAdmin
+      .from("raw_content")
+      .select("*, sources_master!fk_raw_content_source(channel_name)")
+      .eq("id", id)
+      .single();
+    if (fetchErr || !idea) throw new Error("Idea not found");
+
+    const step = String(idea.processing_step || "transcript_pending");
+    if (step === "done") return { ok: true, status: "done" };
+
+    if (step === "transcript_pending") {
+      const run = await apifyStartRun(TRANSCRIPT_ACTOR, { urls: [idea.video_url], language: "English" }, token);
+      await supabaseAdmin.from("raw_content").update({ processing_step: `transcript_run:${run.id}` } as any).eq("id", id);
+      return { ok: true, status: "transcript_started" };
+    }
+
+    if (step.startsWith("transcript_run:")) {
+      const runId = step.slice("transcript_run:".length);
+      const run = await apifyGetRun(runId, token);
+      if (["READY", "RUNNING"].includes(run.status)) return { ok: true, status: run.status.toLowerCase() };
+      if (run.status !== "SUCCEEDED" || !run.defaultDatasetId) throw new Error(`Transcript job failed: ${run.status}`);
+      const transcript = extractTranscriptFromItems(await apifyDatasetItems(run.defaultDatasetId, token));
+      if (!transcript) throw new Error("Transcript job finished but returned empty transcript");
+      await supabaseAdmin.from("raw_content").update({ processing_step: "ai_pending", original_summary: transcript } as any).eq("id", id);
+      return { ok: true, status: "transcript_done" };
+    }
+
+    if (step === "ai_pending") {
+      const aiInput = `Channel: ${idea.sources_master?.channel_name || "Unknown"}\nOriginal Title: ${idea.original_title}\nViews: ${idea.views ?? "N/A"}\n\nTranscript / Description:\n${idea.original_summary || "(no transcript available)"}`;
+      const ai = await callAI(aiInput, SYSTEM_PROMPT);
       await supabaseAdmin.from("raw_content").update({
         status: "Approved",
-        processing_step: "transcript_pending",
+        processing_step: "done",
+        proposed_title: ai.proposed_title,
+        new_thumbnail_outline: ai.new_thumbnail_outline,
+        target_audience: ai.target_audience,
+        core_hooks: ai.core_hooks ?? [],
+        summary_points: ai.summary_points?.slice(0, 7) ?? [],
+        video_outline: ai.video_outline ?? {},
       } as any).eq("id", id);
-    } catch (e) {
-      console.warn("Failed to set initial Approved state, continuing...", e);
+      return { ok: true, status: "done" };
     }
 
-    try {
-      console.log(`[${id}] Fetching transcript...`);
-
-      // 2. Fetch idea
-      const { data: idea, error: fetchErr } = await supabaseAdmin
-        .from("raw_content")
-        .select("*, sources_master!fk_raw_content_source(channel_name)")
-        .eq("id", id)
-        .single();
-      if (fetchErr || !idea) throw new Error("Idea not found");
-
-      // 3. Transcript
-      let transcript = "";
-      try {
-        const tr = await apifyRun(TRANSCRIPT_ACTOR, { urls: [idea.video_url], language: "English" }, token);
-        const transcriptData = tr?.[0];
-        const rawSummary = transcriptData?.summary || "";
-        const rawTranscript = transcriptData?.transcript || "";
-
-        if (rawSummary && rawTranscript) {
-          transcript = `SUMMARY:\n${rawSummary}\n\nTRANSCRIPT:\n${rawTranscript}`;
-        } else {
-          transcript = rawSummary || rawTranscript || "";
-        }
-        transcript = transcript.trim().slice(0, 30000);
-      } catch (e) {
-        console.warn(`Transcript failed for ${idea.original_title}`, e);
-      }
-
-      // Mark transcript done, AI pending
-      await supabaseAdmin.from("raw_content").update({
-        processing_step: "ai_pending",
-        original_summary: transcript,
-      } as any).eq("id", id);
-
-      // 4. AI
-      console.log(`[${id}] Starting AI analysis...`);
-      const aiInput = `Channel: ${idea.sources_master?.channel_name || "Unknown"}
-Original Title: ${idea.original_title}
-Views: ${idea.views ?? "N/A"}
-
-Transcript / Description:
-${transcript || "(no transcript available)"}`;
-
-      const ai = await callAI(aiInput, SYSTEM_PROMPT);
-
-      // 5. Final update
-      const { error: updErr } = await supabaseAdmin
-        .from("raw_content")
-        .update({
-          status: "Approved",
-          processing_step: "done",
-          original_summary: transcript,
-          proposed_title: ai.proposed_title,
-          new_thumbnail_outline: ai.new_thumbnail_outline,
-          target_audience: ai.target_audience,
-          core_hooks: ai.core_hooks ?? [],
-          summary_points: ai.summary_points?.slice(0, 7) ?? [],
-          video_outline: ai.video_outline ?? {},
-        } as any)
-
-        .eq("id", id);
-
-      if (updErr) throw updErr;
-
-      return { ok: true };
-    } catch (e: any) {
-      console.error(`Failed to process approved idea ${id}:`, e);
-      await supabaseAdmin
-        .from("raw_content")
-        .update({ processing_step: "failed" } as any)
-        .eq("id", id);
-      throw e;
-    }
-
+    return { ok: true, status: step };
   });
 
 
