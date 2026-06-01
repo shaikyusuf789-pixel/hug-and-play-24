@@ -80,8 +80,8 @@ serve(async (req) => {
     if (action === 'generate-prompt') {
       const promptResult = await geminiGenerateText(requireGoogleApiKey(), {
         model: 'gemini-2.5-flash-lite',
-        system: 'You are an expert at creating slide content. Your output must be exactly one heading followed by exactly 6 bullet points. No other text.',
-        user: `Create slide content based on this text: ${chunk.content}\n\nRemember: One heading and 6 bullet points.`,
+        system: 'You are an expert at creating slide content. ALWAYS write the output in ENGLISH ONLY, regardless of the input language. If the source text is in Telugu, Hindi, or any non-English language, translate the meaning into clear, natural English first, then produce the slide. Your output must be exactly one English heading followed by exactly 6 English bullet points. No transliteration, no native script, no other text.',
+        user: `Source text (may be in any language — translate to English):\n\n${chunk.content}\n\nProduce: one English heading and exactly 6 English bullet points. English only.`,
         temperature: 0.2,
       })
 
