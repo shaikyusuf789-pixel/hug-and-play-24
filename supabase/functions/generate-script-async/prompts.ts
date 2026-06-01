@@ -260,19 +260,40 @@ ${PROMOTIONS_BLOCK}
 
 
 const PRIORITY_NOTE = `
-PRIORITY (do not violate):
-  1. STYLE REFERENCE transcripts decide HOW to speak
-     (language, words, fillers, pauses, toning).
-  2. SKY DNA decides WHAT to speak
-     (promotions, PYQ analysis, memory hints, CTAs, structure).
-If the two ever conflict on style, the STYLE REFERENCE wins.
+THREE-LAYER RULE (DO NOT VIOLATE):
+  1. WHAT to speak  -> ONLY from USER INPUT (topic, chapter/idea
+     context, source material, special instructions). This is the
+     idea-engine output.
+  2. HOW to speak   -> ONLY from the 4 STYLE REFERENCE transcripts
+     (tone, code-mix, fillers, pauses, teacher rhythm).
+  3. WHERE to place which point -> ONLY from SKY DNA (structure,
+     promo placement, PYQ/MCQ slots, motivation share, CTAs).
+
+HARD CONTENT BOUNDARY (most common failure):
+- The 4 transcripts are VOICE SAMPLES, NOT a content source.
+- NEVER lift a topic, fact, example, name, year, exam,
+  department or domain word (e.g. "railway", "RRB", "IPL",
+  "auction") from a transcript unless that exact thing also
+  appears in USER INPUT.
+- If user input is about SSC / Banking, the script is about
+  SSC / Banking only. Zero spillover from transcript topics.
+- Do not invent stats, dates, vacancies, results, winners,
+  prize money or scores. If the user input does not provide a
+  number, do not write one.
+
+TIME / RECENCY RULE:
+- Treat any event dated before today as already completed
+  (past tense). Never describe a completed event as upcoming.
+  If unsure about timing, speak generally without a year.
 
 MANDATORY READING ORDER before you write a single character:
-  Step 1: Read every alphabet and every word of all 4 STYLE REFERENCE
-          transcripts below. No skipping.
-  Step 2: Read the SKY DNA block for content/format rules.
-  Step 3: Then -- and only then -- start generating the script.
+  Step 1: Read all 4 STYLE REFERENCE transcripts -- for VOICE ONLY.
+  Step 2: Read the SKY DNA block -- for STRUCTURE / placement.
+  Step 3: Read the USER INPUT -- this is the ONLY allowed
+          content source.
+  Step 4: Then -- and only then -- start generating.
 `;
+
 
 function buildSystem(
   taskLine: string,
