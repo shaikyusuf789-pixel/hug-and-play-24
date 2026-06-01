@@ -285,12 +285,33 @@ function SlideMaker() {
                 className="h-9 text-[10px] font-bold gap-2 bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-100"
                 disabled={isProcessingAll || !!processingId}
                 onClick={async () => {
-                  if (chunks.length === 0) return;
+                  if (chunks.length === 0 || !selectedScriptId) return;
                   setIsProcessingAll(true);
-                  toast.info("Queueing slides...");
-                  for (const chunk of chunks) if (chunk.slide_prompt) await generateGammaSlide(chunk.id);
-                  toast.success("All slides generated!");
-                  setIsProcessingAll(false);
+                  try {
+                    // Mark eligible chunks as queued for background processing
+                    const eligibleIds = chunks
+                      .filter(c => c.slide_prompt && c.slide_job_status !== "processing")
+                      .map(c => c.id);
+                    if (eligibleIds.length === 0) {
+                      toast.error("No chunks with outlines to queue. Generate outlines first.");
+                      return;
+                    }
+                    const { error: upErr } = await supabase
+                      .from("script_chunks")
+                      .update({ slide_job_status: "queued", slide_job_theme: gammaTheme, slide_job_error: null })
+                      .in("id", eligibleIds);
+                    if (upErr) throw upErr;
+
+                    // Fire-and-forget the background worker (don't await long-running work)
+                    supabase.functions.invoke("process-queue", { body: { scriptId: selectedScriptId } }).catch(() => {});
+
+                    toast.success(`Queued ${eligibleIds.length} slides — running in background. You can leave this page.`);
+                    await fetchChunks(selectedScriptId);
+                  } catch (e: any) {
+                    toast.error("Failed to queue: " + e.message);
+                  } finally {
+                    setIsProcessingAll(false);
+                  }
                 }}
               >
                 {isProcessingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Layout className="h-3.5 w-3.5" />}
