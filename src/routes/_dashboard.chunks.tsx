@@ -296,7 +296,7 @@ function ChunksPage() {
                   </span>
                   Chunk Content
                 </CardTitle>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 md:gap-3 flex-wrap justify-end">
                   <span className="text-[10px] font-bold text-slate-400 bg-white border px-2 py-0.5 rounded uppercase">
                     {chunk.word_count} words
                   </span>
@@ -306,15 +306,53 @@ function ChunksPage() {
                   )}>
                     {chunk.status}
                   </span>
+                  {editingId === chunk.id ? (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={cancelEdit}
+                        disabled={savingId === chunk.id}
+                        className="h-7 px-2 gap-1 text-xs"
+                      >
+                        <X className="h-3.5 w-3.5" /> Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => saveEdit(chunk, index)}
+                        disabled={savingId === chunk.id}
+                        className="h-7 px-2 gap-1 text-xs bg-indigo-600 hover:bg-indigo-700"
+                      >
+                        {savingId === chunk.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                        Save
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => startEdit(chunk)}
+                      className="h-7 px-2 gap-1 text-xs border-indigo-200 text-indigo-600 hover:bg-indigo-50"
+                    >
+                      <Pencil className="h-3.5 w-3.5" /> Edit
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="p-4 md:p-6">
-                <Textarea 
-                  value={chunk.content}
-                  onChange={(e) => handleUpdateChunkContent(index, e.target.value)}
-                  className="min-h-[120px] md:min-h-[140px] text-slate-800 leading-relaxed resize-none focus-visible:ring-indigo-500 border-none p-0 focus-visible:ring-0 shadow-none text-sm md:text-base font-telugu bg-transparent"
-                  placeholder="Chunk content..."
-                />
+                {editingId === chunk.id ? (
+                  <Textarea
+                    value={editDraft}
+                    onChange={(e) => setEditDraft(e.target.value)}
+                    className="min-h-[140px] md:min-h-[160px] text-slate-800 leading-relaxed resize-y focus-visible:ring-indigo-500 text-sm md:text-base font-telugu"
+                    placeholder="Chunk content..."
+                    autoFocus
+                  />
+                ) : (
+                  <p className="whitespace-pre-wrap text-slate-800 leading-relaxed text-sm md:text-base font-telugu">
+                    {chunk.content}
+                  </p>
+                )}
               </CardContent>
             </Card>
           ))}
