@@ -280,6 +280,11 @@ export type Database = {
       script_chunks: {
         Row: {
           annotations: Json | null
+          audio_job_error: string | null
+          audio_job_provider: string | null
+          audio_job_started_at: string | null
+          audio_job_status: string
+          audio_job_voice_id: string | null
           audio_url: string | null
           chunk_index: number
           content: string
@@ -287,6 +292,10 @@ export type Database = {
           id: string
           script_id: string | null
           slide_id: string | null
+          slide_job_error: string | null
+          slide_job_started_at: string | null
+          slide_job_status: string
+          slide_job_theme: string | null
           slide_prompt: string | null
           slide_url: string | null
           status: string | null
@@ -295,6 +304,11 @@ export type Database = {
         }
         Insert: {
           annotations?: Json | null
+          audio_job_error?: string | null
+          audio_job_provider?: string | null
+          audio_job_started_at?: string | null
+          audio_job_status?: string
+          audio_job_voice_id?: string | null
           audio_url?: string | null
           chunk_index: number
           content: string
@@ -302,6 +316,10 @@ export type Database = {
           id?: string
           script_id?: string | null
           slide_id?: string | null
+          slide_job_error?: string | null
+          slide_job_started_at?: string | null
+          slide_job_status?: string
+          slide_job_theme?: string | null
           slide_prompt?: string | null
           slide_url?: string | null
           status?: string | null
@@ -310,6 +328,11 @@ export type Database = {
         }
         Update: {
           annotations?: Json | null
+          audio_job_error?: string | null
+          audio_job_provider?: string | null
+          audio_job_started_at?: string | null
+          audio_job_status?: string
+          audio_job_voice_id?: string | null
           audio_url?: string | null
           chunk_index?: number
           content?: string
@@ -317,6 +340,10 @@ export type Database = {
           id?: string
           script_id?: string | null
           slide_id?: string | null
+          slide_job_error?: string | null
+          slide_job_started_at?: string | null
+          slide_job_status?: string
+          slide_job_theme?: string | null
           slide_prompt?: string | null
           slide_url?: string | null
           status?: string | null
