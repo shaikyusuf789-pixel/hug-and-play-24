@@ -129,16 +129,34 @@ function AudioEngine() {
   };
 
   const generateAllAudio = async () => {
+    if (!selectedScriptId || chunks.length === 0) return;
     setLoading(true);
     try {
-      for (const chunk of chunks) {
-        if (!chunk.audio_url) {
-          await generateAudio(chunk.id);
-        }
+      const eligibleIds = chunks
+        .filter(c => !c.audio_url && c.audio_job_status !== "processing")
+        .map(c => c.id);
+      if (eligibleIds.length === 0) {
+        toast.info("All chunks already have audio.");
+        return;
       }
-      toast.success("Batch processing complete.");
+      const { error: upErr } = await supabase
+        .from("script_chunks")
+        .update({
+          audio_job_status: "queued",
+          audio_job_provider: model,
+          audio_job_voice_id: voiceId,
+          audio_job_error: null,
+        })
+        .in("id", eligibleIds);
+      if (upErr) throw upErr;
+
+      // Fire-and-forget the background worker
+      supabase.functions.invoke("process-queue", { body: { scriptId: selectedScriptId } }).catch(() => {});
+
+      toast.success(`Queued ${eligibleIds.length} audio clips — running in background. You can leave this page.`);
+      await fetchChunks(selectedScriptId);
     } catch (error: any) {
-      console.error(error);
+      toast.error("Failed to queue: " + error.message);
     } finally {
       setLoading(false);
     }
