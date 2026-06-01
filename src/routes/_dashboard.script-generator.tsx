@@ -956,6 +956,20 @@ function ScriptGenerator() {
                     Regenerate
                   </Button>
                   <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleFactCheck}
+                    disabled={isFactChecking}
+                    className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                  >
+                    {isFactChecking ? (
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    ) : (
+                      <ShieldCheck className="w-4 h-4 mr-1" />
+                    )}
+                    Fact Check
+                  </Button>
+                  <Button
                     variant="default"
                     size="sm"
                     className="bg-green-600 hover:bg-green-700"
