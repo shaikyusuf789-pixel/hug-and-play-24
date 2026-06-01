@@ -97,18 +97,31 @@ async function scrapeYoutubeRss(sourceUrl: string, limit: number = 10): Promise<
   }).filter((video) => video.videoUrl.includes("youtube.com/watch") && video.videoId);
 }
 
-async function apifyRun(actorId: string, input: unknown, token: string) {
-  const res = await fetch(`${APIFY_BASE}/acts/${actorId}/run-sync-get-dataset-items?token=${token}&clean=true`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Apify ${actorId} failed (${res.status}): ${text.slice(0, 300)}`);
+async function apifyRun(actorId: string, input: unknown, token: string, timeoutMs: number = 45000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${APIFY_BASE}/acts/${actorId}/run-sync-get-dataset-items?token=${token}&clean=true&timeout=40`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Apify ${actorId} failed (${res.status}): ${text.slice(0, 300)}`);
+    }
+    return (await res.json()) as any[];
+  } catch (e: any) {
+    if (e?.name === "AbortError") {
+      throw new Error(`Apify ${actorId} timed out after ${timeoutMs}ms`);
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
   }
-  return (await res.json()) as any[];
 }
+
 
 async function callAI(prompt: string, system: string) {
   const key = process.env.OPENAI_API_KEY;
