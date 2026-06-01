@@ -207,6 +207,31 @@ function ChunksPage() {
         </div>
       </div>
 
+      <Card className="border-slate-200 shadow-sm">
+        <CardContent className="p-4 md:p-6 space-y-3">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-sm font-bold text-slate-700">Words per chunk</div>
+              <div className="text-xs text-slate-500">AI will aim for ~{targetWords} words per chunk ({Math.max(20, targetWords - 20)}–{targetWords + 20} range).</div>
+            </div>
+            <div className="text-2xl font-bold text-indigo-600 tabular-nums min-w-[3rem] text-right">{targetWords}</div>
+          </div>
+          <Slider
+            value={[targetWords]}
+            onValueChange={(v) => setTargetWords(v[0])}
+            min={80}
+            max={300}
+            step={5}
+            disabled={generating}
+          />
+          <div className="flex justify-between text-[10px] text-slate-400 font-medium">
+            <span>80</span>
+            <span>185 (default)</span>
+            <span>300</span>
+          </div>
+        </CardContent>
+      </Card>
+
       {chunks.length > 0 && (
         <div className="flex justify-between items-center">
           <div className="text-sm font-medium text-slate-500">
