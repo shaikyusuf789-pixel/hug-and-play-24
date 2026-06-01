@@ -101,11 +101,9 @@ function ChunksPage() {
 
     setGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('process-chunks', {
-        body: { scriptContent: script.content, scriptId: selectedScriptId }
+      const data = await processChunksFn({
+        data: { scriptContent: script.content, targetWords },
       });
-
-      if (error) throw error;
 
       const generatedContents: string[] = data.chunks;
       const newChunks = generatedContents.map((content: string, index: number) => ({
