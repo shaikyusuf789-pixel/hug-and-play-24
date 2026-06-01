@@ -184,18 +184,20 @@ function SupabaseTable({ tableName }: { tableName: string }) {
   };
 
   return (
-    <Card className="rounded-[2.5rem] border border-white/10 shadow-2xl shadow-black/40 overflow-hidden bg-white/5 backdrop-blur-2xl transition-all duration-300 hover:border-white/20">
+    const c = TABLE_COLORS[tableName] || TABLE_COLORS.app_settings;
+    return (
+    <Card className={cn("rounded-[2.5rem] border shadow-2xl shadow-black/40 overflow-hidden bg-white/5 backdrop-blur-2xl transition-all duration-300 hover:border-white/20", c.border)}>
       <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0 p-6 bg-white/[0.01] border-b border-white/5">
         <div className="flex items-center gap-4">
-          <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 shadow-inner">
-            <TableIcon className="h-5 w-5 text-indigo-400" />
+          <div className={cn("p-2.5 rounded-xl shadow-inner", c.iconBg, c.iconBorder, "border")}>
+            <TableIcon className={cn("h-5 w-5", c.text)} />
           </div>
           <div>
             <CardTitle className="text-lg font-black text-white uppercase tracking-widest">
               {tableName.replace(/_/g, " ")}
             </CardTitle>
             <div className="flex items-center gap-1.5 mt-1">
-              <div className="h-1 w-1 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+              <div className={cn("h-1 w-1 rounded-full", c.bg.replace("/10", ""), c.glow)} />
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">
                 {rows?.length || 0} Records Found
               </span>
