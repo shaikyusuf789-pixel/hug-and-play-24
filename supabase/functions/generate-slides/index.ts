@@ -123,7 +123,7 @@ serve(async (req) => {
 
     const { data: chunk, error: fetchError } = await supabase
       .from('script_chunks')
-      .select('content, slide_prompt')
+      .select('content, slide_prompt, annotations')
       .eq('id', chunkId)
       .single()
 
