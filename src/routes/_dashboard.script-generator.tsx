@@ -18,6 +18,16 @@ import { cn } from "@/lib/utils";
 // pdfjsLib will be imported dynamically to avoid SSR issues
 let pdfjsLib: any = null;
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const scriptSearchSchema = z.object({
   transcript: z.string().optional(),
@@ -125,12 +135,41 @@ function ScriptGenerator() {
   const liveWordCount = scriptText.trim() ? scriptText.trim().split(/\s+/).filter(Boolean).length : 0;
   const liveCharCount = scriptText.length;
 
+  // Regenerate confirmation dialog
+  const [regenConfirmOpen, setRegenConfirmOpen] = useState(false);
+
+  // Fetch last 15 priority-marked topics (includes ones already moved to
+  // "Script Done"), most recent first. Then look up which of them already
+  // have a saved script so the dropdown can mark them ✓.
   const { data: priorityIdeasData } = useQuery({
-    queryKey: ["priority-ideas"],
-    queryFn: () => getIdeasFn({ data: { status: "Priority" } }),
+    queryKey: ["priority-ideas-recent-15"],
+    queryFn: async () => {
+      const { data: ideas, error } = await supabase
+        .from("raw_content")
+        .select("*")
+        .in("status", ["Priority", "Script Done"])
+        .order("updated_at", { ascending: false })
+        .limit(15);
+      if (error) throw error;
+
+      const ids = (ideas || []).map((i: any) => i.id);
+      let scriptMap: Record<string, { id: string; updated_at: string }> = {};
+      if (ids.length > 0) {
+        const { data: scripts } = await supabase
+          .from("scripts")
+          .select("id, idea_id, updated_at")
+          .in("idea_id", ids);
+        for (const s of scripts || []) {
+          if (s.idea_id) scriptMap[s.idea_id] = { id: s.id, updated_at: s.updated_at ?? "" };
+        }
+      }
+      return { ideas: ideas || [], scriptMap };
+    },
+    refetchInterval: 10000,
   });
 
   const approvedIdeas = (priorityIdeasData?.ideas || []) as any[];
+  const scriptMap = (priorityIdeasData?.scriptMap || {}) as Record<string, { id: string; updated_at: string }>;
 
   useEffect(() => {
     if (search.ideaId && approvedIdeas.length > 0) {
@@ -326,7 +365,7 @@ function ScriptGenerator() {
           } 
         });
         toast.success("Script updated successfully!");
-        queryClient.invalidateQueries({ queryKey: ["recent-scripts"] });
+        queryClient.invalidateQueries({ queryKey: ["recent-scripts"] }); queryClient.invalidateQueries({ queryKey: ["priority-ideas-recent-15"] });
       } else {
         await saveScriptFn({ 
           data: {
@@ -350,7 +389,7 @@ function ScriptGenerator() {
         } else {
           toast.success("Script saved to database!");
         }
-        queryClient.invalidateQueries({ queryKey: ["recent-scripts"] });
+        queryClient.invalidateQueries({ queryKey: ["recent-scripts"] }); queryClient.invalidateQueries({ queryKey: ["priority-ideas-recent-15"] });
       }
     } catch (err: any) {
       toast.error("Failed to save script: " + err.message);
@@ -519,7 +558,7 @@ function ScriptGenerator() {
           .update({ status: "Script Done" })
           .eq("id", selectedIdeaId);
       }
-      queryClient.invalidateQueries({ queryKey: ["recent-scripts"] });
+      queryClient.invalidateQueries({ queryKey: ["recent-scripts"] }); queryClient.invalidateQueries({ queryKey: ["priority-ideas-recent-15"] });
       toast.success("Script generated ✓ — fact-checking in background…");
 
       // Poll for fact-check completion (runs in background on the server).
@@ -819,7 +858,12 @@ function ScriptGenerator() {
 
               {inputMode === "idea" && (
                 <div className="space-y-2">
-                  <Label htmlFor="idea-select">Select Priority Idea</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="idea-select">Select Priority Idea</Label>
+                    <span className="text-[10px] text-muted-foreground font-medium">
+                      Last 15 priority topics · ✓ = script ready
+                    </span>
+                  </div>
                   <select
                     id="idea-select"
                     className="w-full border rounded-md p-2 text-sm bg-white"
@@ -827,14 +871,26 @@ function ScriptGenerator() {
                     onChange={(e) => handleIdeaSelect(e.target.value)}
                   >
                     <option value="">-- Choose an idea --</option>
-                    {approvedIdeas.map((idea) => (
-                      <option key={idea.id} value={idea.id}>
-                        {idea.proposed_title || idea.original_title}
-                      </option>
-                    ))}
+                    {approvedIdeas.map((idea) => {
+                      const hasScript = !!scriptMap[idea.id];
+                      const marker = hasScript ? "✓" : "○";
+                      const title = idea.proposed_title || idea.original_title;
+                      return (
+                        <option key={idea.id} value={idea.id}>
+                          {marker} {title} {hasScript ? "— script ready" : "— no script yet"}
+                        </option>
+                      );
+                    })}
                   </select>
+                  {selectedIdeaId && scriptMap[selectedIdeaId] && (
+                    <div className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-2 py-1.5 font-medium">
+                      ✓ This topic already has a saved script. Edit it in the preview, or click <b>Regenerate</b> for a fresh version with current settings.
+                    </div>
+                  )}
                 </div>
               )}
+
+
 
               {inputMode === "pdf" && (
                 <div className="space-y-4">
@@ -975,7 +1031,10 @@ function ScriptGenerator() {
 
               <Button 
                 className="w-full bg-blue-600 hover:bg-blue-700 h-12" 
-                onClick={handleGenerate}
+                onClick={() => {
+                  if (isExistingScript) setRegenConfirmOpen(true);
+                  else handleGenerate();
+                }}
                 disabled={isGenerating}
               >
                 {isGenerating ? (
@@ -1038,7 +1097,7 @@ function ScriptGenerator() {
                         variant="outline"
                         size="sm"
                         className="h-8 text-[10px] font-bold bg-white"
-                        onClick={handleGenerate}
+                        onClick={() => setRegenConfirmOpen(true)}
                         disabled={isGenerating}
                       >
                         {isGenerating ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RotateCcw className="h-3 w-3 mr-1" />}
@@ -1093,7 +1152,7 @@ function ScriptGenerator() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleGenerate}
+                    onClick={() => setRegenConfirmOpen(true)}
                     disabled={isGenerating}
                   >
                     <RotateCcw className={cn("w-4 h-4 mr-1", isGenerating && "animate-spin")} />
@@ -1278,6 +1337,32 @@ function ScriptGenerator() {
           )}
         </div>
       </div>
+      <AlertDialog open={regenConfirmOpen} onOpenChange={setRegenConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Regenerate script?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will replace the existing script for this topic with a fresh
+              generation using the current word count, special instructions, and
+              model settings. The previous version will be overwritten.
+              <br /><br />
+              Are you sure you want to proceed?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setRegenConfirmOpen(false);
+                handleGenerate();
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Proceed
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
