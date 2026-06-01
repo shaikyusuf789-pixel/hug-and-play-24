@@ -252,12 +252,33 @@ function ScriptGenerator() {
         setExistingScriptId(script.id);
         setIsExistingScript(true);
         setScriptText(script.content || "");
-        toast.info("Script already generated for this idea. Loaded from database.");
+
+        // Also look up chunks + audio progress for this script so the
+        // user sees "where they left off" on revisit.
+        const { data: chunkRows } = await supabase
+          .from("script_chunks")
+          .select("id, audio_url")
+          .eq("script_id", script.id);
+
+        const totalChunks = chunkRows?.length || 0;
+        const audioDone = (chunkRows || []).filter((c: any) => !!c.audio_url).length;
+
+        const parts = ["✓ Script already generated"];
+        if (totalChunks > 0) parts.push(`✓ ${totalChunks} chunks saved`);
+        else parts.push("• chunks not yet generated");
+        if (totalChunks > 0) {
+          if (audioDone === totalChunks) parts.push(`✓ all ${audioDone} audio ready`);
+          else if (audioDone > 0) parts.push(`• audio ${audioDone}/${totalChunks}`);
+          else parts.push("• audio not yet generated");
+        }
+
+        toast.info(parts.join("  |  "), { duration: 6000 });
       } else {
         setExistingScriptId(null);
         setIsExistingScript(false);
         setScriptText("");
       }
+
     } catch (err) {
       console.error("Error checking for existing script:", err);
     }
