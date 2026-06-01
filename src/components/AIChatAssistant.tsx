@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bot, Send, X, MessageSquare, Loader2, User, ChevronDown, Trash2, History, Plus, Menu } from "lucide-react";
+import { Bot, Send, X, MessageSquare, Loader2, User, ChevronDown, Trash2, History, Plus, Menu, Pencil, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -30,6 +30,8 @@ export function AIChatAssistant() {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [showSessions, setShowSessions] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -176,6 +178,35 @@ export function AIChatAssistant() {
     }
   };
 
+  const startRename = (session: ChatSession, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRenamingId(session.id);
+    setRenameValue(session.title);
+  };
+
+  const saveRename = async (sessionId: string, e?: React.MouseEvent | React.FormEvent) => {
+    e?.stopPropagation?.();
+    e?.preventDefault?.();
+    const newTitle = renameValue.trim();
+    if (!newTitle) {
+      setRenamingId(null);
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('chat_sessions')
+        .update({ title: newTitle })
+        .eq('id', sessionId);
+      if (error) throw error;
+      setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, title: newTitle } : s));
+      setRenamingId(null);
+      toast.success("Session renamed");
+    } catch (error) {
+      console.error("Error renaming session:", error);
+      toast.error("Failed to rename session");
+    }
+  };
+
   return (
     <>
       <Button
@@ -215,6 +246,15 @@ export function AIChatAssistant() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
+                  className="h-8 w-8 text-muted-foreground hover:text-primary"
+                  onClick={() => handleNewChat()}
+                  title="New session"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
                   className="h-8 w-8 text-muted-foreground"
                   onClick={() => setIsOpen(false)}
                 >
@@ -250,28 +290,69 @@ export function AIChatAssistant() {
                         <div
                           key={session.id}
                           className={cn(
-                            "group flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors",
+                            "group flex items-center justify-between gap-1 p-2 rounded-md cursor-pointer transition-colors",
                             currentSessionId === session.id 
                               ? "bg-primary/10 text-primary border border-primary/20" 
                               : "hover:bg-secondary text-muted-foreground"
                           )}
                           onClick={() => {
+                            if (renamingId === session.id) return;
                             setCurrentSessionId(session.id);
                             setShowSessions(false);
                           }}
                         >
-                          <div className="flex items-center gap-2 overflow-hidden">
+                          <div className="flex items-center gap-2 overflow-hidden flex-1 min-w-0">
                             <History className="h-3.5 w-3.5 shrink-0" />
-                            <span className="text-[11px] font-medium truncate">{session.title}</span>
+                            {renamingId === session.id ? (
+                              <form
+                                onSubmit={(e) => saveRename(session.id, e)}
+                                className="flex-1 min-w-0"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Input
+                                  autoFocus
+                                  value={renameValue}
+                                  onChange={(e) => setRenameValue(e.target.value)}
+                                  onBlur={() => saveRename(session.id)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Escape") setRenamingId(null);
+                                  }}
+                                  className="h-6 text-[11px] px-1.5"
+                                />
+                              </form>
+                            ) : (
+                              <span className="text-[11px] font-medium truncate">{session.title}</span>
+                            )}
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-rose-500"
-                            onClick={(e) => handleDeleteSession(session.id, e)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            {renamingId === session.id ? (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-muted-foreground hover:text-emerald-500"
+                                onClick={(e) => saveRename(session.id, e)}
+                              >
+                                <Check className="h-3 w-3" />
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary"
+                                onClick={(e) => startRename(session, e)}
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-rose-500"
+                              onClick={(e) => handleDeleteSession(session.id, e)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
