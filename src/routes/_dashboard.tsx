@@ -13,7 +13,8 @@ import {
   Inbox,
   Search,
   Menu,
-  Sparkles
+  Sparkles,
+  Wand2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,8 @@ function DashboardLayout() {
         { to: "/chunks", label: "Chunks", icon: Layers, number: "2" },
         { to: "/audio", label: "Audio", icon: Mic2, number: "3" },
         { to: "/slides", label: "Slides", icon: FileVideo, number: "4" },
+        { to: "/annotations", label: "Annotations", icon: Wand2, number: "5" },
+        { to: "/master-video", label: "Master Video", icon: FileVideo, number: "6" },
         { to: "/youtube", label: "YouTube", icon: Youtube, number: "7" },
       ]
     },
