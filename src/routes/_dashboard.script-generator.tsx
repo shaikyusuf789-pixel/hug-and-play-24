@@ -858,7 +858,12 @@ function ScriptGenerator() {
 
               {inputMode === "idea" && (
                 <div className="space-y-2">
-                  <Label htmlFor="idea-select">Select Priority Idea</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="idea-select">Select Priority Idea</Label>
+                    <span className="text-[10px] text-muted-foreground font-medium">
+                      Last 15 priority topics · ✓ = script ready
+                    </span>
+                  </div>
                   <select
                     id="idea-select"
                     className="w-full border rounded-md p-2 text-sm bg-white"
@@ -866,14 +871,26 @@ function ScriptGenerator() {
                     onChange={(e) => handleIdeaSelect(e.target.value)}
                   >
                     <option value="">-- Choose an idea --</option>
-                    {approvedIdeas.map((idea) => (
-                      <option key={idea.id} value={idea.id}>
-                        {idea.proposed_title || idea.original_title}
-                      </option>
-                    ))}
+                    {approvedIdeas.map((idea) => {
+                      const hasScript = !!scriptMap[idea.id];
+                      const marker = hasScript ? "✓" : "○";
+                      const title = idea.proposed_title || idea.original_title;
+                      return (
+                        <option key={idea.id} value={idea.id}>
+                          {marker} {title} {hasScript ? "— script ready" : "— no script yet"}
+                        </option>
+                      );
+                    })}
                   </select>
+                  {selectedIdeaId && scriptMap[selectedIdeaId] && (
+                    <div className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-2 py-1.5 font-medium">
+                      ✓ This topic already has a saved script. Edit it in the preview, or click <b>Regenerate</b> for a fresh version with current settings.
+                    </div>
+                  )}
                 </div>
               )}
+
+
 
               {inputMode === "pdf" && (
                 <div className="space-y-4">
