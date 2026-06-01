@@ -421,7 +421,7 @@ export function AIChatAssistant() {
                       {msg.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
                     </div>
                     <div className={cn(
-                      "min-w-0 rounded-2xl px-4 py-2.5 text-sm shadow-sm leading-relaxed break-words overflow-hidden",
+                      "min-w-0 flex-1 rounded-2xl px-4 py-2.5 text-sm shadow-sm leading-relaxed break-words overflow-hidden [overflow-wrap:anywhere] [word-break:break-word]",
                       msg.role === "user"
                         ? "rounded-tr-none border bg-secondary text-secondary-foreground whitespace-pre-wrap"
                         : "rounded-tl-none border bg-card text-card-foreground"
