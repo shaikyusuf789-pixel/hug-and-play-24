@@ -133,6 +133,18 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
               </>
             ) : "—"}
           </h2>
+          {idea.published_date && (
+            <div className="text-[10px] md:text-[11px] font-bold text-slate-500 mt-1 flex items-center gap-1">
+              <Calendar className="size-3" />
+              {(() => {
+                const d = new Date(idea.published_date);
+                const day = String(d.getDate()).padStart(2, '0');
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const year = d.getFullYear();
+                return `${day}/${month}/${year}`;
+              })()}
+            </div>
+          )}
         </div>
 
         {/* Meta */}
@@ -141,12 +153,6 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
             <span className="inline-flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
               <Eye className="size-2.5 md:size-3" />
               <span className="text-slate-800">{idea.views.toLocaleString()}</span>
-            </span>
-          )}
-          {idea.published_date && (
-            <span className="inline-flex items-center gap-1">
-              <Calendar className="size-2.5 md:size-3" />
-              {new Date(idea.published_date).toLocaleDateString()}
             </span>
           )}
           {idea.duration && (
