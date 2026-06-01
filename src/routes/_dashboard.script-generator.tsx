@@ -277,10 +277,14 @@ function ScriptGenerator() {
     
     // Check if script already exists for this idea
     try {
+      // Pick the latest script that actually has content. Earlier broken
+      // streams may have left empty placeholder rows behind -- skip those.
       const { data: existingScripts, error } = await supabase
         .from("scripts")
         .select("*")
         .eq("idea_id", ideaId)
+        .neq("content", "")
+        .not("content", "is", null)
         .order("created_at", { ascending: false })
         .limit(1);
 
