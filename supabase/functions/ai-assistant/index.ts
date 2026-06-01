@@ -121,18 +121,32 @@ RESPONSE FORMAT (CRITICAL):
         return JSON.stringify(stats);
       }
       if (name === "get_app_activity") {
-        const [{ data: ideas }, { data: scripts }, { data: chunks }, { count: srcCount }] = await Promise.all([
-          supabase.from("raw_content").select("status").order("created_at", { ascending: false }).limit(200),
+        // Use exact COUNT queries (head:true) so we get true totals and are not
+        // limited by Supabase's default 1000-row fetch cap. Group counts by status
+        // case-insensitively (DB has mixed-case values like "Pending" / "pending").
+        const ideaStatusBuckets = ["pending", "approved", "rejected", "priority", "processing"];
+        const chunkStatusBuckets = ["pending", "processing", "done", "failed"];
+        const countBy = async (table: string, status: string) => {
+          const { count } = await supabase
+            .from(table)
+            .select("*", { count: "exact", head: true })
+            .ilike("status", status);
+          return [status, count || 0] as [string, number];
+        };
+        const [ideaCounts, chunkCounts, { data: scripts }, { count: srcCount }, { count: ideasTotal }] = await Promise.all([
+          Promise.all(ideaStatusBuckets.map((s) => countBy("raw_content", s))),
+          Promise.all(chunkStatusBuckets.map((s) => countBy("script_chunks", s))),
           supabase.from("scripts").select("id, title, status, created_at").order("created_at", { ascending: false }).limit(10),
-          supabase.from("script_chunks").select("status"),
           supabase.from("sources_master").select("*", { count: "exact", head: true }),
+          supabase.from("raw_content").select("*", { count: "exact", head: true }),
         ]);
-        const counts = (arr: any[], k = "status") => arr?.reduce((a: any, r: any) => { const v = (r[k] || "unknown").toLowerCase(); a[v] = (a[v] || 0) + 1; return a; }, {}) || {};
         return JSON.stringify({
           sources_total: srcCount,
-          ideas_by_status: counts(ideas || []),
-          chunks_by_status: counts(chunks || []),
+          ideas_total: ideasTotal,
+          ideas_by_status: Object.fromEntries(ideaCounts),
+          chunks_by_status: Object.fromEntries(chunkCounts),
           recent_scripts: scripts,
+          note: "Counts are EXACT totals from the database (case-insensitive on status). Do NOT estimate from a sample or from get_recent_ideas — that tool only returns the latest 10 rows.",
         });
       }
       if (name === "analyze_youtube_channel") {
