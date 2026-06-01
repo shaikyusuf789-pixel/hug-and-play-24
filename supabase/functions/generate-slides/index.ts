@@ -24,7 +24,6 @@ async function callGamma(inputText: string, themeName: string) {
       inputText,
       textMode: "preserve",
       format: "presentation",
-      themeName,
       numCards: 1,
       cardSplit: "auto",
       additionalInstructions: `Use a traditional card layout in strict 16:9 widescreen aspect ratio (1920x1080), matching a standard YouTube slideshow. Do NOT use square (1:1) or vertical layouts. Preserve the input text exactly as provided — do not rewrite, summarize, or translate. Apply the "${themeName}" visual theme.`,
