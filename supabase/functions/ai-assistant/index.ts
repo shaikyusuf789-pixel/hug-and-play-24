@@ -31,22 +31,34 @@ serve(async (req) => {
     const biography = truncate(metadata?.find(m => m.key === "app_biography")?.value);
     const neuralScheme = truncate(metadata?.find(m => m.key === "neural_scheme")?.value);
 
-    const systemPrompt = `You are the SKY Studio AI Assistant ("Second Brain") for a YouTube production pipeline.
+    const systemPrompt = `You are **JERRY**, the personal assistant ("PA") and watchdog for boss's SKY Studio YouTube production app.
+
+IDENTITY (CRITICAL — never break character):
+- Your name is **Jerry**. If asked "what is your name" / "who are you", reply exactly:
+  "Hi, I am Jerry, your PA. How can I assist you boss?"
+- Always address the user as "boss". Friendly, sharp, proactive — like Jarvis.
+- Never say you are ChatGPT, GPT, OpenAI, an AI language model, or mention the underlying model.
+
+ROLE — WATCHDOG OF THE WHOLE APP:
+- You silently observe every activity boss does: sources added, ideas approved/rejected, scripts generated, videos produced, slides created.
+- Proactively flag waste: if boss keeps rejecting ideas from a specific channel, use \`analyze_source_health\` and recommend silencing or removing that channel to save Apify/scraper credits.
+- When boss shares a YouTube channel link, run \`analyze_youtube_channel\` (web_search + fetch_url) to judge whether it fits SKY Academy's niche. If it fits, **suggest** adding it and wait for boss's approval — only then call \`add_source\`.
+- Periodically (when asked "what's happening" / "status" / "report") call \`get_app_activity\` to summarise pipeline state.
 
 APP BIOGRAPHY: ${biography}
 NEURAL SCHEME: ${neuralScheme}
 
 CAPABILITIES:
-- Read/write app DB via tools (sources, ideas, scripts, notes).
-- Internet: web_search + fetch_url. Cite source URLs.
-- Image gen via generate_image (DALL·E 3). Embed result as ![alt](url).
-- save_app_note to store notes; clear_chat_memory to wipe history.
+- DB: get_sources / add_source / remove_source / get_recent_ideas / approve_idea / reject_idea / get_scripts / get_app_activity / analyze_source_health.
+- YouTube: analyze_youtube_channel (researches a channel and decides fit).
+- Internet: web_search + fetch_url. Always cite source URLs.
+- Image gen: generate_image (DALL·E 3). Embed result as ![alt](url).
+- Memory: save_app_note / clear_chat_memory.
 
 RESPONSE FORMAT (CRITICAL):
 - Always reply in clean GitHub-flavored Markdown — never one long paragraph.
 - Use ## headings, **bold**, numbered/bulleted lists, [text](url) links.
-- For lists of channels/ideas/sources: numbered, each item bold title + sub-bullets (Description / Link / Source).
-- Be concise. Only call tools when necessary.`;
+- Be concise, structured, boss-friendly. Only call tools when necessary.`;
 
     const handleToolCall = async (call: any) => {
       const { name, arguments: argsJson } = call.function;
@@ -64,6 +76,68 @@ RESPONSE FORMAT (CRITICAL):
         ]).select();
         if (error) return JSON.stringify({ error: error.message });
         return JSON.stringify({ success: true, data });
+      }
+      if (name === "remove_source") {
+        const { error } = await supabase.from("sources_master").delete().eq("id", args.id);
+        if (error) return JSON.stringify({ error: error.message });
+        return JSON.stringify({ success: true, message: "Source removed from monitor list." });
+      }
+      if (name === "analyze_source_health") {
+        // Compute approve/reject ratio per source
+        const { data: sources } = await supabase.from("sources_master").select("id, channel_name");
+        const { data: content } = await supabase.from("raw_content").select("source_id, status");
+        const stats = (sources || []).map((s: any) => {
+          const items = (content || []).filter((c: any) => c.source_id === s.id);
+          const total = items.length;
+          const rejected = items.filter((c: any) => (c.status || "").toLowerCase() === "rejected").length;
+          const approved = items.filter((c: any) => (c.status || "").toLowerCase() === "approved").length;
+          const rejectRate = total ? Math.round((rejected / total) * 100) : 0;
+          const recommend =
+            total >= 5 && rejectRate >= 70
+              ? "REMOVE — wasting credits"
+              : total >= 5 && rejectRate >= 50
+              ? "SILENCE — low ROI"
+              : "KEEP";
+          return { id: s.id, channel: s.channel_name, total, approved, rejected, rejectRate, recommend };
+        }).sort((a: any, b: any) => b.rejectRate - a.rejectRate);
+        return JSON.stringify(stats);
+      }
+      if (name === "get_app_activity") {
+        const [{ data: ideas }, { data: scripts }, { data: chunks }, { count: srcCount }] = await Promise.all([
+          supabase.from("raw_content").select("status").order("created_at", { ascending: false }).limit(200),
+          supabase.from("scripts").select("id, title, status, created_at").order("created_at", { ascending: false }).limit(10),
+          supabase.from("script_chunks").select("status"),
+          supabase.from("sources_master").select("*", { count: "exact", head: true }),
+        ]);
+        const counts = (arr: any[], k = "status") => arr?.reduce((a: any, r: any) => { const v = (r[k] || "unknown").toLowerCase(); a[v] = (a[v] || 0) + 1; return a; }, {}) || {};
+        return JSON.stringify({
+          sources_total: srcCount,
+          ideas_by_status: counts(ideas || []),
+          chunks_by_status: counts(chunks || []),
+          recent_scripts: scripts,
+        });
+      }
+      if (name === "analyze_youtube_channel") {
+        try {
+          // Fetch the channel page and extract basic info
+          const r = await fetch(args.url, { headers: { "User-Agent": "Mozilla/5.0" } });
+          const html = await r.text();
+          const title = (html.match(/<meta property="og:title" content="([^"]+)"/) || [])[1] || "";
+          const desc = (html.match(/<meta property="og:description" content="([^"]+)"/) || [])[1] || "";
+          const subs = (html.match(/"subscriberCountText":\{"simpleText":"([^"]+)"/) || [])[1] || "";
+          // Sample recent video titles
+          const videoTitles = [...html.matchAll(/"title":\{"runs":\[\{"text":"([^"]+)"/g)].slice(0, 15).map(m => m[1]);
+          return JSON.stringify({
+            url: args.url,
+            channel_title: title,
+            description: desc,
+            subscribers: subs,
+            recent_video_titles: videoTitles,
+            instructions: "Judge fit for SKY Academy (educational, motivational, tech/business/self-improvement). Return verdict (FIT / NOT FIT / MAYBE) with reasoning and ask boss to approve before calling add_source.",
+          });
+        } catch (e) {
+          return JSON.stringify({ error: String(e) });
+        }
       }
       if (name === "get_recent_ideas") {
         const { data } = await supabase.from("raw_content").select("*").order("created_at", { ascending: false }).limit(10);
@@ -316,6 +390,42 @@ RESPONSE FORMAT (CRITICAL):
                 size: { type: "string", enum: ["1024x1024", "1792x1024", "1024x1792"], description: "Image size. Use 1792x1024 for YouTube thumbnails." }
               },
               required: ["prompt"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "remove_source",
+            description: "Remove a YouTube channel from the sources_master table by id. Call after boss confirms.",
+            parameters: { type: "object", properties: { id: { type: "string" } }, required: ["id"] }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "analyze_source_health",
+            description: "Compute reject/approve ratio for each source. Use to recommend silencing or removing low-ROI channels that waste scraper/Apify credits.",
+            parameters: { type: "object", properties: {} }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "get_app_activity",
+            description: "Summarise current app activity: total sources, ideas grouped by status, chunks by status, recent scripts. Use for watchdog status reports.",
+            parameters: { type: "object", properties: {} }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "analyze_youtube_channel",
+            description: "Fetch a YouTube channel page and extract title/description/subs/recent video titles so you can judge whether it fits SKY Academy. Suggest add_source ONLY after boss approves.",
+            parameters: {
+              type: "object",
+              properties: { url: { type: "string", description: "Full YouTube channel URL" } },
+              required: ["url"]
             }
           }
         }
