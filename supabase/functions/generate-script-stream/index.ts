@@ -204,8 +204,8 @@ serve(async (req) => {
       150,
       Math.min(5000, Number(body.wordCount) || 1800),
     );
-    const model = ||;
-    const factCheckModel = body.factCheckModel || "gemini-2.5-pro";
+    const model = normalizeGeminiModel(body.model, "gemini-2.5-pro");
+    const factCheckModel = normalizeGeminiModel(body.factCheckModel, "gemini-2.5-pro");
 
     const parts: string[] = [];
     if (body.topic) parts.push(`TOPIC / TITLE:\n${body.topic}`);
@@ -227,8 +227,10 @@ serve(async (req) => {
     );
     const userPrompt = parts.join("\n\n");
 
-    const LOVABLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    let googleApiKey = "";
+    try {
+      googleApiKey = requireGoogleApiKey();
+    } catch (_) {
       return new Response(
         JSON.stringify({ error: "GOOGLE_API_KEY missing" }),
         {
@@ -311,24 +313,12 @@ serve(async (req) => {
     const scriptId = row.id as string;
 
     // Open AI gateway in streaming mode.
-    const aiRes = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          stream: true,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-        }),
-      },
-    );
+    const aiRes = await geminiStreamResponse(googleApiKey, {
+      model,
+      system: systemPrompt,
+      user: userPrompt,
+      temperature: 0.2,
+    });
 
     if (!aiRes.ok || !aiRes.body) {
       const t = await aiRes.text().catch(() => "");
@@ -371,7 +361,7 @@ serve(async (req) => {
             const { value, done } = await reader.read();
             if (done) break;
             buffer += decoder.decode(value, { stream: true });
-            // OpenAI-style SSE: lines starting with "data: "
+            // Gemini SSE: lines starting with "data: "
             const lines = buffer.split("\n");
             buffer = lines.pop() || "";
             for (const line of lines) {
@@ -381,9 +371,7 @@ serve(async (req) => {
               if (!payload || payload === "[DONE]") continue;
               try {
                 const j = JSON.parse(payload);
-                const delta: string =
-                  j?.choices?.[0]?.delta?.content ??
-                    j?.choices?.[0]?.message?.content ?? "";
+                const delta: string = extractGeminiText(j);
                 if (delta) {
                   full += delta;
                   controller.enqueue(
@@ -463,7 +451,7 @@ serve(async (req) => {
             scriptId,
             finalText,
             factCheckModel,
-            LOVABLE_API_KEY,
+            googleApiKey,
           ),
         );
       },
