@@ -13,7 +13,8 @@ import {
   Inbox,
   Search,
   Menu,
-  Sparkles
+  Sparkles,
+  Wand2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
