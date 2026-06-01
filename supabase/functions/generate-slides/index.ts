@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
+import { geminiGenerateText, requireGoogleApiKey } from "../_shared/google-ai.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,29 +31,12 @@ serve(async (req) => {
     }
 
     if (action === 'generate-prompt') {
-      const response = await fetch('https://api.lovable.ai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${Deno.env.get('LOVABLE_API_KEY')}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an expert at creating slide content. Your output must be exactly one heading followed by exactly 6 bullet points. No other text.'
-            },
-            {
-              role: 'user',
-              content: `Create slide content based on this text: ${chunk.content}\n\nRemember: One heading and 6 bullet points.`
-            }
-          ],
-        }),
+      const promptResult = await geminiGenerateText(requireGoogleApiKey(), {
+        model: 'gemini-2.5-flash-lite',
+        system: 'You are an expert at creating slide content. Your output must be exactly one heading followed by exactly 6 bullet points. No other text.',
+        user: `Create slide content based on this text: ${chunk.content}\n\nRemember: One heading and 6 bullet points.`,
+        temperature: 0.2,
       })
-
-      const aiData = await response.json()
-      const promptResult = aiData.choices[0].message.content
 
       // Save to database
       const { error: updateError } = await supabase
