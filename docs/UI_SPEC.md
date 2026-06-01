@@ -44,7 +44,17 @@ Sky Studio is a premium, autonomous AI video production pipeline designed for SK
 - **Logic**: "Approve" button triggers `process-idea` Edge Function (Apify transcript -> OpenAI summarizer).
 - **Real-time**: Uses Supabase Realtime to update status as backend steps finish.
 
-### 2.3 Scripting (/script-generator)
+### 2.3 Content Preview (/content-preview)
+![Content Preview](screenshots/content-preview.png)
+- **Purpose**: Detailed tabular overview of all generated content ideas with full metadata.
+- **UI Components**:
+  - **Table view**: Columns for Status (badge), Proposed Title, Original Title, Channel, Category, Views, Duration, Published Date.
+  - **Proposed Title** now includes channel name appended: `"Title - ChannelName"` (matching the card view format).
+  - **Status badges**: Color-coded — Approved (green), Rejected (red), Priority (yellow), Done (blue), Pending (slate).
+  - **Refresh button**: Triggers refetch of the ideas list.
+- **Logic**: Reads all ideas via `getIdeas` server function; displays in a responsive data table.
+
+### 2.4 Scripting (/script-generator)
 ![Scripting](screenshots/script-generator.png)
 - **Purpose**: Full AI script generation in Telugu Unicode.
 - **UI Components**:
