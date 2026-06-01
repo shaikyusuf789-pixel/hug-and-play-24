@@ -65,6 +65,14 @@ export function AIChatAssistant() {
     }
   }, [messages, isLoading, isOpen, showSessions]);
 
+  useEffect(() => {
+    if (!input && textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    } else {
+      adjustTextareaHeight();
+    }
+  }, [input]);
+
   const loadSessions = async () => {
     try {
       const { data, error } = await supabase
