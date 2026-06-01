@@ -56,13 +56,19 @@ Sky Studio is a premium, autonomous AI video production pipeline designed for SK
 
 ### 2.4 Scripting (/script-generator)
 ![Scripting](screenshots/script-generator.png)
-- **Purpose**: Full AI script generation in Telugu Unicode.
+- **Purpose**: Full AI script generation in Telugu Unicode, with live token-by-token streaming.
+- **Default selections**: Video Type = **General**; Input Mode = **Priority List**.
 - **UI Components**:
-  - **Input Modes**: Generate from Topic, Transcript, PDF, or Priority Idea.
-  - **Provider Settings**: Choice of OpenAI, Google, or Poe models.
-  - **Fact-Check panel**: Preview box for proofreading AI output + editable original script preview + "FACTS APPROVED" button to merge corrections in the same tone/style.
-- **Logic**: Triggers `generate-script` Edge Function to produce 150-180 word segments. Autosaves to `scripts` table on generate; regenerate/edit + manual Save replaces existing row. Mandatory promos (Telegram channel / WhatsApp mentorship / SKY Academy app + private mentorship "360 degree strong hold preparation") are injected once each at natural spots by the prompt.
-- **Revisit UX**: Selecting a Priority Idea queries `scripts`, `script_chunks`, and `script_audio` and shows a status toast (e.g., `✓ Script already generated | ✓ 12 chunks saved | • audio 4/12`) so the user sees pipeline progress instantly.
+  - **Input Modes** (each color-coded): Priority List (emerald, default), Topic Name (amber), Competitor Transcripts (sky), Book / PDF Section (violet).
+  - **Provider Settings**: Sky Studio Gemini (default — `google/gemini-3.1-pro-preview`), Poe, Anthropic, OpenAI, External Google.
+  - **Priority List dropdown**: Shows the **last 15 priority-marked topics** (statuses `Priority` + `Script Done`), most recent first. Each row is prefixed with `✓` (script already saved) or `○` (not generated yet). An emerald banner under the selector confirms when a saved script exists. Auto-refreshes every 10 s.
+  - **Existing script → editable**: Selecting a topic with a saved script auto-loads it into the preview; user can toggle **Edit**, modify text, and click **Save Script** (no auto-save).
+  - **Regenerate with double confirm**: Every Regenerate trigger (main button, banner button, preview header) opens an AlertDialog — "This will replace the existing script — Cancel / Proceed" — before running a fresh generation honoring the current word count, special instructions, and model.
+  - **Live streaming preview**: Tokens stream Gemini-chat-style via SSE from `generate-script-stream` edge function.
+  - **Fact-Check panel**: Wrong-statements-only preview (claim + issue + editable correction + source) with "Facts Approved — Merge" to merge corrections preserving tone.
+- **Logic**: `generate-script-stream` enforces the **THREE-LAYER RULE** (WHAT = user input only · HOW = 4 reference transcripts for style only · WHERE = SKY DNA structure) with a hard content boundary against transcript topic spillover. Fact-checking runs in the background after the stream completes and persists findings to `scripts.fact_check_findings`.
+- **Revisit UX**: Selecting a Priority Idea queries `scripts`, `script_chunks`, and audio progress and shows a status toast (e.g., `✓ Script already generated | ✓ 12 chunks saved | • audio 4/12`).
+
 
 ### 2.5 Chunks (/chunks)
 ![Chunks](screenshots/chunks.png)
