@@ -41,16 +41,11 @@ export const Route = createFileRoute("/api/public/hooks/auto-run-engine")({
             { onConflict: "key" },
           );
 
-        // Inline import to avoid SSR module evaluation issues
-        const { runIdeaEngine } = await import("@/lib/engine.functions");
+        const { runIdeaEngineCore } = await import("@/lib/engine.functions");
         const videosLimit = cfg.videos_per_run ?? 10;
 
         try {
-          // call the underlying handler directly (server-side)
-          const result = await (runIdeaEngine as any).handler({
-            data: { videosLimit },
-            context: {},
-          });
+          const result = await runIdeaEngineCore({ videosLimit });
           return Response.json({ ok: true, ran: true, result });
         } catch (err: any) {
           console.error("[auto-run-engine] failed:", err);
