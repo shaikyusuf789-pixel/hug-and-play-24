@@ -4,6 +4,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { geminiGenerateText, normalizeGeminiModel, requireGoogleApiKey } from "../_shared/google-ai.ts";
 import {
   DNA_GENERAL,
   DNA_SUBJECTIVE,
@@ -168,7 +169,7 @@ serve(async (req) => {
       150,
       Math.min(5000, Number(body.wordCount) || 660),
     );
-    const model = body.model || "gemini-2.5-pro";
+    const model = normalizeGeminiModel(body.model, "gemini-2.5-pro");
     const save = body.save !== false;
 
     // Build the user prompt from whichever inputs the frontend sent.
@@ -199,8 +200,10 @@ serve(async (req) => {
     );
     const userPrompt = parts.join("\n\n");
 
-    const LOVABLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    let googleApiKey = "";
+    try {
+      googleApiKey = requireGoogleApiKey();
+    } catch (_) {
       return new Response(
         JSON.stringify({ error: "GOOGLE_API_KEY missing on server" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -260,39 +263,13 @@ serve(async (req) => {
       systemChars: systemPrompt.length,
     });
 
-    const aiRes = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-        }),
-      },
-    );
-
-    if (!aiRes.ok) {
-      const errTxt = await aiRes.text();
-      console.error("Google AI error", aiRes.status, errTxt);
-      return new Response(
-        JSON.stringify({
-          error: "Google AI error",
-          status: aiRes.status,
-          detail: errTxt,
-        }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    const aiJson = await aiRes.json();
-    const content: string = aiJson?.choices?.[0]?.message?.content ?? "";
+    const content = await geminiGenerateText(googleApiKey, {
+      model,
+      system: systemPrompt,
+      user: userPrompt,
+      temperature: 0.2,
+      responseMimeType: "application/json",
+    });
     const script = extractScriptText(content);
     if (!script) {
       return new Response(
