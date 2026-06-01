@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     if (provider === "elevenlabs") {
       const key = Deno.env.get("ELEVEN_LABS_API_KEY");
       if (!key) return json({ error: "ELEVEN_LABS_API_KEY not set" }, 500);
-      const vId = voiceId || "JBFqnCBsd6RMkjVDRZzb";
+      const vId = "UusdT1frXE5G4cvEE2dJ";
       const r = await fetch(
         `https://api.elevenlabs.io/v1/text-to-speech/${vId}?output_format=mp3_44100_128`,
         {
