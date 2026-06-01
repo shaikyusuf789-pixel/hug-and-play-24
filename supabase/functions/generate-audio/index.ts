@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
           headers: { "xi-api-key": key, "Content-Type": "application/json" },
           body: JSON.stringify({
             text: chunk.content,
-            model_id: "eleven_multilingual_v2",
+            model_id: "eleven_v3",
           }),
         },
       );
