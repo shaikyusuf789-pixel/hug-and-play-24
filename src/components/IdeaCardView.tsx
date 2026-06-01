@@ -121,6 +121,19 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
 
       {/* Body */}
       <div className="px-5 md:px-6 py-5 md:py-6 space-y-4 md:space-y-5">
+        {showProgress && (
+          <div className={cn(
+            "flex items-center gap-2 md:gap-3 rounded-2xl px-3 md:px-4 py-2.5 md:py-3 border",
+            failed
+              ? "bg-rose-50 border-rose-200"
+              : "bg-indigo-50 border-indigo-100"
+          )}>
+            <ProgressPill label="Transcript" done={transcriptDone} active={!transcriptDone && !failed} failed={failed && !transcriptDone} />
+            <div className="h-px flex-1 bg-slate-300/70" />
+            <ProgressPill label="AI Analysis" done={aiDone} active={transcriptDone && !aiDone && !failed} failed={failed && transcriptDone && !aiDone} />
+          </div>
+        )}
+
         <div className="space-y-1">
           <div className="text-[8px] md:text-[9px] uppercase tracking-[0.15em] md:tracking-[0.2em] text-slate-500 font-black flex items-center gap-2">
             <div className="h-1 w-1 rounded-full bg-slate-700" />
