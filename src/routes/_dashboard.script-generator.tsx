@@ -62,6 +62,66 @@ function ScriptGenerator() {
   const [existingScriptId, setExistingScriptId] = useState<string | null>(null);
   const [isExistingScript, setIsExistingScript] = useState(false);
 
+  // Fact-checking AI
+  type FactFinding = { claim: string; issue: string; correction: string; source: string; severity?: "high" | "medium" | "low" };
+  const [isFactChecking, setIsFactChecking] = useState(false);
+  const [factFindings, setFactFindings] = useState<FactFinding[]>([]);
+  const [factCheckRan, setFactCheckRan] = useState(false);
+  const [isApplyingFacts, setIsApplyingFacts] = useState(false);
+  const [factCheckedAgainst, setFactCheckedAgainst] = useState<string>("");
+
+  const handleFactCheck = async () => {
+    if (!scriptText.trim()) return;
+    setIsFactChecking(true);
+    setFactFindings([]);
+    setFactCheckRan(false);
+    try {
+      const res = await supabase.functions.invoke("fact-check-script", {
+        body: { script: scriptText },
+      });
+      if (res.error) throw res.error;
+      const findings: FactFinding[] = res.data?.findings || [];
+      setFactFindings(findings);
+      setFactCheckRan(true);
+      setFactCheckedAgainst(scriptText);
+      toast.success(findings.length === 0 ? "No factual issues found ✓" : `${findings.length} factual issue(s) found`);
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Fact-check failed");
+    } finally {
+      setIsFactChecking(false);
+    }
+  };
+
+  const updateFinding = (idx: number, patch: Partial<FactFinding>) => {
+    setFactFindings((prev) => prev.map((f, i) => (i === idx ? { ...f, ...patch } : f)));
+  };
+  const removeFinding = (idx: number) => {
+    setFactFindings((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleApproveFacts = async () => {
+    if (!scriptText.trim() || factFindings.length === 0) return;
+    setIsApplyingFacts(true);
+    try {
+      const res = await supabase.functions.invoke("apply-fact-corrections", {
+        body: { script: scriptText, findings: factFindings },
+      });
+      if (res.error) throw res.error;
+      const corrected = res.data?.corrected_script;
+      if (!corrected) throw new Error("No corrected script returned");
+      setScriptText(corrected);
+      setFactFindings([]);
+      setFactCheckRan(false);
+      toast.success("Facts merged into script ✓");
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Failed to apply corrections");
+    } finally {
+      setIsApplyingFacts(false);
+    }
+  };
+
   const liveWordCount = scriptText.trim() ? scriptText.trim().split(/\s+/).filter(Boolean).length : 0;
   const liveCharCount = scriptText.length;
 
