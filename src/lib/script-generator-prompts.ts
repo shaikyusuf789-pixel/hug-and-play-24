@@ -86,6 +86,62 @@ Return ONLY a valid JSON array. No preamble, no markdown fences, no explanation 
 `;
 
 /**
+ * Shared promotions block — injected into BOTH DNA variants so the
+ * generated script always weaves in the 3 mandatory promos exactly ONCE
+ * each at natural, motivational, mentor-style moments.
+ */
+const PROMOTIONS_BLOCK = `
+MANDATORY PROMOTIONS (insert each ONE TIME, ONCE EACH, at the most natural
+and apt place inside the script -- never two in a row, never at the very
+opening, never crammed at the end. They MUST feel like the mentor is
+casually telling students, NOT like an advertisement. Weave them into the
+flow using the same tone, fillers and code-mix as the surrounding script.):
+
+PROMO A -- TELEGRAM CHANNEL (free resources + updates):
+  Tell students to join the free Telegram channel for free study materials,
+  quick updates, important alerts and many more useful resources -- "link
+  description lo undi" style. Place this at a point where you just finished
+  giving a useful tip or resource, so it feels like a natural extension.
+
+PROMO B -- WHATSAPP MENTORSHIP (doubts + motivation + demo):
+  Tell students they can text on WhatsApp for all their doubts,
+  clarifications, motivation, and to book a free mentorship demo --
+  "WhatsApp number description lo unnadi" style. Place this where students
+  would emotionally need support (after a tough-topic explanation, after a
+  motivational beat, or near discussion of personal struggles).
+
+PROMO C -- SKY ACADEMY APP + 360 DEGREE STRONG HOLD PREPARATION:
+  Naturally mention the SKY Academy app offerings:
+    - Full video courses for all competitive exams
+    - PDFs
+    - Quizzes
+    - Section-wise tests
+    - Full-length mocks
+  THEN, most importantly, explain the PRIVATE TELEGRAM MENTORSHIP SYSTEM
+  in the same breath:
+    - Each student is added into a private group
+    - Only the mentor, the tutor and the students are inside
+    - Personal monitoring of every single student
+    - Daily morning schedules
+    - Daily evening tests
+    - Topic-wise analysis
+    - Continuous guidance and real accountability
+  Describe this whole package as "360 degree strong hold preparation".
+  Place this where the script is talking about serious preparation,
+  discipline, or "how to actually crack the exam" -- so it lands as the
+  natural answer to that need, not as a sales pitch.
+
+HARD RULES for all 3 promos:
+  - Each promo appears EXACTLY ONCE in the full script. No repetition.
+  - Spread them out across different segments -- never back-to-back.
+  - Use the SAME Telugu+English code-mix and filler style as the rest of
+    the script (refer STYLE REFERENCE transcripts).
+  - Tone must be mentor-to-student, motivational and helpful -- NEVER
+    advertisement-style, NEVER "buy now" energy.
+  - Do NOT add any new promo, link or product beyond A, B and C above.
+`;
+
+/**
  * SKY DNA — GENERAL
  * Contains ONLY content / structural / promotional rules.
  * No tone, voice, pacing or filler-word instructions.
@@ -101,6 +157,8 @@ DNA RULES FOR GENERAL (content only):
 4. Community: Reinforce that SKY Academy students are a family.
 5. CTA: Must mention the Telegram group for daily motivation.
 6. Promotions: SKY Academy app + Telegram are the standard CTAs.
+
+${PROMOTIONS_BLOCK}
 `;
 
 /**
@@ -117,7 +175,10 @@ DNA RULES FOR SUBJECTIVE (content only):
 4. Memory Key: At least ONE memory hint per major concept
    (mnemonics, funny stories, coding images). Content device, not tone.
 5. Final Seg: Summarize, then SKY Academy app CTA + Telegram study-notes CTA.
+
+${PROMOTIONS_BLOCK}
 `;
+
 
 const PRIORITY_NOTE = `
 PRIORITY (do not violate):
