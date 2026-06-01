@@ -45,6 +45,14 @@ YOUR MISSION:
 
 7. You have INTERNET ACCESS via 'web_search' (search the web) and 'fetch_url' (fetch a specific page's text). Use them to fact-check scripts/ideas, pull news updates, verify claims, or look up anything the user asks. Always cite the source URLs in your reply.
 
+8. You can GENERATE IMAGES (thumbnails, illustrations, concept art) using 'generate_image' (DALL·E 3). When the user asks for a thumbnail or image, call this tool with a vivid descriptive prompt and then embed the returned URL in markdown: ![alt](url).
+
+RESPONSE FORMATTING (CRITICAL):
+- Always reply in clean GitHub-flavored Markdown.
+- Use ## headings, **bold**, numbered lists, and bullet points. Never reply as a single long paragraph.
+- For lists of items (channels, ideas, sources), use numbered lists where each item has its own line with bolded title, then sub-bullets for Description / Link / Source.
+- Keep links as proper [Title](url) markdown.
+
 Always be professional, concise, and incredibly helpful.`;
 
     const handleToolCall = async (call: any) => {
@@ -150,14 +158,40 @@ Always be professional, concise, and incredibly helpful.`;
         }
       }
 
+      if (name === "generate_image") {
+        try {
+          const r = await fetch("https://api.openai.com/v1/images/generations", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
+            },
+            body: JSON.stringify({
+              model: "dall-e-3",
+              prompt: args.prompt,
+              n: 1,
+              size: args.size || "1792x1024",
+              quality: "standard",
+            }),
+          });
+          const j = await r.json();
+          if (j.error) return JSON.stringify({ error: j.error.message });
+          const url = j.data?.[0]?.url;
+          return JSON.stringify({ success: true, url, prompt: args.prompt, instructions: "Embed in reply as ![thumbnail](URL)" });
+        } catch (e) {
+          return JSON.stringify({ error: String(e) });
+        }
+      }
+
       return "Tool not found";
     };
 
     const apiKey = Deno.env.get("OPENAI_API_KEY");
     if (!apiKey) throw new Error("Missing OPENAI_API_KEY");
 
-    const requestBody = {
+    const requestBody: any = {
       model: "gpt-4o-mini",
+      max_tokens: 4096,
       messages: [
         { role: "system", content: systemPrompt },
         ...messages
@@ -276,6 +310,21 @@ Always be professional, concise, and incredibly helpful.`;
               required: ["url"]
             }
           }
+        },
+        {
+          type: "function",
+          function: {
+            name: "generate_image",
+            description: "Generate an image (YouTube thumbnail, illustration, concept art) using DALL·E 3. Returns a URL to embed in the reply as markdown image.",
+            parameters: {
+              type: "object",
+              properties: {
+                prompt: { type: "string", description: "Detailed visual prompt for the image. Be vivid and specific." },
+                size: { type: "string", enum: ["1024x1024", "1792x1024", "1024x1792"], description: "Image size. Use 1792x1024 for YouTube thumbnails." }
+              },
+              required: ["prompt"]
+            }
+          }
         }
       ]
     };
@@ -314,12 +363,14 @@ Always be professional, concise, and incredibly helpful.`;
         },
         body: JSON.stringify({
           model: requestBody.model,
+          max_tokens: 4096,
           messages: [
             { role: "system", content: systemPrompt },
             ...messages,
             message,
             ...toolResults
-          ]
+          ],
+          tools: requestBody.tools,
         }),
       });
 
