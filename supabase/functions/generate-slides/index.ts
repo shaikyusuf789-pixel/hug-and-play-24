@@ -153,15 +153,35 @@ serve(async (req) => {
       if (!inputText) throw new Error("Chunk has no outline/content to send to Gamma")
 
       const theme = (themeName && String(themeName).trim()) || "Oasis"
-      const gammaUrl = await callGamma(inputText, theme)
+      const gamma = await callGamma(inputText, theme, supabase, chunkId)
 
       const { error: updateError } = await supabase
         .from('script_chunks')
-        .update({ status: 'slide_generated', slide_url: gammaUrl })
+        .update({
+          status: 'slide_generated',
+          slide_url: gamma.gammaUrl,
+          annotations: {
+            ...(chunk.annotations && typeof chunk.annotations === 'object' ? chunk.annotations : {}),
+            gamma: {
+              preview_url: gamma.previewUrl,
+              gamma_id: gamma.gammaId,
+              generation_id: gamma.generationId,
+              export_url: gamma.exportUrl,
+              dimensions: gamma.dimensions,
+              requested_dimensions: '16x9',
+              verified_16x9: Boolean(gamma.dimensions),
+            },
+          },
+        })
         .eq('id', chunkId)
       if (updateError) throw updateError
 
-      return new Response(JSON.stringify({ success: true, slide_url: gammaUrl }), {
+      return new Response(JSON.stringify({
+        success: true,
+        slide_url: gamma.gammaUrl,
+        preview_url: gamma.previewUrl,
+        dimensions: gamma.dimensions,
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
