@@ -55,6 +55,15 @@ function AudioEngine() {
     }
   }, [selectedScriptId]);
 
+  // Auto-fill default voice when switching providers (user can still edit)
+  useEffect(() => {
+    if (model === "elevenlabs") {
+      setVoiceId("UusdT1frXE5G4cvEE2dJ");
+    } else if (model === "google") {
+      setVoiceId("Zephyr");
+    }
+  }, [model]);
+
   const fetchScripts = async () => {
     const { data, error } = await supabase
       .from("scripts")
