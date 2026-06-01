@@ -337,10 +337,12 @@ export type Database = {
         Row: {
           content: string
           created_at: string | null
+          fact_check_findings: Json | null
           final_audio_url: string | null
           id: string
           idea_id: string | null
           model: string | null
+          script_error: string | null
           status: string | null
           title: string
           updated_at: string | null
@@ -350,10 +352,12 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string | null
+          fact_check_findings?: Json | null
           final_audio_url?: string | null
           id?: string
           idea_id?: string | null
           model?: string | null
+          script_error?: string | null
           status?: string | null
           title: string
           updated_at?: string | null
@@ -363,10 +367,12 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string | null
+          fact_check_findings?: Json | null
           final_audio_url?: string | null
           id?: string
           idea_id?: string | null
           model?: string | null
+          script_error?: string | null
           status?: string | null
           title?: string
           updated_at?: string | null
