@@ -97,6 +97,9 @@ function ContentPreviewPage() {
                   </TableCell>
                   <TableCell className="max-w-[200px] font-medium text-foreground" title={idea.proposed_title}>
                     {idea.proposed_title}
+                    {idea.sources_master?.channel_name && (
+                      <span className="text-indigo-600"> - {idea.sources_master.channel_name}</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <ul className="list-disc list-inside space-y-1 text-xs text-muted-foreground">
