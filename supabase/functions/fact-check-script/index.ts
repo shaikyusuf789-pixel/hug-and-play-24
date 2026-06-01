@@ -3,6 +3,7 @@
 // Does NOT modify the original script.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { geminiGenerateJson, normalizeGeminiModel, requireGoogleApiKey } from "../_shared/google-ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,7 +30,7 @@ For every finding, return:
 
 If you find ZERO factual issues, return an empty findings array.
 
-You MUST respond by calling the report_findings tool. Do not respond with prose.`;
+Return ONLY valid JSON in this shape: {"findings":[...]}. Do not respond with prose.`;
 
 interface Body {
   script?: string;
@@ -51,8 +52,10 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    let apiKey = "";
+    try {
+      apiKey = requireGoogleApiKey();
+    } catch (_) {
       return new Response(
         JSON.stringify({ error: "GOOGLE_API_KEY is not configured" }),
         {
@@ -62,119 +65,15 @@ serve(async (req) => {
       );
     }
 
-    const chosenModel = model || "gemini-2.5-pro";
+    const chosenModel = normalizeGeminiModel(model, "gemini-2.5-pro");
 
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: chosenModel,
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            {
-              role: "user",
-              content:
-                `Fact-check the following script. Return ONLY the incorrect/suspicious factual claims.\n\n--- SCRIPT START ---\n${script}\n--- SCRIPT END ---`,
-            },
-          ],
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "report_findings",
-                description:
-                  "Return the list of factually incorrect or suspicious claims found in the script.",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    findings: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          claim: { type: "string" },
-                          issue: { type: "string" },
-                          correction: { type: "string" },
-                          source: { type: "string" },
-                          severity: {
-                            type: "string",
-                            enum: ["high", "medium", "low"],
-                          },
-                        },
-                        required: [
-                          "claim",
-                          "issue",
-                          "correction",
-                          "source",
-                          "severity",
-                        ],
-                        additionalProperties: false,
-                      },
-                    },
-                  },
-                  required: ["findings"],
-                  additionalProperties: false,
-                },
-              },
-            },
-          ],
-          tool_choice: {
-            type: "function",
-            function: { name: "report_findings" },
-          },
-        }),
-      },
-    );
-
-    if (!response.ok) {
-      const t = await response.text();
-      console.error("Google AI error:", response.status, t);
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limited. Please retry shortly." }),
-          {
-            status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({
-            error:
-              "Workspace credits exhausted. Add funds in Settings → Workspace → Usage.",
-          }),
-          {
-            status: 402,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
-      }
-      return new Response(
-        JSON.stringify({ error: "Google AI error", details: t }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    const data = await response.json();
-    const toolCall = data?.choices?.[0]?.message?.tool_calls?.[0];
-    let findings: any[] = [];
-    if (toolCall?.function?.arguments) {
-      try {
-        const parsed = JSON.parse(toolCall.function.arguments);
-        findings = Array.isArray(parsed.findings) ? parsed.findings : [];
-      } catch (e) {
-        console.error("Failed to parse tool args:", e);
-      }
-    }
+    const parsed = await geminiGenerateJson<{ findings?: any[] }>(apiKey, {
+      model: chosenModel,
+      system: SYSTEM_PROMPT,
+      user: `Fact-check the following script. Return ONLY JSON: {"findings":[...]}.\n\n--- SCRIPT START ---\n${script}\n--- SCRIPT END ---`,
+      temperature: 0.1,
+    });
+    const findings = Array.isArray(parsed.findings) ? parsed.findings : [];
 
     return new Response(
       JSON.stringify({ findings, model: chosenModel }),

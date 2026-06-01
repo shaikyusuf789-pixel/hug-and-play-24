@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { saveChunks } from "@/lib/engine.functions";
-import { processChunks } from "@/lib/api/process-chunks.server";
+import { processChunks } from "@/lib/api/process-chunks.functions";
 
 export const Route = createFileRoute("/_dashboard/chunks")({
   component: ChunksPage,

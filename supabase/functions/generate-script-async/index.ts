@@ -5,6 +5,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { geminiGenerateJson, geminiGenerateText, normalizeGeminiModel, requireGoogleApiKey } from "../_shared/google-ai.ts";
 import {
   DNA_GENERAL,
   DNA_SUBJECTIVE,
@@ -130,35 +131,13 @@ async function runBackground(
 ) {
   try {
     // 1) Generate script
-    const aiRes = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-        }),
-      },
-    );
-
-    if (!aiRes.ok) {
-      const t = await aiRes.text();
-      await supa.from("scripts").update({
-        status: "FAILED",
-        script_error: `AI gateway ${aiRes.status}: ${t.slice(0, 500)}`,
-      }).eq("id", scriptId);
-      return;
-    }
-
-    const aiJson = await aiRes.json();
-    const content: string = aiJson?.choices?.[0]?.message?.content ?? "";
+    const content = await geminiGenerateText(apiKey, {
+      model,
+      system: systemPrompt,
+      user: userPrompt,
+      temperature: 0.2,
+      responseMimeType: "application/json",
+    });
     const script = extractScriptText(content);
     const wc = countWords(script);
 
@@ -174,48 +153,18 @@ async function runBackground(
       scriptId,
     );
 
-    const fcRes = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: factCheckModel,
-          messages: [
-            { role: "system", content: FACT_CHECK_SYSTEM },
-            {
-              role: "user",
-              content:
-                `Fact-check this script. Return only the JSON object as instructed.\n\n--- SCRIPT START ---\n${script}\n--- SCRIPT END ---`,
-            },
-          ],
-        }),
-      },
-    );
-
     let findings: any[] = [];
     let fcError: string | null = null;
-    if (fcRes.ok) {
-      const fcJson = await fcRes.json();
-      const fcContent: string = fcJson?.choices?.[0]?.message?.content ?? "";
-      try {
-        let t = fcContent.trim().replace(/^```(?:json)?\s*/i, "").replace(
-          /```\s*$/i,
-          "",
-        );
-        const s = t.indexOf("{");
-        const e = t.lastIndexOf("}");
-        if (s !== -1 && e !== -1) t = t.slice(s, e + 1);
-        const parsed = JSON.parse(t);
-        findings = Array.isArray(parsed.findings) ? parsed.findings : [];
-      } catch (e) {
-        fcError = `parse error: ${(e as Error).message}`;
-      }
-    } else {
-      fcError = `fact-check gateway ${fcRes.status}`;
+    try {
+      const parsed = await geminiGenerateJson<{ findings?: any[] }>(apiKey, {
+        model: factCheckModel,
+        system: FACT_CHECK_SYSTEM,
+        user: `Fact-check this script. Return only JSON {"findings":[...]}.\n\n--- SCRIPT START ---\n${script}\n--- SCRIPT END ---`,
+        temperature: 0.1,
+      });
+      findings = Array.isArray(parsed.findings) ? parsed.findings : [];
+    } catch (e) {
+      fcError = `fact-check error: ${(e as Error).message}`;
     }
 
     await supa.from("scripts").update({
@@ -247,8 +196,8 @@ serve(async (req) => {
       150,
       Math.min(5000, Number(body.wordCount) || 1800),
     );
-    const model = ||;
-    const factCheckModel = body.factCheckModel || "gemini-2.5-pro";
+    const model = normalizeGeminiModel(body.model, "gemini-2.5-pro");
+    const factCheckModel = normalizeGeminiModel(body.factCheckModel, "gemini-2.5-pro");
 
     const parts: string[] = [];
     if (body.topic) parts.push(`TOPIC / TITLE:\n${body.topic}`);
@@ -272,8 +221,10 @@ serve(async (req) => {
     );
     const userPrompt = parts.join("\n\n");
 
-    const LOVABLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    let googleApiKey = "";
+    try {
+      googleApiKey = requireGoogleApiKey();
+    } catch (_) {
       return new Response(
         JSON.stringify({ error: "GOOGLE_API_KEY missing" }),
         {
@@ -360,7 +311,7 @@ serve(async (req) => {
         userPrompt,
         model,
         factCheckModel,
-        LOVABLE_API_KEY,
+        googleApiKey,
       ),
     );
 

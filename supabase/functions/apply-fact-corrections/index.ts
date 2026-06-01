@@ -3,6 +3,7 @@
 // tone, style, code-mix, sentence rhythm. Only the wrong facts are swapped.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { geminiGenerateJson, normalizeGeminiModel, requireGoogleApiKey } from "../_shared/google-ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,7 +26,7 @@ Your job:
 6. If a claim cannot be found verbatim in the script, find the closest matching sentence and apply the correction there with the same minimal-edit rule.
 7. The total word count of the output should remain within ±5% of the original.
 
-You MUST respond by calling the return_corrected_script tool with the full corrected script.`;
+Return ONLY valid JSON in this shape: {"corrected_script":"<full corrected script>"}.`;
 
 interface Finding {
   claim: string;
@@ -64,8 +65,10 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    let apiKey = "";
+    try {
+      apiKey = requireGoogleApiKey();
+    } catch (_) {
       return new Response(
         JSON.stringify({ error: "GOOGLE_API_KEY is not configured" }),
         {
@@ -75,7 +78,7 @@ serve(async (req) => {
       );
     }
 
-    const chosenModel = model || "gemini-2.5-pro";
+    const chosenModel = normalizeGeminiModel(model, "gemini-2.5-pro");
 
     const fixesBlock = findings
       .map(
@@ -86,94 +89,13 @@ serve(async (req) => {
       )
       .join("\n\n");
 
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: chosenModel,
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            {
-              role: "user",
-              content:
-                `ORIGINAL_SCRIPT:\n---\n${script}\n---\n\nAPPROVED_FACT_FIXES:\n${fixesBlock}\n\nReturn the full corrected script via the tool.`,
-            },
-          ],
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "return_corrected_script",
-                description:
-                  "Return the full script with only the approved factual fixes applied.",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    corrected_script: { type: "string" },
-                  },
-                  required: ["corrected_script"],
-                  additionalProperties: false,
-                },
-              },
-            },
-          ],
-          tool_choice: {
-            type: "function",
-            function: { name: "return_corrected_script" },
-          },
-        }),
-      },
-    );
-
-    if (!response.ok) {
-      const t = await response.text();
-      console.error("Google AI error:", response.status, t);
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limited. Please retry shortly." }),
-          {
-            status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({
-            error:
-              "Workspace credits exhausted. Add funds in Settings → Workspace → Usage.",
-          }),
-          {
-            status: 402,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
-      }
-      return new Response(
-        JSON.stringify({ error: "Google AI error", details: t }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    const data = await response.json();
-    const toolCall = data?.choices?.[0]?.message?.tool_calls?.[0];
-    let corrected = "";
-    if (toolCall?.function?.arguments) {
-      try {
-        const parsed = JSON.parse(toolCall.function.arguments);
-        corrected = String(parsed.corrected_script || "");
-      } catch (e) {
-        console.error("Failed to parse tool args:", e);
-      }
-    }
+    const parsed = await geminiGenerateJson<{ corrected_script?: string }>(apiKey, {
+      model: chosenModel,
+      system: SYSTEM_PROMPT,
+      user: `ORIGINAL_SCRIPT:\n---\n${script}\n---\n\nAPPROVED_FACT_FIXES:\n${fixesBlock}\n\nReturn ONLY JSON with corrected_script.`,
+      temperature: 0.1,
+    });
+    const corrected = String(parsed.corrected_script || "");
 
     if (!corrected.trim()) {
       return new Response(
