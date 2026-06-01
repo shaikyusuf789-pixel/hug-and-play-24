@@ -32,6 +32,14 @@ export const Route = createFileRoute("/_dashboard/slides")({
   component: SlideMaker,
 });
 
+const GAMMA_THEMES = [
+  "Oasis","Aurora","Night Sky","Bubble Gum","Marina","Stargazer","Atmosphere",
+  "Sketch","Sleek","Sapphire","Vintage","Blueberry","Chisel","Chalkboard",
+  "Crimson","Daydream","Dynamic","Finesse","Flow","Icebreaker","Keynote",
+  "Linen","Lux","Mint","Mocha","Moss","Nightfall","Peach","Piano","Prism",
+  "Rose","Serene","Slate","Stellar","Sunset","Verdant","Vortex"
+];
+
 function SlideMaker() {
   const [scripts, setScripts] = useState<any[]>([]);
   const [selectedScriptId, setSelectedScriptId] = useState<string>("");
@@ -39,6 +47,7 @@ function SlideMaker() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [isProcessingAll, setIsProcessingAll] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [gammaTheme, setGammaTheme] = useState<string>("Oasis");
 
   useEffect(() => {
     fetchScripts();
@@ -107,13 +116,15 @@ function SlideMaker() {
   const generateGammaSlide = async (chunkId: string) => {
     setProcessingId(`${chunkId}-slide`);
     try {
-      const { error } = await supabase.functions.invoke("generate-slides", {
-        body: { chunkId, action: "generate-slide" },
+      const { data, error } = await supabase.functions.invoke("generate-slides", {
+        body: { chunkId, action: "generate-slide", themeName: gammaTheme },
       });
 
       if (error) throw error;
-      toast.success("Gamma slide generated successfully!");
-      fetchChunks(selectedScriptId);
+      if (data?.slide_url) {
+        setChunks(prev => prev.map(c => c.id === chunkId ? { ...c, slide_url: data.slide_url, status: "slide_generated" } : c));
+      }
+      toast.success("Gamma slide generated!");
     } catch (error: any) {
       toast.error("Gamma generation failed: " + error.message);
     } finally {
@@ -215,6 +226,17 @@ function SlideMaker() {
                   <SelectItem key={s.id} value={s.id} className="text-xs">
                     {s.title}
                   </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={gammaTheme} onValueChange={setGammaTheme}>
+              <SelectTrigger className="w-full md:w-[170px] bg-orange-50 border-orange-200 h-9 text-xs rounded-lg font-bold text-orange-700">
+                <SelectValue placeholder="Gamma Theme" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {GAMMA_THEMES.map(t => (
+                  <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -382,17 +404,21 @@ function SlideChunkCard({
 
       <div className="flex flex-col space-y-2">
         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Gamma Slide</span>
-        <div className="aspect-video bg-white rounded-lg border border-slate-200 overflow-hidden relative shadow-sm">
-          {chunk.slide_url ? (
-            <iframe 
-              src={chunk.slide_url} 
-              className="w-full h-full border-none"
-              title={`Slide ${idx + 1}`}
-            />
+        <div className="aspect-video bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg border border-slate-200 overflow-hidden relative shadow-sm flex items-center justify-center">
+          {chunk.slide_url && chunk.slide_url !== "https://gamma.app/placeholder" ? (
+            <a
+              href={chunk.slide_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center justify-center gap-2 w-full h-full hover:bg-orange-100/40 transition-colors p-3 text-center"
+            >
+              <Layout className="h-8 w-8 text-orange-500" />
+              <span className="text-[10px] font-bold text-orange-700 uppercase tracking-wider">Gamma Slide Ready</span>
+              <span className="text-[9px] text-slate-500 underline break-all line-clamp-2">{chunk.slide_url}</span>
+              <span className="text-[8px] text-slate-400">Click to open in new tab ↗</span>
+            </a>
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-[9px] text-slate-400 font-bold uppercase bg-slate-50/30">
-              No slide yet
-            </div>
+            <div className="text-[9px] text-slate-400 font-bold uppercase">No slide yet</div>
           )}
         </div>
         <Button 

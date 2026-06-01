@@ -7,28 +7,75 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const GAMMA_API = "https://public-api.gamma.app/v0.2/generations"
+
+async function callGamma(inputText: string, themeName: string) {
+  const apiKey = Deno.env.get("GAMMA_API_KEY")
+  if (!apiKey) throw new Error("GAMMA_API_KEY is not configured")
+
+  // Kick off generation
+  const startRes = await fetch(GAMMA_API, {
+    method: "POST",
+    headers: {
+      "X-API-KEY": apiKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      inputText,
+      textMode: "preserve",          // <-- PRESERVE TEXT
+      format: "presentation",
+      themeName,                     // <-- user-selected theme
+      numCards: 1,
+      cardSplit: "auto",
+      cardOptions: { dimensions: "16x9" }, // <-- strict 16:9 traditional
+      imageOptions: { source: "noImages" },
+    }),
+  })
+
+  if (!startRes.ok) {
+    const t = await startRes.text()
+    throw new Error(`Gamma start failed (${startRes.status}): ${t}`)
+  }
+  const { generationId } = await startRes.json()
+  if (!generationId) throw new Error("Gamma: no generationId returned")
+
+  // Poll for completion (max ~3 min)
+  for (let i = 0; i < 60; i++) {
+    await new Promise(r => setTimeout(r, 3000))
+    const pollRes = await fetch(`${GAMMA_API}/${generationId}`, {
+      headers: { "X-API-KEY": apiKey },
+    })
+    if (!pollRes.ok) continue
+    const data = await pollRes.json()
+    if (data.status === "completed" && data.gammaUrl) {
+      return data.gammaUrl as string
+    }
+    if (data.status === "failed") {
+      throw new Error(`Gamma generation failed: ${data.error || "unknown"}`)
+    }
+  }
+  throw new Error("Gamma generation timed out")
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { chunkId, action } = await req.json()
-    
+    const { chunkId, action, themeName } = await req.json()
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Fetch the chunk content
     const { data: chunk, error: fetchError } = await supabase
       .from('script_chunks')
-      .select('content')
+      .select('content, slide_prompt')
       .eq('id', chunkId)
       .single()
 
-    if (fetchError || !chunk) {
-      throw new Error('Chunk not found')
-    }
+    if (fetchError || !chunk) throw new Error('Chunk not found')
 
     if (action === 'generate-prompt') {
       const promptResult = await geminiGenerateText(requireGoogleApiKey(), {
@@ -38,12 +85,10 @@ serve(async (req) => {
         temperature: 0.2,
       })
 
-      // Save to database
       const { error: updateError } = await supabase
         .from('script_chunks')
         .update({ slide_prompt: promptResult })
         .eq('id', chunkId)
-
       if (updateError) throw updateError
 
       return new Response(JSON.stringify({ success: true, prompt: promptResult }), {
@@ -52,18 +97,19 @@ serve(async (req) => {
     }
 
     if (action === 'generate-slide') {
-      // Placeholder for Gamma slide generation
-      // For now, let's just simulate success or update a status
-      // In a real scenario, this would call Gamma API
-      
+      const inputText = (chunk.slide_prompt || chunk.content || "").trim()
+      if (!inputText) throw new Error("Chunk has no outline/content to send to Gamma")
+
+      const theme = (themeName && String(themeName).trim()) || "Oasis"
+      const gammaUrl = await callGamma(inputText, theme)
+
       const { error: updateError } = await supabase
         .from('script_chunks')
-        .update({ status: 'slide_generated', slide_url: 'https://gamma.app/placeholder' })
+        .update({ status: 'slide_generated', slide_url: gammaUrl })
         .eq('id', chunkId)
-
       if (updateError) throw updateError
 
-      return new Response(JSON.stringify({ success: true }), {
+      return new Response(JSON.stringify({ success: true, slide_url: gammaUrl }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
