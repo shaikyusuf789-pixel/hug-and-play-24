@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Layers, Scissors, CheckCircle2, ChevronRight, Play, Save, Loader2 } from "lucide-react";
+import { Layers, Scissors, CheckCircle2, ChevronRight, Play, Save, Loader2, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
