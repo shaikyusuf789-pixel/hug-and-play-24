@@ -1,0 +1,1 @@
+UPDATE public.raw_content SET status='Pending' WHERE status='Processing';
