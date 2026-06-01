@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { geminiGenerateText } from "@/lib/google-ai.server";
+import { geminiGenerateText } from "@/lib/google-ai";
 
 export const processChunks = createServerFn({ method: "POST" })
   .inputValidator(
