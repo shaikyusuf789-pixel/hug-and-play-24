@@ -116,6 +116,21 @@ export function WatchdogControl({ className, variant = "full" }: Props) {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            <span className="text-slate-300">·</span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 text-[10px] font-bold text-slate-500 hover:text-indigo-600 px-0">
+                  {settings?.videos_per_run ?? 10} vids <ChevronRight className="h-2 w-2 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {[3, 5, 10, 15, 20, 30, 50].map((n) => (
+                  <DropdownMenuItem key={n} onClick={() => handleVideosChange(n)}>
+                    {n} videos / channel
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
