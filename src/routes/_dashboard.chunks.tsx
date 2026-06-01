@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { saveChunks } from "@/lib/engine.functions";
+import { saveChunks, updateChunk } from "@/lib/engine.functions";
 import { processChunks } from "@/lib/api/process-chunks.functions";
 
 export const Route = createFileRoute("/_dashboard/chunks")({
