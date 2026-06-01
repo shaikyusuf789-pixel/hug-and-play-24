@@ -694,44 +694,64 @@ function ScriptGenerator() {
                   onValueChange={(v: any) => setInputMode(v)}
                   className="space-y-2"
                 >
-                  <div 
-                    className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent/50 transition-colors"
+                  <div
+                    className={cn(
+                      "flex items-center space-x-2 border rounded-lg p-3 cursor-pointer transition-colors",
+                      inputMode === "idea"
+                        ? "bg-emerald-50 border-emerald-300 hover:bg-emerald-100"
+                        : "hover:bg-accent/50"
+                    )}
                     onClick={() => setInputMode("idea")}
                   >
                     <RadioGroupItem value="idea" id="mode-idea" />
                     <Label htmlFor="mode-idea" className="flex-1 cursor-pointer">
-                      <div className="font-semibold text-sm">Priority List</div>
-                      <div className="text-[10px] text-muted-foreground uppercase">Marked from Idea Cards</div>
+                      <div className={cn("font-semibold text-sm", inputMode === "idea" && "text-emerald-700")}>Priority List</div>
+                      <div className={cn("text-[10px] uppercase", inputMode === "idea" ? "text-emerald-600" : "text-muted-foreground")}>Marked from Idea Cards</div>
                     </Label>
                   </div>
-                  <div 
-                    className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent/50 transition-colors"
+                  <div
+                    className={cn(
+                      "flex items-center space-x-2 border rounded-lg p-3 cursor-pointer transition-colors",
+                      inputMode === "topic"
+                        ? "bg-amber-50 border-amber-300 hover:bg-amber-100"
+                        : "hover:bg-accent/50"
+                    )}
                     onClick={() => setInputMode("topic")}
                   >
                     <RadioGroupItem value="topic" id="mode-topic" />
                     <Label htmlFor="mode-topic" className="flex-1 cursor-pointer">
-                      <div className="font-semibold text-sm">Topic Name</div>
-                      <div className="text-[10px] text-muted-foreground uppercase">Generate from scratch</div>
+                      <div className={cn("font-semibold text-sm", inputMode === "topic" && "text-amber-700")}>Topic Name</div>
+                      <div className={cn("text-[10px] uppercase", inputMode === "topic" ? "text-amber-600" : "text-muted-foreground")}>Generate from scratch</div>
                     </Label>
                   </div>
-                  <div 
-                    className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent/50 transition-colors"
+                  <div
+                    className={cn(
+                      "flex items-center space-x-2 border rounded-lg p-3 cursor-pointer transition-colors",
+                      inputMode === "transcript"
+                        ? "bg-sky-50 border-sky-300 hover:bg-sky-100"
+                        : "hover:bg-accent/50"
+                    )}
                     onClick={() => setInputMode("transcript")}
                   >
                     <RadioGroupItem value="transcript" id="mode-transcript" />
                     <Label htmlFor="mode-transcript" className="flex-1 cursor-pointer">
-                      <div className="font-semibold text-sm">Competitor Transcripts</div>
-                      <div className="text-[10px] text-muted-foreground uppercase">Reference from transcript</div>
+                      <div className={cn("font-semibold text-sm", inputMode === "transcript" && "text-sky-700")}>Competitor Transcripts</div>
+                      <div className={cn("text-[10px] uppercase", inputMode === "transcript" ? "text-sky-600" : "text-muted-foreground")}>Reference from transcript</div>
                     </Label>
                   </div>
-                  <div 
-                    className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent/50 transition-colors"
+                  <div
+                    className={cn(
+                      "flex items-center space-x-2 border rounded-lg p-3 cursor-pointer transition-colors",
+                      inputMode === "pdf"
+                        ? "bg-violet-50 border-violet-300 hover:bg-violet-100"
+                        : "hover:bg-accent/50"
+                    )}
                     onClick={() => setInputMode("pdf")}
                   >
                     <RadioGroupItem value="pdf" id="mode-pdf" />
                     <Label htmlFor="mode-pdf" className="flex-1 cursor-pointer">
-                      <div className="font-semibold text-sm">Book / PDF Section</div>
-                      <div className="text-[10px] text-muted-foreground uppercase">Convert to SKY Style</div>
+                      <div className={cn("font-semibold text-sm", inputMode === "pdf" && "text-violet-700")}>Book / PDF Section</div>
+                      <div className={cn("text-[10px] uppercase", inputMode === "pdf" ? "text-violet-600" : "text-muted-foreground")}>Convert to SKY Style</div>
                     </Label>
                   </div>
                 </RadioGroup>
