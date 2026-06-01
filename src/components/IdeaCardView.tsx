@@ -4,11 +4,36 @@ import { cn } from "@/lib/utils";
 
 export type ActionKey = "approve" | "reject" | "priority" | "done" | "generate";
 
+function formatPublishedDate(iso?: string | null, fallback?: string | null): string | null {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const fmt = (d: Date) => `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`;
+  if (iso) {
+    const d = new Date(iso);
+    if (!isNaN(d.getTime())) return fmt(d);
+  }
+  if (fallback) {
+    const m = fallback.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if (m) {
+      let [, dd, mm, yy] = m;
+      let year = parseInt(yy);
+      if (year < 100) year += 2000;
+      const d = new Date(Date.UTC(year, parseInt(mm) - 1, parseInt(dd)));
+      if (!isNaN(d.getTime())) return fmt(d);
+    }
+    const d = new Date(fallback);
+    if (!isNaN(d.getTime())) return fmt(d);
+  }
+  return null;
+}
+
+
 export interface IdeaCard {
   id: string;
   video_url: string;
   views: number | null;
   published_date: string | null;
+  published_at?: string | null;
+
   duration: string | null;
   thumbnail_url: string | null;
   original_title: string | null;
@@ -133,18 +158,17 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
               </>
             ) : "—"}
           </h2>
-          {idea.published_date && (
-            <div className="text-[10px] md:text-[11px] font-bold text-slate-500 mt-1 flex items-center gap-1">
-              <Calendar className="size-3" />
-              {(() => {
-                const d = new Date(idea.published_date);
-                const day = String(d.getDate()).padStart(2, '0');
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const year = d.getFullYear();
-                return `${day}/${month}/${year}`;
-              })()}
-            </div>
-          )}
+          {(() => {
+            const formatted = formatPublishedDate(idea.published_at, idea.published_date);
+            if (!formatted) return null;
+            return (
+              <div className="text-[10px] md:text-[11px] font-bold text-slate-500 mt-1 flex items-center gap-1">
+                <Calendar className="size-3" />
+                {formatted}
+              </div>
+            );
+          })()}
+
         </div>
 
         {/* Meta */}
