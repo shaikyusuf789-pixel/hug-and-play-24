@@ -242,6 +242,8 @@ Return ONLY the JSON object."""
     clean: list[dict[str, Any]] = []
     for ann in annotations:
         t = ann.get("type")
+        if t == "double_underline":
+            t = "underline"   # deprecated — collapse to single underline
         if t not in allowed_types:
             continue
         target = str(ann.get("target_text") or "").strip()
