@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ANNOTATIONS_WORKER_URL } from "@/lib/worker";
 import { runTimestamps, runTimestampsAll } from "@/lib/timestamps.functions";
-import { runOcr, runOcrAll } from "@/lib/ocr.functions";
+import { runOcr as runOcrFn, runOcrAll as runOcrAllFn } from "@/lib/ocr.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_dashboard/annotations")({
