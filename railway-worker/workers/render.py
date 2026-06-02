@@ -72,51 +72,99 @@ def _eased(t: float) -> float:
     return t * t * (3 - 2 * t)
 
 
-def _pts_to_path(pts: list[tuple[int, int]]) -> str:
+def _pts_to_path(pts: list[tuple[float, float]]) -> str:
     if not pts:
         return ""
-    d = f"M{pts[0][0]},{pts[0][1]}"
-    for p in pts[1:]:
-        d += f" L{p[0]},{p[1]}"
+    d = f"M{pts[0][0]:.1f},{pts[0][1]:.1f}"
+    # Quadratic-smoothed path so the hand wobble looks like ink, not zig-zags
+    for i in range(1, len(pts)):
+        x, y = pts[i]
+        d += f" L{x:.1f},{y:.1f}"
     return d
 
 
-def _underline_pts(x: int, y_bottom: int, w: int) -> list[tuple[int, int]]:
-    steps = max(20, w // 4)
-    return [(x + w * i // steps, y_bottom + 4) for i in range(steps + 1)]
+def _rng(seed_key: str) -> random.Random:
+    return random.Random(hash(seed_key) & 0xFFFFFFFF)
 
 
-def _double_underline_pts(x: int, y_bottom: int, w: int) -> list[list[tuple[int, int]]]:
-    steps = max(20, w // 4)
-    line1 = [(x + w * i // steps, y_bottom + 4) for i in range(steps + 1)]
-    line2 = [(x + w * i // steps, y_bottom + 11) for i in range(steps + 1)]
+def _underline_pts(x: int, y_bottom: int, w: int, seed: str = "u") -> list[tuple[float, float]]:
+    """Wavy, slightly sloped underline — looks like a tutor's marker stroke."""
+    r = _rng(seed)
+    steps = max(40, w // 6)
+    # Random tiny slope and vertical offset
+    slope = r.uniform(-0.012, 0.012)
+    base_y = y_bottom + r.uniform(3, 8)
+    amp = r.uniform(1.6, 3.2)
+    freq = r.uniform(0.018, 0.035)
+    phase = r.uniform(0, math.tau)
+    pts: list[tuple[float, float]] = []
+    for i in range(steps + 1):
+        px = x + w * i / steps
+        wave = math.sin(phase + (px - x) * freq) * amp
+        jitter = r.uniform(-0.9, 0.9)
+        py = base_y + slope * (px - x) + wave + jitter
+        pts.append((px, py))
+    return pts
+
+
+def _double_underline_pts(x: int, y_bottom: int, w: int, seed: str = "d") -> list[list[tuple[float, float]]]:
+    line1 = _underline_pts(x, y_bottom, w, seed + "1")
+    line2 = _underline_pts(x, y_bottom + 9, w, seed + "2")
     return [line1, line2]
 
 
-def _circle_pts(cx: float, cy: float, rx: float, ry: float) -> list[tuple[int, int]]:
-    return [
-        (
-            round(cx + rx * math.cos(-math.pi / 2 - 2.1 * math.pi * i / 89)),
-            round(cy + ry * math.sin(-math.pi / 2 - 2.1 * math.pi * i / 89)),
-        )
-        for i in range(90)
-    ]
+def _circle_pts(cx: float, cy: float, rx: float, ry: float, seed: str = "c") -> list[tuple[float, float]]:
+    """Hand-drawn loop — slightly overshoots, varies radius."""
+    r = _rng(seed)
+    n = 110
+    start = -math.pi / 2 + r.uniform(-0.2, 0.2)
+    sweep = 2 * math.pi + r.uniform(0.1, 0.45)  # overshoot
+    pts: list[tuple[float, float]] = []
+    for i in range(n + 1):
+        t = i / n
+        a = start - sweep * t
+        # Wobble radius
+        wob = 1 + 0.04 * math.sin(t * 6.0 + r.random() * 2) + r.uniform(-0.015, 0.015)
+        px = cx + rx * wob * math.cos(a)
+        py = cy + ry * wob * math.sin(a)
+        pts.append((px, py))
+    return pts
 
 
-def _box_pts(x: int, y: int, w: int, h: int) -> list[tuple[int, int]]:
-    n = 20
-    def side(x1, y1, x2, y2):
-        return [(x1 + (x2 - x1) * i // n, y1 + (y2 - y1) * i // n) for i in range(n)]
-    return side(x, y, x+w, y) + side(x+w, y, x+w, y+h) + side(x+w, y+h, x, y+h) + side(x, y+h, x, y) + [(x, y)]
+def _box_pts(x: int, y: int, w: int, h: int, seed: str = "b") -> list[tuple[float, float]]:
+    r = _rng(seed)
+    def side(x1, y1, x2, y2, n=24):
+        out = []
+        for i in range(n + 1):
+            t = i / n
+            px = x1 + (x2 - x1) * t + r.uniform(-1.4, 1.4)
+            py = y1 + (y2 - y1) * t + r.uniform(-1.4, 1.4)
+            out.append((px, py))
+        return out
+    # Start a bit before top-left, close a bit past it (sketchy overshoot)
+    sx = x - r.uniform(2, 6); sy = y - r.uniform(2, 6)
+    return (side(sx, sy, x+w, y)
+            + side(x+w, y, x+w, y+h)
+            + side(x+w, y+h, x, y+h)
+            + side(x, y+h, sx, sy))
 
 
-def _arrow_pts(x: int, y_mid: int) -> list[tuple[int, int]]:
-    tip = x - 10
-    return (
-        [(tip - 40 + i * 2, y_mid) for i in range(20)] +
-        [(tip - i * 8, y_mid - i * 8) for i in range(5)] +
-        [(tip - 40 + i * 8, y_mid - 40 + i * 8) for i in range(5)]
-    )
+def _arrow_pts(x: int, y_mid: int, seed: str = "a") -> list[list[tuple[float, float]]]:
+    r = _rng(seed)
+    tip_x = x - 8 + r.uniform(-2, 2)
+    tip_y = y_mid + r.uniform(-3, 3)
+    tail_x = tip_x - 80
+    tail_y = tip_y + r.uniform(-6, 6)
+    shaft = []
+    for i in range(40):
+        t = i / 39
+        px = tail_x + (tip_x - tail_x) * t + r.uniform(-1.0, 1.0)
+        py = tail_y + (tip_y - tail_y) * t + math.sin(t * 4) * 1.2
+        shaft.append((px, py))
+    head1 = [(tip_x, tip_y), (tip_x - 18 + r.uniform(-2,2), tip_y - 12 + r.uniform(-2,2))]
+    head2 = [(tip_x, tip_y), (tip_x - 18 + r.uniform(-2,2), tip_y + 12 + r.uniform(-2,2))]
+    return [shaft, head1, head2]
+
 
 
 # ── Frame SVG builder ────────────────────────────────────────────────────────
