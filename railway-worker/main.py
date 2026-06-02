@@ -332,16 +332,25 @@ def ai_run(req: AiRunReq):
         if not ts_words:
             raise HTTPException(status_code=400, detail="No timestamp words found — re-run Timestamps")
 
-        # Fetch chunk text from script_chunks
+        # Fetch chunk text + slide image url + slide prompt
         chunk_text = ""
-        res = (get_supabase().table("script_chunks").select("content")
+        slide_url = None
+        slide_prompt = None
+        res = (get_supabase().table("script_chunks")
+               .select("content,slide_url,slide_prompt")
                .eq("id", req.chunk_id).limit(1).execute())
         if res.data:
-            chunk_text = res.data[0].get("content", "")
+            chunk_text   = res.data[0].get("content", "") or ""
+            slide_url    = res.data[0].get("slide_url")
+            slide_prompt = res.data[0].get("slide_prompt")
 
-        annotations = generate_annotations(ocr_words, ts_words, chunk_text, req.chunk_number)
+        annotations = generate_annotations(
+            ocr_words, ts_words, chunk_text, req.chunk_number,
+            slide_image_url=slide_url, slide_prompt=slide_prompt,
+        )
         _upsert_ai(req.script_id, req.chunk_id, req.chunk_number, req.slide_source, annotations)
         return {"ok": True, "annotation_count": len(annotations)}
+
     except HTTPException:
         raise
     except Exception as e:
