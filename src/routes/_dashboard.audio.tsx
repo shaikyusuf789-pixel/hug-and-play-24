@@ -41,12 +41,18 @@ const GOOGLE_MODELS = [
   "gemini-2.5-flash-preview-tts",
 ];
 
+// Cartesia TTS models (see https://docs.cartesia.ai/build-with-cartesia/tts-models)
+// `sonic-3-latest` currently resolves to Sonic 3.5 (recommended, 42 languages incl. Telugu).
+// `sonic-3` = Sonic 3 stable. `sonic-2` kept for legacy compatibility (deprecated June 1, 2026).
 const CARTESIA_MODELS = [
+  "sonic-3-latest",
+  "sonic-3",
+  "sonic-3-2026-01-12",
+  "sonic-3-2025-10-27",
   "sonic-2",
-  "sonic-2-2025-03-07",
+  "sonic-2-2025-06-11",
+  "sonic-2-2025-04-16",
   "sonic-turbo",
-  "sonic",
-  "sonic-multilingual",
 ];
 
 const ELEVENLABS_MODELS = [
