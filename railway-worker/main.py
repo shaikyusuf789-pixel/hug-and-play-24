@@ -249,12 +249,27 @@ def ocr_run_all(req: OcrRunAllReq, bg: BackgroundTasks):
 # TIMESTAMPS ROUTES
 # ══════════════════════════════════════════════════════════════════════════════
 
+def _resolve_audio_key(script_id: str, chunk_id: str, chunk_number: int) -> str:
+    """Resolve the audio storage key from chunks.audio_url, with legacy fallback."""
+    try:
+        row = (get_supabase().table("script_chunks")
+               .select("audio_url").eq("id", chunk_id).limit(1).execute())
+        url = (row.data or [{}])[0].get("audio_url") or ""
+        marker = f"/{AUDIO_BUCKET}/"
+        if marker in url:
+            return url.split(marker, 1)[1].split("?", 1)[0]
+    except Exception as e:
+        print(f"[AUDIO] resolve from DB failed: {e}")
+    return audio_path(script_id, chunk_number)
+
+
 @app.post("/timestamps/run")
 def timestamps_run(req: TsRunReq):
     tmp = None
     try:
         print(f"[TS/run] chunk {req.chunk_number} ({req.chunk_id})")
-        tmp = download_to_tmp(AUDIO_BUCKET, audio_path(req.script_id, req.chunk_number), ".mp3")
+        key = _resolve_audio_key(req.script_id, req.chunk_id, req.chunk_number)
+        tmp = download_to_tmp(AUDIO_BUCKET, key, ".mp3")
         words, duration = get_timestamps(tmp)
         _upsert_timestamps(req.script_id, req.chunk_id, req.chunk_number, words)
         return {"ok": True, "word_count": len(words), "duration": duration}
@@ -273,7 +288,8 @@ def _ts_all_job(script_id: str) -> None:
         try:
             chunk_id     = chunk["id"]
             chunk_number = chunk["chunk_index"]
-            tmp = download_to_tmp(AUDIO_BUCKET, audio_path(script_id, chunk_number), ".mp3")
+            key = _resolve_audio_key(script_id, chunk_id, chunk_number)
+            tmp = download_to_tmp(AUDIO_BUCKET, key, ".mp3")
             words, _ = get_timestamps(tmp)
             _upsert_timestamps(script_id, chunk_id, chunk_number, words)
             print(f"[TS/run-all] chunk {chunk_number} done — {len(words)} words")
