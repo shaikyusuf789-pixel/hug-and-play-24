@@ -163,14 +163,21 @@ function AnnotationsPage() {
     if (!scriptId) return toast.error("Pick a script first");
     setBulkBusy(label);
     try {
-      const body: any = { script_id: scriptId };
-      if (path !== "/timestamps/run-all") body.slide_source = slideSource;
-      const res = await workerPost(path, body);
-      toast.success(`${label}: queued ${res.queued ?? ""} chunks`);
+      if (path === "/timestamps/run-all") {
+        // Timestamps now run via ElevenLabs forced alignment (server fn).
+        const res = await runTimestampsAll({ data: { scriptId } });
+        const failedMsg = res.failed ? `, ${res.failed} failed` : "";
+        toast.success(`${label}: ${res.succeeded}/${res.queued} chunks${failedMsg}`);
+      } else {
+        const body: any = { script_id: scriptId, slide_source: slideSource };
+        const res = await workerPost(path, body);
+        toast.success(`${label}: queued ${res.queued ?? ""} chunks`);
+      }
       setTimeout(() => refreshAll(scriptId, slideSource), 1500);
     } catch (e: any) { toast.error(`${label} failed: ${e.message}`); }
     finally { setTimeout(() => setBulkBusy(null), 1200); }
   };
+
 
   const mergeMega = async () => {
     if (!scriptId) return;
