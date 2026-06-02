@@ -694,7 +694,7 @@ function ScriptGenerator() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Provider</Label>
-                    <select 
+                    <select
                       className="w-full border rounded-md p-2 text-sm"
                       value={provider}
                       onChange={(e) => {
@@ -702,6 +702,8 @@ function ScriptGenerator() {
                         setProvider(newProvider);
                         if (newProvider === "lovable-gemini") {
                           setModel("google/gemini-3.1-pro-preview");
+                        } else if (newProvider === "anthropic") {
+                          setModel("claude-sonnet-4-5");
                         } else if (newProvider === "poe") {
                           setModel("claude-3-5-sonnet");
                         } else if (newProvider === "google") {
@@ -712,15 +714,15 @@ function ScriptGenerator() {
                       }}
                     >
                       <option value="lovable-gemini">Sky Studio Gemini</option>
-                      <option value="poe">Poe.com (Multi-Model)</option>
                       <option value="anthropic">Claude (Anthropic)</option>
+                      <option value="poe">Poe.com (Multi-Model)</option>
                       <option value="openai">OpenAI (GPT)</option>
                       <option value="google">Google (External Gemini)</option>
                     </select>
                   </div>
                   <div className="space-y-2">
                     <Label>Model</Label>
-                    <select 
+                    <select
                       className="w-full border rounded-md p-2 text-sm"
                       value={model}
                       onChange={(e) => setModel(e.target.value)}
@@ -729,6 +731,21 @@ function ScriptGenerator() {
                         <>
                           <option value="google/gemini-3.1-pro-preview">Gemini 3.1 Pro (Most Capable)</option>
                           <option value="google/gemini-3.5-flash">Gemini 3.5 Flash (Fastest)</option>
+                        </>
+                      ) : provider === "anthropic" ? (
+                        <>
+                          <optgroup label="Claude 4.x (Latest)">
+                            <option value="claude-sonnet-4-5">Claude Sonnet 4.5 (Recommended)</option>
+                            <option value="claude-opus-4-1">Claude Opus 4.1 (Most Capable)</option>
+                            <option value="claude-opus-4">Claude Opus 4</option>
+                            <option value="claude-sonnet-4">Claude Sonnet 4</option>
+                          </optgroup>
+                          <optgroup label="Claude 3.x">
+                            <option value="claude-3-7-sonnet">Claude 3.7 Sonnet</option>
+                            <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+                            <option value="claude-3-5-haiku">Claude 3.5 Haiku (Fastest)</option>
+                            <option value="claude-3-opus">Claude 3 Opus</option>
+                          </optgroup>
                         </>
                       ) : provider === "poe" ? (
                         <>
@@ -749,6 +766,7 @@ function ScriptGenerator() {
                       )}
                     </select>
                   </div>
+
                 </div>
               </div>
 
