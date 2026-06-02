@@ -10,7 +10,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { unidecode } from "@/lib/unidecode";
+import anyAscii from "any-ascii";
 
 const RunInput = z.object({
   scriptId: z.string().uuid(),
