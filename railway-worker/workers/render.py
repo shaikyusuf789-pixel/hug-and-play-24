@@ -176,17 +176,18 @@ def _box_pts(x: int, y: int, w: int, h: int, seed: str = "b") -> list[tuple[floa
 
 
 def _arrow_pts(x: int, y_mid: int, seed: str = "a") -> list[list[tuple[float, float]]]:
-    """Hand-drawn arrow with a slightly curved shaft + asymmetric arrowhead."""
+    """Hand-drawn arrow with a slightly curved shaft + asymmetric arrowhead.
+    Shaft length is clamped so the tail can't shoot across the slide into the
+    opposite column."""
     r = _rng(seed)
     tip_x = x - 10 + r.uniform(-3, 3)
     tip_y = y_mid + r.uniform(-4, 4)
-    length = r.uniform(95, 130)
-    angle  = math.pi + r.uniform(-0.35, 0.35)   # mostly leftward, slight tilt
+    length = r.uniform(70, 95)                  # tighter than before
+    angle  = math.pi + r.uniform(-0.18, 0.18)   # mostly leftward, gentle tilt
     tail_x = tip_x + math.cos(angle) * length
     tail_y = tip_y + math.sin(angle) * length
-    # Curved shaft via a quadratic-ish midpoint offset
-    mid_x = (tip_x + tail_x) / 2 + r.uniform(-14, 14)
-    mid_y = (tip_y + tail_y) / 2 + r.uniform(-18, 18)
+    mid_x = (tip_x + tail_x) / 2 + r.uniform(-8, 8)
+    mid_y = (tip_y + tail_y) / 2 + r.uniform(-10, 10)
     shaft = []
     steps = 48
     for i in range(steps + 1):
