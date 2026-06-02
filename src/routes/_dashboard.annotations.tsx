@@ -169,6 +169,11 @@ function AnnotationsPage() {
         const res = await runTimestampsAll({ data: { scriptId } });
         const failedMsg = res.failed ? `, ${res.failed} failed` : "";
         toast.success(`${label}: ${res.succeeded}/${res.queued} chunks${failedMsg}`);
+      } else if (path === "/ocr/run-all") {
+        // OCR now runs via Google Cloud Vision (server fn).
+        const res: any = await runOcrAll({ data: { scriptId, slideSource } });
+        const failedMsg = res.failed ? `, ${res.failed} failed` : "";
+        toast.success(`${label}: ${res.succeeded}/${res.queued} chunks${failedMsg}`);
       } else {
         const body: any = { script_id: scriptId, slide_source: slideSource };
         const res = await workerPost(path, body);
