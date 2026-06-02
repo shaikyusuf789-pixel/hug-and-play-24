@@ -26,6 +26,11 @@ import cairosvg
 from PIL import Image
 
 W, H, FPS = 1920, 1080, 30
+# Annotations start drawing this many seconds BEFORE the spoken word so the
+# visual lands in sync with the voice (compensates for ElevenLabs alignment
+# bias + human perception lag). Override via env if needed.
+ANNOTATION_LEAD = float(os.environ.get("ANNOTATION_LEAD_SECONDS", "0.6"))
+
 
 # Warmer "marker" palette — feels more like a tutor's highlighter than a UI accent
 STROKE_COLORS = {
@@ -348,12 +353,15 @@ def render_clip(
             t = f_idx / FPS
             prog_map: dict[int, float] = {}
             for i, ann in enumerate(annotations):
-                start = float(ann.get("start_time") or 0)
+                start = float(ann.get("start_time") or 0) - ANNOTATION_LEAD
+                if start < 0:
+                    start = 0.0
                 dur   = draw_durations[i]
                 if t < start:
                     continue
                 elapsed = t - start
                 prog_map[i] = 1.0 if elapsed >= dur else _eased(elapsed / dur)
+
 
             if not prog_map:
                 ff.stdin.write(slide_bytes)
