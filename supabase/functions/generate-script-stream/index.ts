@@ -8,6 +8,13 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { extractGeminiText, geminiGenerateJson, geminiStreamResponse, normalizeGeminiModel, requireGoogleApiKey } from "../_shared/google-ai.ts";
 import {
+  anthropicStreamResponse,
+  extractAnthropicDelta,
+  isClaudeModel,
+  normalizeClaudeModel,
+  requireAnthropicApiKey,
+} from "../_shared/anthropic.ts";
+import {
   DNA_GENERAL,
   DNA_SUBJECTIVE,
   TELUGU_TTS_MASTER_PROMPT,
@@ -204,7 +211,10 @@ serve(async (req) => {
       150,
       Math.min(5000, Number(body.wordCount) || 1800),
     );
-    const model = normalizeGeminiModel(body.model, "gemini-2.5-pro");
+    const useClaude = isClaudeModel(body.model);
+    const model = useClaude
+      ? normalizeClaudeModel(body.model)
+      : normalizeGeminiModel(body.model, "gemini-2.5-pro");
     const factCheckModel = normalizeGeminiModel(body.factCheckModel, "gemini-2.5-pro");
 
     const parts: string[] = [];
@@ -229,6 +239,7 @@ serve(async (req) => {
 
     let googleApiKey = "";
     try {
+      // Google key is always required (fact-checker uses Gemini).
       googleApiKey = requireGoogleApiKey();
     } catch (_) {
       return new Response(
@@ -238,6 +249,21 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
+    }
+
+    let anthropicApiKey = "";
+    if (useClaude) {
+      try {
+        anthropicApiKey = requireAnthropicApiKey();
+      } catch (e) {
+        return new Response(
+          JSON.stringify({ error: (e as Error).message }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
     }
 
     const supa = createClient(
@@ -312,23 +338,32 @@ serve(async (req) => {
     }
     const scriptId = row.id as string;
 
-    // Open AI gateway in streaming mode.
-    const aiRes = await geminiStreamResponse(googleApiKey, {
-      model,
-      system: systemPrompt,
-      user: userPrompt,
-      temperature: 0.2,
-    });
+    // Open AI gateway in streaming mode (Anthropic or Gemini).
+    const aiRes = useClaude
+      ? await anthropicStreamResponse(anthropicApiKey, {
+          model,
+          system: systemPrompt,
+          user: userPrompt,
+          temperature: 0.2,
+          maxTokens: Math.min(16000, Math.max(2048, targetWords * 6)),
+        })
+      : await geminiStreamResponse(googleApiKey, {
+          model,
+          system: systemPrompt,
+          user: userPrompt,
+          temperature: 0.2,
+        });
 
     if (!aiRes.ok || !aiRes.body) {
       const t = await aiRes.text().catch(() => "");
+      const providerLabel = useClaude ? "Anthropic" : "Google";
       await supa.from("scripts").update({
         status: "FAILED",
-        script_error: `AI gateway ${aiRes.status}: ${t.slice(0, 500)}`,
+        script_error: `${providerLabel} ${aiRes.status}: ${t.slice(0, 500)}`,
       }).eq("id", scriptId);
       return new Response(
         JSON.stringify({
-          error: "Google AI error",
+          error: `${providerLabel} AI error`,
           status: aiRes.status,
           detail: t.slice(0, 500),
         }),
@@ -371,7 +406,9 @@ serve(async (req) => {
               if (!payload || payload === "[DONE]") continue;
               try {
                 const j = JSON.parse(payload);
-                const delta: string = extractGeminiText(j);
+                const delta: string = useClaude
+                  ? extractAnthropicDelta(j)
+                  : extractGeminiText(j);
                 if (delta) {
                   full += delta;
                   controller.enqueue(
