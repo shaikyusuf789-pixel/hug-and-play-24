@@ -60,9 +60,11 @@ term/number/name, annotate that SINGLE WORD.
 
 ANNOTATION TYPES (vary them intentionally based on slide layout):
   double_underline → THE main slide heading. Use AT MOST ONCE per chunk.
-  underline        → important phrases, sub-headings, full bullet lines
-                     (use this most often for definitions / long phrases)
-  circle           → spotlight a single key term, number, name, or short phrase
+  underline        → SHORT phrases only (2–5 words). Use sparingly — a real
+                     tutor doesn't underline full sentences. Max 2 full-line
+                     underlines per chunk; the rest must be short phrases.
+  circle           → PREFERRED for spotlighting a single keyword, number,
+                     name, or 1–3 word phrase. Use this most often.
   box              → frame a statistic, formula, or grouped block
   arrow            → point to a list item or a concept being introduced
 
