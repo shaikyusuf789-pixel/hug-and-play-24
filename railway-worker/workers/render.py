@@ -399,7 +399,7 @@ def render_clip(
             if not prog_map:
                 ff.stdin.write(slide_bytes)
             else:
-                svg = _build_frame_svg(annotations, prog_map, ocr_src_w, ocr_src_h)
+                svg = _build_frame_svg(annotations, prog_map, ocr_src_w, ocr_src_h, pen)
                 if svg:
                     png_bytes = cairosvg.svg2png(
                         bytestring=svg.encode(),
