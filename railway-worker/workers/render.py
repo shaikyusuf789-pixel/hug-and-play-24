@@ -247,7 +247,7 @@ def _build_frame_svg(
 
         elif ann_type == "circle":
             cx, cy = x + w / 2, y + h / 2
-            rx, ry = w / 2 + 10, h / 2 + 8
+            rx, ry = w / 2 + 18, h / 2 + 14
             pts = _circle_pts(cx, cy, rx, ry, seed=seed)
             n   = max(2, round(len(pts) * prog))
             paths_svg.append(_stroke(_pts_to_path(pts[:n]), color, 4.0, 0.9))
