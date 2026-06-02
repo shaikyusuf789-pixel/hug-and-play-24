@@ -1,5 +1,6 @@
 """
 main.py — FastAPI application for sky-annotations-worker.
+DEPLOY_MARKER: 2026-06-02-v2 (no double_underline, ANNOTATION_LEAD_SECONDS, 4-5s spacing)
 
 All annotation pipeline routes:
   GET  /health
