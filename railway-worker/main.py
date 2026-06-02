@@ -193,9 +193,15 @@ def _update_clip_status(script_id: str, chunk_id: str, slide_source: str,
 # HEALTH
 # ══════════════════════════════════════════════════════════════════════════════
 
+WORKER_VERSION = "2026-06-02.padded-audio-002"
+
 @app.get("/health")
 def health():
-    return {"ok": True, "service": "sky-annotations-worker"}
+    return {"ok": True, "service": "sky-annotations-worker", "version": WORKER_VERSION}
+
+@app.get("/version")
+def version():
+    return {"version": WORKER_VERSION}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
