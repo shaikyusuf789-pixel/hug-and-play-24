@@ -298,7 +298,7 @@ function AnnotationsPage() {
               <div className="flex items-center justify-between px-5 py-3 border-b bg-slate-50/50">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-violet-100 text-violet-700 font-bold flex items-center justify-center text-sm">{chunk.chunk_index}</div>
-                  <p className="font-bold text-slate-800">Chunk {chunk.chunk_index}</p>
+                  <p className="font-bold text-slate-800">Chunk {String((Number(chunk.chunk_index) || 0) + 1).padStart(3, "0")}</p>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-400">
                   {ocrWords > 0 && <StatusPill label={`OCR ${ocrWords}`} color="sky" />}
@@ -466,7 +466,7 @@ function getSlidePreviewUrl(chunk: any, source: SlideSource): string | null {
   // Fall back to the slide PNG the worker downloaded into the `slides` bucket.
   const base = import.meta.env.VITE_SUPABASE_URL as string | undefined;
   if (!base || !chunk?.script_id) return chunk?.slide_url || null;
-  const n = String(chunk.chunk_index).padStart(3, "0");
+  const n = String((Number(chunk.chunk_index) || 0) + 1).padStart(3, "0");
   return `${base}/storage/v1/object/public/slides/${chunk.script_id}/slide_${n}.png`;
 }
 
