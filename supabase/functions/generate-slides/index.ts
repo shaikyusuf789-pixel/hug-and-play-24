@@ -20,15 +20,13 @@ async function callGamma(inputText: string, themeName: string, supabase: ReturnT
   if (!apiKey) throw new Error("GAMMA_API_KEY is not configured")
 
   const strictInstructions = [
-    "STRICT OUTPUT: create exactly one 16:9 widescreen presentation slide, not a document, webpage, social post, square card, or vertical card.",
-    "The card canvas must be fixed widescreen 16:9, suitable for YouTube and PowerPoint (1920x1080). Do not use fluid/tall/scrolling layout.",
-    "Use a traditional PowerPoint-style slide: title at top, compact 3x2 grid or balanced two-column card layout below.",
-    "Preserve the provided English heading and bullet text exactly. Do not rewrite, summarize, translate, add, or remove text.",
-    "Fit all preserved text within the 16:9 canvas by reducing font size, tightening spacing, and using compact content blocks. Never increase card height.",
-    `Apply a polished ${themeName} inspired visual style if available.`,
+    "PRESERVE MODE — the input text is FINAL COPY. Reproduce every word EXACTLY as provided. Do NOT rewrite, paraphrase, summarize, condense, expand, translate, reorder, add, or remove ANY word, bullet, punctuation, or line break.",
+    "Output exactly one 16:9 widescreen slide (1920x1080) for YouTube/PowerPoint. Not a document, webpage, social post, square or vertical card. No fluid/tall/scrolling layout.",
+    "Layout: title at top, balanced two-column or compact grid below. Fit ALL preserved text by adjusting font size and spacing ONLY — never by editing the text.",
+    `Visual style: apply the ${themeName} theme. No images, no added icons, no extra labels.`,
   ].join(" ")
 
-  // Kick off generation
+  // Kick off generation — textMode "preserve" forces Gamma to keep input text verbatim.
   const startRes = await fetch(GAMMA_API, {
     method: "POST",
     headers: {
@@ -42,7 +40,10 @@ async function callGamma(inputText: string, themeName: string, supabase: ReturnT
       numCards: 1,
       cardSplit: "inputTextBreaks",
       exportAs: "png",
-      textOptions: { language: "en" },
+      textOptions: {
+        amount: "detailed",
+        language: "en",
+      },
       additionalInstructions: strictInstructions,
       cardOptions: { dimensions: "16x9" },
       imageOptions: { source: "noImages" },
