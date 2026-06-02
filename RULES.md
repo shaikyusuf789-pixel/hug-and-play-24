@@ -4,28 +4,42 @@ These rules apply to EVERY change in this repo. The AI agent must follow them on
 
 ## Rule 1 — UI Spec is the source of truth
 After ANY UI change to a page:
-1. Take a screenshot of the updated page.
-2. Open `docs/UI_SPEC.md`.
-3. Replace the existing entry for that page (or add a new one) with the new screenshot + a short description of what changed.
+1. Take a screenshot of the updated page (desktop **and** mobile if the layout differs).
+2. Save it under `docs/screenshots/v5/` using the existing `NN-<page>-<device>.png` naming.
+3. Open `docs/UI_SPEC.md` and replace the matching entry's screenshot + short description.
 
 ## Rule 2 — Security check every time
-After every change set (frontend, schema, or config):
-- Run the Supabase linter (`supabase--linter`).
+After every change set (frontend, schema, secrets, edge functions, server fns):
+- Run `supabase--linter`.
 - Fix or document any new finding before closing the task.
 
-## Rule 3 — Frontend only here, Supabase is backend
-This repository is the frontend ONLY. Nothing app-data lives in the managed backend.
-- All tables, storage buckets, secrets, edge functions, auth = the user's direct Supabase project: `eozteueesaemhcmbqcxt`.
+## Rule 3 — Frontend repo, Supabase is backend
+This repository is the frontend ONLY. App data lives in the direct Supabase project, not the managed default DB.
+- Project ref: `eozteueesaemhcmbqcxt` · URL: `https://eozteueesaemhcmbqcxt.supabase.co`.
 - Frontend reads `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` pointing to that project.
 - Never create tables or store secrets in the internal managed DB.
+- Railway worker (`railway-worker/`) MUST point at the same Supabase project via its own `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` env vars.
 
-## Mobile-first
-Every page must work on a phone. All buttons, actions, and data must be reachable without a laptop. Use the existing `Sheet` mobile drawer pattern in `src/routes/_dashboard.tsx`.
+## Rule 4 — Mobile-first
+Every page must work on a 390 px-wide phone. All buttons, actions, and data must be reachable without a laptop. Use the existing `Sheet` mobile drawer pattern in `src/routes/_dashboard.tsx`.
 
-## Rule 4 — UI Consistency (Dashboard)
+## Rule 5 — UI Consistency
 Maintain the established dashboard design system:
-- Status tiles must use the vibrant glassmorphism style with secondary icons.
+- Status tiles use the vibrant glassmorphism style with secondary icons.
 - All controls (sliders, switches) must be mobile-accessible.
-- Dashboard screenshots must be updated in `docs/UI_SPEC.md` after any functional or visual change.
+- Colors come from semantic tokens in `src/styles.css` — never hard-code hex/oklch in components.
 
-When the user asks "what is Rule 1/2/3?" → answer from this file.
+## Rule 6 — OCR & Timestamps stay off Railway
+- OCR runs in `src/lib/ocr.functions.ts` via **Google Cloud Vision** (`GOOGLE_VISION_API_KEY`).
+- Per-word timestamps run in `src/lib/timestamps.functions.ts` via **ElevenLabs Forced Alignment** (`ELEVEN_LABS_API_KEY`).
+- Railway worker is for **clip render + mega merge only**. Do not re-wire the UI to Railway `/ocr` or `/timestamps`.
+
+## Rule 7 — Jerry update on every change set
+After completing a change set, summarise for Jerry (the project owner) in plain English:
+- what changed in the UI,
+- what files moved/created,
+- any secrets, env vars, or Railway settings he needs to set/rotate,
+- which screenshots in `docs/screenshots/v5/` were refreshed,
+- any open follow-ups.
+
+When the user asks "what is Rule N?" → answer from this file verbatim.

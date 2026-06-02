@@ -1,52 +1,78 @@
-# VibeCoder - Project Status & Handover Documentation
-**Date:** May 31, 2026
-**Status:** Successfully decoupled from managed backend services. Fully integrated with Direct Supabase Instance.
+# Sky Studio — Backend Handover (v5.0, 2026-06-02)
 
-## 🔗 Core Backend Integration
-The project is strictly wired to a specific Supabase instance. **Do not use the project's default managed database.**
+This project is architected with a strict separation:
+- **Frontend**: TanStack Start v1 (Lovable / VibeCoder).
+- **Backend (data, auth, storage, secrets)**: a single direct Supabase project — **NOT** the platform's default managed DB.
 
+## 🔗 Active Supabase Project
+
+- **Project ref:** `eozteueesaemhcmbqcxt`
 - **Project URL:** `https://eozteueesaemhcmbqcxt.supabase.co`
-- **Publishable Key:** `sb_publishable_8_LFpheRbnwNiecH1oHujQ_6HHrydgh`
-- **Service Role Key:** Required for server functions (stored in secrets as `CUSTOM_SUPABASE_SERVICE_ROLE_KEY`).
+- **Publishable Key:** see `VITE_SUPABASE_PUBLISHABLE_KEY` (safe in client)
+- **Service Role Key:** stored as the secret `SUPABASE_SERVICE_ROLE_KEY` (and `CUSTOM_SUPABASE_SERVICE_ROLE_KEY` for direct-DB tools). Server-side only.
 
-### Configuration Files
-- `src/integrations/supabase/client.ts`: Hardcoded to the specific Supabase project for the frontend.
-- `src/integrations/supabase/client.server.ts`: Hardcoded to the specific Supabase project for server-side functions using the custom service role key.
-- `.env`: Contains the same credentials for local development.
+> The earlier project `klhcrdacefntzqwqwiiu` is retired. Anything pointing at it must be updated.
 
-## 🗄️ Database Mapping (Direct Supabase)
-Every component in the UI is mapped directly to these tables in your Supabase project:
+## 🗄️ Database Table → UI Mapping
 
-| Table Name | UI Context |
-|------------|------------|
-| `sources_master` | Scraper Sources & Dashboard |
-| `raw_content` | Idea Cards & Content Tracking |
-| `scripts` | Script Generator |
-| `script_chunks` | Audio & Slide Generation |
-| `youtube_seo` | YouTube Optimization |
-| `notifications` | System Alerts |
-| `user_uploads` | File Management |
-| `ai_chat_memory` | AI Assistant Context |
-| `app_settings` | Global System Settings |
-| `daily_backup_logs`| Backup Status Tracking |
+| Table | UI Page / Feature |
+|---|---|
+| `sources_master` | `/ideas-engine` — channel registry |
+| `raw_content` | `/idea-cards`, `/content-preview`, `/dashboard` counts |
+| `scripts` | `/script-generator`, `/chunks`, `/audio`, `/slides` selectors |
+| `script_chunks` | `/chunks`, `/audio`, `/slides`, `/annotations` per-chunk rows |
+| `audio_timestamps` | `/annotations` — ElevenLabs forced-alignment per-word timings |
+| `ocr_results` | `/annotations` — Google Vision word + bbox JSON |
+| `clip_annotations` | `/annotations` — AI overlay JSON |
+| `video_clips` | `/annotations` final clip, `/master-video` |
+| `youtube_seo` | `/youtube` |
+| `notifications` | header bell |
+| `user_uploads` | `/uploads` |
+| `ai_chat_memory` | `/history` (Neural History / Second Brain) |
+| `app_settings`, `app_metadata` | `/settings`, `/pipeline` |
+| `daily_backup_logs` | Dashboard "Full Backup" button |
 
-## 🛠️ Key Technical Fixes & Features
-1. **Dynamic Database Browser**: The "Database Tables" page uses a custom RPC function `get_public_tables()` to list **all** available tables in your Supabase project dynamically.
-2. **Hardcoded Decoupling**: Credentials have been hardcoded in the Supabase clients to prevent the internal backend from interfering.
-3. **Admin Client (Bypassing RLS)**: Server functions use `supabaseAdmin` with the Service Role Key to manage complex workflows like the Idea Engine.
-4. **Dashboard Wiring**: The Dashboard now visualizes status indicators for all 10 core tables to confirm active connectivity.
+## 🪣 Storage Buckets (all public)
 
-## 🚀 Migration Instructions (Replit / Bolt / New Project)
-To replicate this setup elsewhere:
-1. Copy the frontend code.
-2. Add the `CUSTOM_SUPABASE_SERVICE_ROLE_KEY` to the new platform's secrets.
-3. Ensure the Supabase project at `eozteueesaemhcmbqcxt.supabase.co` has the following RPC in the `public` schema:
+- `slides` — `{script_id}/slide_{nnn}.png` Gamma deck output
+- `audio-files` — `{script_id}/{chunk}.mp3` + merged master
+- `video-clips` — `{script_id}/clip_{nnn}.mp4` per-chunk rendered + `mega.mp4`
+- `user-uploads` — PDFs / transcripts referenced by AI
+
+## 🔐 Secrets (Supabase Edge Function Secrets)
+
+Required: `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `GOOGLE_VISION_API_KEY`, `LOVABLE_API_KEY`, `APIFY_API_TOKEN`, `ELEVEN_LABS_API_KEY`, `GAMMA_API_KEY`, plus the Supabase `*_KEY` / `*_KEYS` / `JWKS` / `DB_URL` set.
+
+`GOOGLE_VISION_API_KEY` is a separate key from `GOOGLE_API_KEY`. It must be issued from a Google Cloud project where the **Vision AI API** (`vision.googleapis.com`) is enabled and not blocked. The Gemini key (`GOOGLE_API_KEY`) lives on `aistudio.google.com` and is unrelated.
+
+## 🛠️ Architecture Notes
+
+1. **OCR** runs in `src/lib/ocr.functions.ts` via Google Cloud Vision `DOCUMENT_TEXT_DETECTION`. No Railway dependency.
+2. **Per-word timestamps** run in `src/lib/timestamps.functions.ts` via ElevenLabs Forced Alignment. No Railway dependency. Original text is ASCII-normalized with `any-ascii` before being sent.
+3. **Clip rendering + mega-merge** are the only Railway responsibilities. Repo: `shaikyusuf789-pixel/sky-annotations-worker`. Deploy URL: `https://sky-annotations-worker-production.up.railway.app`.
+4. **Annotation lead** — render worker subtracts `ANNOTATION_LEAD_SECONDS` (default `0.6`) from every annotation `start_time` so overlays land before the matching voice line.
+5. **Dynamic Database Browser** (`/tables`) uses the SECURITY DEFINER RPC `public.get_public_tables()` to list every public table.
+6. **Admin client** (`supabaseAdmin` in `src/integrations/supabase/client.server.ts`) uses the service-role key to bypass RLS for server fns.
+
+## 🚀 Porting to Replit / Bolt / Another Builder
+
+1. Copy this repo's `src/` and `railway-worker/`.
+2. On the target platform, set:
+   - `VITE_SUPABASE_URL=https://eozteueesaemhcmbqcxt.supabase.co`
+   - `VITE_SUPABASE_PUBLISHABLE_KEY=<publishable key>`
+   - `SUPABASE_SERVICE_ROLE_KEY=<service-role key>` (server-side only)
+   - All secrets in the list above.
+3. Apply `docs/backup/schema.sql` then `docs/backup/data.sql` to a fresh Supabase project (or reuse `eozteueesaemhcmbqcxt`).
+4. Ensure these RPCs exist:
+
    ```sql
    CREATE OR REPLACE FUNCTION public.get_public_tables()
    RETURNS TABLE (table_name TEXT) LANGUAGE plpgsql SECURITY DEFINER AS $$
    BEGIN
-       RETURN QUERY SELECT t.table_name::TEXT FROM information_schema.tables t
-       WHERE t.table_schema = 'public' AND t.table_type = 'BASE TABLE';
+     RETURN QUERY SELECT t.table_name::TEXT FROM information_schema.tables t
+     WHERE t.table_schema = 'public' AND t.table_type = 'BASE TABLE';
    END; $$;
    ```
-4. Update `.env` with the project URL and Publishable Key.
+
+5. Redeploy `railway-worker/` to Railway, with env vars listed in `docs/UI_SPEC.md` §8.
+6. Open `/annotations`, pick a script, click **All OCR → All Timestamps → All Annotations → Render All → Merge Mega Video** and confirm a 4K MP4 lands in `video-clips/`.
