@@ -287,6 +287,11 @@ function AnnotationsPage() {
           const tsWords = ts?.words ? safeLen(ts.words) : 0;
           const aiCount = ai?.annotations ? safeLen(ai.annotations) : 0;
 
+          const slideImgUrl = getSlidePreviewUrl(chunk, slideSource);
+          const ocrText = parseWordsText(ocr?.words);
+          const tsText = parseWordsText(ts?.words);
+          const aiText = parseAnnotationsText(ai?.annotations);
+
           return (
             <div key={chunk.id} className="bg-white rounded-2xl border shadow-sm overflow-hidden">
               {/* row header */}
@@ -303,75 +308,115 @@ function AnnotationsPage() {
                 </div>
               </div>
 
-              {/* script + slide preview */}
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-4 px-5 py-4">
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Original Script</p>
-                  <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed">{chunk.content}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Slide · {slideSource.toUpperCase()}</p>
-                  <div className="rounded-xl border bg-slate-100 aspect-video overflow-hidden flex items-center justify-center">
-                    {chunk.slide_url ? (
-                      <img src={chunk.slide_url} alt="" className="w-full h-full object-cover" />
+              {/* Row 1: Original Script · Slide · OCR */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 px-5 pt-4">
+                <Tile label="Original Script" color="slate">
+                  <p className="text-xs text-slate-600 line-clamp-6 leading-relaxed whitespace-pre-wrap">{chunk.content}</p>
+                </Tile>
+
+                <Tile label={`Slide · ${slideSource.toUpperCase()}`} color="amber">
+                  <div className="rounded-md border bg-slate-100 aspect-video overflow-hidden flex items-center justify-center">
+                    {slideImgUrl ? (
+                      <img src={slideImgUrl} alt="" className="w-full h-full object-contain" onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
                     ) : (
                       <FileImage className="h-8 w-8 text-slate-300" />
                     )}
                   </div>
-                </div>
-              </div>
+                </Tile>
 
-              {/* OCR / TS / AI cells */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 px-5 pb-4">
-                <Cell
-                  title="OCR"
-                  icon={<Type className="h-4 w-4" />}
+                <Tile
+                  label="OCR Output"
                   color="sky"
-                  status={ocr ? `${ocrWords} words` : "No OCR yet"}
-                  onRun={() => runOcr(chunk)}
-                  busy={!!busy[`ocr:${chunk.id}`]}
-                />
-                <Cell
-                  title="Timestamps"
-                  icon={<Clock className="h-4 w-4" />}
-                  color="emerald"
-                  status={ts ? `${tsWords} words` : "No timestamps yet"}
-                  onRun={() => runTs(chunk)}
-                  busy={!!busy[`ts:${chunk.id}`]}
-                />
-                <Cell
-                  title="Annotations"
-                  icon={<Sparkles className="h-4 w-4" />}
-                  color="violet"
-                  status={ai ? `${aiCount} annotations` : ocr && ts ? "Ready to run" : "Run OCR + TS first"}
-                  disabled={!ocr || !ts}
-                  onRun={() => runAi(chunk)}
-                  busy={!!busy[`ai:${chunk.id}`]}
-                />
+                  icon={<Type className="h-3.5 w-3.5" />}
+                  action={
+                    <ActionBtn
+                      color="sky"
+                      busy={!!busy[`ocr:${chunk.id}`]}
+                      onClick={() => runOcr(chunk)}
+                      label={ocr ? "Regenerate" : "Generate"}
+                    />
+                  }
+                >
+                  {ocr ? (
+                    <div className="text-xs text-slate-700 whitespace-pre-wrap line-clamp-6 leading-relaxed">{ocrText || `${ocrWords} words`}</div>
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">No OCR yet</p>
+                  )}
+                </Tile>
               </div>
 
-              {/* clip row */}
-              <div className="flex items-center justify-between px-5 py-3 border-t bg-rose-50/40">
-                <div className="flex items-center gap-3 text-sm text-slate-700">
-                  <Film className="h-4 w-4 text-rose-500" />
-                  <span className="font-semibold">Final MP4 — Chunk {chunk.chunk_index}</span>
-                  {clip?.status === "rendering" && <span className="text-xs text-amber-600 flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> rendering…</span>}
-                  {clip?.status === "done" && <span className="text-xs text-emerald-600 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> {clip.duration ? `${clip.duration.toFixed(1)}s` : "done"}</span>}
-                  {clip?.status === "error" && <span className="text-xs text-rose-600 flex items-center gap-1"><AlertCircle className="h-3 w-3" /> {clip.error_msg?.slice(0, 80)}</span>}
-                </div>
-                <div className="flex items-center gap-2">
-                  {clip?.file_url && (
-                    <a href={clip.file_url} target="_blank" rel="noreferrer" className="text-xs text-rose-700 underline">preview</a>
+              {/* Row 2: Timestamps · Annotations · Clip */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 px-5 py-4">
+                <Tile
+                  label="Timestamps"
+                  color="emerald"
+                  icon={<Clock className="h-3.5 w-3.5" />}
+                  action={
+                    <ActionBtn
+                      color="emerald"
+                      busy={!!busy[`ts:${chunk.id}`]}
+                      onClick={() => runTs(chunk)}
+                      label={ts ? "Regenerate" : "Generate"}
+                    />
+                  }
+                >
+                  {ts ? (
+                    <div className="text-xs text-slate-700 whitespace-pre-wrap line-clamp-6 leading-relaxed">{tsText || `${tsWords} words`}</div>
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">No timestamps yet</p>
                   )}
-                  <Button
-                    onClick={() => renderClip(chunk)}
-                    disabled={!ai || busy[`clip:${chunk.id}`] || clip?.status === "rendering"}
-                    className="bg-rose-500 hover:bg-rose-600 rounded-xl gap-2 h-9 text-xs"
-                  >
-                    {busy[`clip:${chunk.id}`] || clip?.status === "rendering" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-                    {clip ? "Re-render" : "Generate Clip"}
-                  </Button>
-                </div>
+                </Tile>
+
+                <Tile
+                  label="Annotations"
+                  color="violet"
+                  icon={<Sparkles className="h-3.5 w-3.5" />}
+                  action={
+                    <ActionBtn
+                      color="violet"
+                      busy={!!busy[`ai:${chunk.id}`]}
+                      onClick={() => runAi(chunk)}
+                      disabled={!ocr || !ts}
+                      label={ai ? "Regenerate" : "Generate"}
+                    />
+                  }
+                >
+                  {ai ? (
+                    <div className="text-xs text-slate-700 whitespace-pre-wrap line-clamp-6 leading-relaxed">{aiText || `${aiCount} annotations`}</div>
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">{ocr && ts ? "Ready to run" : "Run OCR + TS first"}</p>
+                  )}
+                </Tile>
+
+                <Tile
+                  label="Final Clip"
+                  color="rose"
+                  icon={<Film className="h-3.5 w-3.5" />}
+                  action={
+                    <ActionBtn
+                      color="rose"
+                      busy={!!busy[`clip:${chunk.id}`] || clip?.status === "rendering"}
+                      onClick={() => renderClip(chunk)}
+                      disabled={!ai}
+                      label={clip ? "Re-render" : "Generate"}
+                    />
+                  }
+                >
+                  <div className="rounded-md border bg-slate-900 aspect-video overflow-hidden flex items-center justify-center">
+                    {clip?.file_url && clip?.status === "done" ? (
+                      <video src={clip.file_url} controls className="w-full h-full" />
+                    ) : clip?.status === "rendering" ? (
+                      <span className="text-[11px] text-amber-300 flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> rendering…</span>
+                    ) : clip?.status === "error" ? (
+                      <span className="text-[11px] text-rose-300 px-2 text-center"><AlertCircle className="h-3 w-3 inline mr-1" />{clip.error_msg?.slice(0, 60)}</span>
+                    ) : (
+                      <Film className="h-8 w-8 text-slate-600" />
+                    )}
+                  </div>
+                  {clip?.status === "done" && clip.duration && (
+                    <p className="text-[10px] text-emerald-600 text-center mt-1 flex items-center justify-center gap-1"><CheckCircle2 className="h-3 w-3" />{clip.duration.toFixed(1)}s</p>
+                  )}
+                </Tile>
               </div>
             </div>
           );
@@ -392,30 +437,100 @@ function safeLen(v: any): number {
   } catch { return 0; }
 }
 
-function Cell({
-  title, icon, color, status, onRun, busy, disabled,
+function parseWordsText(v: any): string {
+  try {
+    const arr = typeof v === "string" ? JSON.parse(v) : v;
+    if (!Array.isArray(arr)) return "";
+    return arr.map((w: any) => (typeof w === "string" ? w : w?.text ?? w?.word ?? "")).filter(Boolean).join(" ");
+  } catch { return ""; }
+}
+
+function parseAnnotationsText(v: any): string {
+  try {
+    const arr = typeof v === "string" ? JSON.parse(v) : v;
+    if (!Array.isArray(arr)) return "";
+    return arr.map((a: any, i: number) => {
+      const t = a?.text ?? a?.label ?? a?.annotation ?? JSON.stringify(a);
+      return `${i + 1}. ${t}`;
+    }).join("\n");
+  } catch { return ""; }
+}
+
+function getSlidePreviewUrl(chunk: any, source: SlideSource): string | null {
+  // Prefer cached preview URL embedded in annotations payload (used by /slides page).
+  const ann = chunk?.annotations;
+  if (ann && typeof ann === "object") {
+    const srcAnn = (ann as any)[source];
+    if (srcAnn?.preview_url) return srcAnn.preview_url;
+  }
+  // Fall back to the slide PNG the worker downloaded into the `slides` bucket.
+  const base = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  if (!base || !chunk?.script_id) return chunk?.slide_url || null;
+  const n = String(chunk.chunk_index).padStart(3, "0");
+  return `${base}/storage/v1/object/public/slides/${chunk.script_id}/slide_${n}.png`;
+}
+
+function Tile({
+  label, color, icon, action, children,
 }: {
-  title: string;
-  icon: React.ReactNode;
-  color: "sky" | "emerald" | "violet";
-  status: string;
-  onRun: () => void;
-  busy: boolean;
-  disabled?: boolean;
+  label: string;
+  color: "slate" | "sky" | "emerald" | "violet" | "rose" | "amber";
+  icon?: React.ReactNode;
+  action?: React.ReactNode;
+  children: React.ReactNode;
 }) {
-  const ring = { sky: "border-sky-200 bg-sky-50/40", emerald: "border-emerald-200 bg-emerald-50/40", violet: "border-violet-200 bg-violet-50/40" }[color];
-  const btn = { sky: "bg-sky-500 hover:bg-sky-600", emerald: "bg-emerald-500 hover:bg-emerald-600", violet: "bg-violet-500 hover:bg-violet-600" }[color];
-  const head = { sky: "text-sky-700", emerald: "text-emerald-700", violet: "text-violet-700" }[color];
+  const ring: Record<string, string> = {
+    slate: "border-slate-200 bg-slate-50/40",
+    sky: "border-sky-200 bg-sky-50/40",
+    emerald: "border-emerald-200 bg-emerald-50/40",
+    violet: "border-violet-200 bg-violet-50/40",
+    rose: "border-rose-200 bg-rose-50/40",
+    amber: "border-amber-200 bg-amber-50/40",
+  };
+  const head: Record<string, string> = {
+    slate: "text-slate-500",
+    sky: "text-sky-700",
+    emerald: "text-emerald-700",
+    violet: "text-violet-700",
+    rose: "text-rose-700",
+    amber: "text-amber-700",
+  };
   return (
-    <div className={cn("rounded-xl border p-3", ring)}>
-      <div className={cn("flex items-center gap-2 mb-2 font-bold text-xs uppercase tracking-wider", head)}>
-        {icon}{title}
+    <div className={cn("rounded-xl border p-2.5 flex flex-col gap-2", ring[color])}>
+      <div className="flex items-center justify-between gap-2">
+        <div className={cn("flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider", head[color])}>
+          {icon}{label}
+        </div>
       </div>
-      <Button onClick={onRun} disabled={busy || disabled} className={cn("w-full rounded-lg gap-2 h-9 text-xs text-white", btn, disabled && "opacity-50")}>
-        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-        {busy ? "Running…" : `Generate ${title}`}
-      </Button>
-      <p className="text-[11px] text-slate-500 text-center mt-2">{status}</p>
+      {action}
+      <div className="flex-1 min-h-0">{children}</div>
     </div>
+  );
+}
+
+function ActionBtn({
+  color, busy, onClick, disabled, label,
+}: {
+  color: "sky" | "emerald" | "violet" | "rose";
+  busy: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+  label: string;
+}) {
+  const btn: Record<string, string> = {
+    sky: "bg-sky-500 hover:bg-sky-600",
+    emerald: "bg-emerald-500 hover:bg-emerald-600",
+    violet: "bg-violet-500 hover:bg-violet-600",
+    rose: "bg-rose-500 hover:bg-rose-600",
+  };
+  return (
+    <Button
+      onClick={onClick}
+      disabled={busy || disabled}
+      className={cn("w-full rounded-lg gap-1.5 h-8 text-[11px] text-white", btn[color], disabled && "opacity-50")}
+    >
+      {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+      {busy ? "Running…" : label}
+    </Button>
   );
 }
