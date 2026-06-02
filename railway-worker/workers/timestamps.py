@@ -215,7 +215,7 @@ def _elevenlabs_forced_alignment(audio_path: str, script_text: str) -> tuple[lis
     Form fields: file=<audio>, text=<script>
     Response: { "words": [{"text","start","end","loss"}], "characters": [...], "loss": ... }
     """
-    import requests
+    import httpx
 
     api_key = config.ELEVENLABS_API_KEY
     if not api_key:
@@ -225,12 +225,12 @@ def _elevenlabs_forced_alignment(audio_path: str, script_text: str) -> tuple[lis
 
     print(f"[TS/ELEVEN] aligning {audio_path} against {len(script_text)} chars of script")
     with open(audio_path, "rb") as f:
-        resp = requests.post(
+        resp = httpx.post(
             "https://api.elevenlabs.io/v1/forced-alignment",
             headers={"xi-api-key": api_key},
             files={"file": ("audio.mp3", f, "audio/mpeg")},
             data={"text": script_text},
-            timeout=300,
+            timeout=300.0,
         )
     if resp.status_code != 200:
         raise RuntimeError(f"ElevenLabs forced-alignment failed {resp.status_code}: {resp.text[:500]}")
