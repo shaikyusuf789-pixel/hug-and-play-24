@@ -102,7 +102,7 @@ function AudioEngine() {
       setTtsModel("gemini-2.5-pro-preview-tts");
     } else if (model === "cartesia") {
       setVoiceId("4987882a-488c-480a-ace8-f1127032a83b");
-      setTtsModel("sonic-2");
+      setTtsModel("sonic-3-latest");
     }
   }, [model]);
 
