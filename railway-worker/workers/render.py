@@ -26,6 +26,11 @@ import cairosvg
 from PIL import Image
 
 W, H, FPS = 1920, 1080, 30
+# Annotations start drawing this many seconds BEFORE the spoken word so the
+# visual lands in sync with the voice (compensates for ElevenLabs alignment
+# bias + human perception lag). Override via env if needed.
+ANNOTATION_LEAD = float(os.environ.get("ANNOTATION_LEAD_SECONDS", "0.6"))
+
 
 # Warmer "marker" palette — feels more like a tutor's highlighter than a UI accent
 STROKE_COLORS = {
