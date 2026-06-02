@@ -198,9 +198,9 @@ HARD RULES:
 6. target_text MUST be the EXACT OCR text (copy character-for-character).
    For multi-word targets, concatenate consecutive OCR words with single
    spaces in the order they appear in the OCR dump.
-7. Vary types. double_underline at most ONCE (the heading). Lean heavily
-   on `circle` for keywords. Mix in short `underline`, occasional `box`
-   or `arrow` so it feels like a real tutor.
+7. Vary types. DO NOT use double_underline. Lean on `circle` for keywords,
+   short `underline` for phrases, plenty of `arrow` for callouts, and the
+   occasional `box` for grouped callouts so it feels like a real tutor.
 8. Return 12–20 annotations, chronologically ordered, with start_times
    spaced at least 4 seconds apart and ALL within the speech window.
 
