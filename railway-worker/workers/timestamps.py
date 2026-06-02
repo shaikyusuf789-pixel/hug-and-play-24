@@ -34,10 +34,68 @@ def _to_latin(text: str) -> str:
     return unidecode(text).strip()
 
 
+def _group_into_phrases(
+    words: list[dict],
+    min_dur: float = 1.5,
+    max_dur: float = 4.0,
+    max_words: int = 6,
+    pause_break: float = 0.35,
+) -> list[dict]:
+    """Group micro word-timings into moderate phrase chunks (1.5–4s, ~3-6 words).
+
+    Breaks on: punctuation-ending word, long inter-word pause (>pause_break),
+    max word count, or max duration reached. Gives the AI better semantic
+    anchors than raw word-by-word stamps.
+    """
+    if not words:
+        return []
+    phrases: list[dict] = []
+    cur_words: list[dict] = []
+    cur_start = words[0]["start"]
+    prev_end = words[0]["start"]
+
+    def _flush():
+        if not cur_words:
+            return
+        text = " ".join(w["word"] for w in cur_words)
+        orig = " ".join(w.get("original") or w["word"] for w in cur_words)
+        phrases.append({
+            "word":     text,
+            "original": orig,
+            "start":    round(cur_words[0]["start"], 3),
+            "end":      round(cur_words[-1]["end"], 3),
+        })
+
+    for w in words:
+        gap = w["start"] - prev_end
+        cur_dur = (cur_words[-1]["end"] - cur_start) if cur_words else 0.0
+        ends_punct = bool(cur_words) and cur_words[-1]["word"][-1:] in ".!?,;:।"
+        should_break = (
+            cur_words
+            and (
+                (cur_dur >= min_dur and (gap > pause_break or ends_punct))
+                or len(cur_words) >= max_words
+                or cur_dur >= max_dur
+            )
+        )
+        if should_break:
+            _flush()
+            cur_words = []
+            cur_start = w["start"]
+        if not cur_words:
+            cur_start = w["start"]
+        cur_words.append(w)
+        prev_end = w["end"]
+    _flush()
+    return phrases
+
+
 def get_timestamps(audio_path: str) -> tuple[list[dict], float]:
     """
-    Transcribe an MP3 with Whisper and return word-level timestamps,
-    with each word transliterated to Latin script.
+    Transcribe an MP3 with Whisper and return phrase-level timestamps
+    (moderate 1.5–4s chunks, ~3-6 words each), with each phrase
+    transliterated to Latin script. This gives downstream AI better
+    semantic anchors than raw word-by-word timings.
     """
     print(f"[TS] transcribing {audio_path} (auto-detect language, transliterate to Latin)")
 
@@ -47,8 +105,6 @@ def get_timestamps(audio_path: str) -> tuple[list[dict], float]:
             model="whisper-1",
             response_format="verbose_json",
             timestamp_granularities=["word"],
-            # No language= → Whisper auto-detects (Telugu / Hindi / English).
-            # We transliterate the output below so AI sees Latin script.
         )
 
     raw_words    = getattr(transcription, "words",    None) or []
@@ -69,6 +125,9 @@ def get_timestamps(audio_path: str) -> tuple[list[dict], float]:
             "end":      round(float(w.end   if hasattr(w, "end")   else w.get("end",   0)), 3),
         })
 
+    # Group micro word-stamps into phrase chunks for the AI / annotation layer
+    phrases = _group_into_phrases(words)
+
     if raw_segments:
         last = raw_segments[-1]
         duration = float(last.end if hasattr(last, "end") else last.get("end", 0))
@@ -78,5 +137,5 @@ def get_timestamps(audio_path: str) -> tuple[list[dict], float]:
         duration = 0.0
 
     detected = getattr(transcription, "language", None)
-    print(f"[TS] detected={detected!r}, {len(words)} words, duration={duration:.2f}s")
-    return words, duration
+    print(f"[TS] detected={detected!r}, {len(words)} words → {len(phrases)} phrases, duration={duration:.2f}s")
+    return phrases, duration
