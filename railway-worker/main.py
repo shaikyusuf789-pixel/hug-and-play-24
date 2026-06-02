@@ -390,7 +390,7 @@ def _render_job(script_id: str, chunk_id: str, chunk_number: int, slide_source: 
             raise ValueError("Annotations not found — run AI step first")
 
         tmp_slide = download_slide_to_tmp(script_id, chunk_number, ".png")
-        tmp_audio = download_to_tmp(AUDIO_BUCKET, audio_path(script_id, chunk_number), ".mp3")
+        tmp_audio = download_to_tmp(AUDIO_BUCKET, _resolve_audio_key(script_id, chunk_id, chunk_number), ".mp3")
 
         tmp_out = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4", dir="/tmp/render").name
         annotations = json.loads(ai_row["annotations"])
