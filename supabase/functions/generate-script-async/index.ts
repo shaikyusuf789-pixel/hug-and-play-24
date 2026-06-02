@@ -71,14 +71,14 @@ function buildSystemPrompt(
     ? (overrides?.dna_subjective || DNA_SUBJECTIVE)
     : (overrides?.dna_general || DNA_GENERAL);
   const taskLine = inputMode === "transcript"
-    ? "REWRITE the provided competitor transcript into ONE continuous SKY Academy Telugu voiceover script."
+    ? "REWRITE the provided competitor transcript into ONE continuous sky academy Telugu voiceover script."
     : inputMode === "pdf"
-    ? "ADAPT the provided book / PDF text into ONE continuous SKY Academy Telugu teaching voiceover."
-    : "WRITE ONE complete, original SKY Academy Telugu voiceover script on the given topic / idea.";
+    ? "ADAPT the provided book / PDF text into ONE continuous sky academy Telugu teaching voiceover."
+    : "WRITE ONE complete, original sky academy Telugu voiceover script on the given topic / idea.";
   const min = Math.max(50, targetWords - 50);
   const max = targetWords + 50;
   return `
-You are an expert Telugu video script writer for SKY Academy.
+You are an expert Telugu video script writer for sky academy.
 ${taskLine}
 
 ABSOLUTE WORD-COUNT TARGET: approximately ${targetWords} Telugu words. Acceptable range: ${min}-${max}.
@@ -278,7 +278,7 @@ serve(async (req) => {
       overrides,
     );
 
-    const title = body.title || body.topic || "SKY Academy Script";
+    const title = body.title || body.topic || "sky academy Script";
 
     // Create placeholder row IMMEDIATELY
     const { data: row, error: insErr } = await supa.from("scripts").insert({
