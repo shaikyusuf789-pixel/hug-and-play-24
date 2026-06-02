@@ -2,9 +2,9 @@
 lib/storage.py — Supabase Storage helpers for download and upload.
 
 Bucket layout (all public):
-  slides      → {script_id}/slide_{NNN}.png          (chunk_number zero-padded to 3 digits)
-  audio-files → {script_id}/audio_{N}.mp3
-  video-clips → {script_id}/clip_{NNN}_{slide_source}.mp4
+  slides      → {script_id}/slide_{NNN}.png          (chunk_number zero-padded to 3 digits, 1-indexed)
+  audio-files → {script_id}/audio_{NNN}.mp3          (chunk_number zero-padded to 3 digits, 1-indexed)
+  video-clips → {script_id}/clip_{NNN}_{slide_source}.mp4   (chunk_number zero-padded to 3 digits, 1-indexed)
 """
 
 import os

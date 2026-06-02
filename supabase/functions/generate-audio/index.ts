@@ -70,7 +70,8 @@ Deno.serve(async (req) => {
       return json({ error: `Unsupported provider: ${provider}` }, 400);
     }
 
-    const path = `${chunk.script_id}/audio_${(chunk.chunk_index ?? 0) + 1}.${ext}`;
+    const audioNumber = String((chunk.chunk_index ?? 0) + 1).padStart(3, "0");
+    const path = `${chunk.script_id}/audio_${audioNumber}.${ext}`;
     const { error: upErr } = await supabase.storage
       .from(BUCKET)
       .upload(path, audioBytes, { contentType, upsert: true });
