@@ -332,22 +332,26 @@ def ai_run(req: AiRunReq):
         if not ts_words:
             raise HTTPException(status_code=400, detail="No timestamp words found — re-run Timestamps")
 
-        # Fetch chunk text + slide image url + slide prompt
+        # Fetch chunk text + slide prompt
         chunk_text = ""
-        slide_url = None
         slide_prompt = None
         res = (get_supabase().table("script_chunks")
-               .select("content,slide_url,slide_prompt")
+               .select("content,slide_prompt")
                .eq("id", req.chunk_id).limit(1).execute())
         if res.data:
             chunk_text   = res.data[0].get("content", "") or ""
-            slide_url    = res.data[0].get("slide_url")
             slide_prompt = res.data[0].get("slide_prompt")
+
+        # Use the actual slide PNG from Supabase Storage (NOT the gamma.app docs URL,
+        # which OpenAI cannot fetch). The slides bucket is public.
+        from lib.storage import slide_path, SLIDES_BUCKET, _public_url
+        slide_image_url = _public_url(SLIDES_BUCKET, slide_path(req.script_id, req.chunk_number))
 
         annotations = generate_annotations(
             ocr_words, ts_words, chunk_text, req.chunk_number,
-            slide_image_url=slide_url, slide_prompt=slide_prompt,
+            slide_image_url=slide_image_url, slide_prompt=slide_prompt,
         )
+
         _upsert_ai(req.script_id, req.chunk_id, req.chunk_number, req.slide_source, annotations)
         return {"ok": True, "annotation_count": len(annotations)}
 
