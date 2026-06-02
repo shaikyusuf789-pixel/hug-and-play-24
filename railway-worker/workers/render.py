@@ -219,6 +219,7 @@ def _build_frame_svg(
     progress_map: dict[int, float],  # ann_index → 0.0–1.0
     src_w: int,
     src_h: int,
+    pen: str,
 ) -> str:
     paths_svg = []
 
@@ -235,43 +236,38 @@ def _build_frame_svg(
             continue
 
         ann_type = ann["type"]
-        color    = STROKE_COLORS.get(ann_type, "#ffd54a")
+        # Single-pen mode: every annotation uses the same color for the whole clip.
+        color    = pen
         x, y, w, h = _scale_bbox(ann["bbox"], src_w, src_h)
         seed = f"{idx}-{ann.get('target_text','')[:24]}"
 
-        if ann_type == "underline":
+        # Double underline removed by user request → render as a single underline.
+        if ann_type in ("underline", "double_underline"):
             pts = _underline_pts(x, y + h, w, seed=seed)
             n   = max(2, round(len(pts) * prog))
-            # Lighter, thinner: highlight feel, not strike-through
-            paths_svg.append(_stroke(_pts_to_path(pts[:n]), color, 4.2, 0.55))
-            paths_svg.append(_stroke(_pts_to_path(pts[:n]), color, 2.0, 0.40))
-
-        elif ann_type == "double_underline":
-            for li, line_pts in enumerate(_double_underline_pts(x, y + h, w, seed=seed)):
-                n = max(2, round(len(line_pts) * prog))
-                paths_svg.append(_stroke(_pts_to_path(line_pts[:n]), color, 4.0, 0.65))
-                paths_svg.append(_stroke(_pts_to_path(line_pts[:n]), color, 1.8, 0.40))
+            paths_svg.append(_stroke(_pts_to_path(pts[:n]), color, 4.0, 0.85))
 
         elif ann_type == "circle":
             cx, cy = x + w / 2, y + h / 2
-            # Tighter circle — hugs the word, less padding
             rx, ry = w / 2 + 10, h / 2 + 8
             pts = _circle_pts(cx, cy, rx, ry, seed=seed)
             n   = max(2, round(len(pts) * prog))
-            paths_svg.append(_stroke(_pts_to_path(pts[:n]), color, 4.5, 0.85))
+            paths_svg.append(_stroke(_pts_to_path(pts[:n]), color, 4.0, 0.9))
 
         elif ann_type == "box":
             pts = _box_pts(x - 6, y - 4, w + 12, h + 8, seed=seed)
             n   = max(2, round(len(pts) * prog))
-            paths_svg.append(_stroke(_pts_to_path(pts[:n]), color, 4.5, 0.80))
+            paths_svg.append(_stroke(_pts_to_path(pts[:n]), color, 4.0, 0.85))
 
         elif ann_type == "arrow":
             shaft, h1, h2 = _arrow_pts(x, y + h // 2, seed=seed)
             n = max(2, round(len(shaft) * prog))
-            paths_svg.append(_stroke(_pts_to_path(shaft[:n]), color, 4.5, 0.85))
-            if prog > 0.85:
-                paths_svg.append(_stroke(_pts_to_path(h1), color, 4.5, 0.85))
-                paths_svg.append(_stroke(_pts_to_path(h2), color, 4.5, 0.85))
+            paths_svg.append(_stroke(_pts_to_path(shaft[:n]), color, 4.0, 0.9))
+            if prog > 0.7:
+                head_prog = min(1.0, (prog - 0.7) / 0.3)
+                # Draw arrowhead progressively too
+                paths_svg.append(_stroke(_pts_to_path(h1), color, 4.0, 0.9 * head_prog))
+                paths_svg.append(_stroke(_pts_to_path(h2), color, 4.0, 0.9 * head_prog))
 
     if not paths_svg:
         return ""
