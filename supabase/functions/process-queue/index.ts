@@ -96,7 +96,9 @@ async function processOneAudio(sb: any, scriptId?: string): Promise<boolean> {
       chunkId: claim.id,
       provider: claim.audio_job_provider || "elevenlabs",
       voiceId: claim.audio_job_voice_id || undefined,
+      model: claim.audio_job_model || undefined,
     });
+
     await sb.from("script_chunks").update({ audio_job_status: "done", audio_job_error: null }).eq("id", claim.id);
   } catch (e: any) {
     await sb.from("script_chunks").update({ audio_job_status: "failed", audio_job_error: String(e?.message || e) }).eq("id", claim.id);
