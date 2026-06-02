@@ -36,6 +36,27 @@ const GOOGLE_VOICES = [
   "Vindemiatrix", "Sadachbia", "Sadaltager", "Sulafat"
 ];
 
+const GOOGLE_MODELS = [
+  "gemini-2.5-pro-preview-tts",
+  "gemini-2.5-flash-preview-tts",
+];
+
+const CARTESIA_MODELS = [
+  "sonic-2",
+  "sonic-2-2025-03-07",
+  "sonic-turbo",
+  "sonic",
+  "sonic-multilingual",
+];
+
+const ELEVENLABS_MODELS = [
+  "eleven_v3",
+  "eleven_multilingual_v2",
+  "eleven_turbo_v2_5",
+  "eleven_flash_v2_5",
+];
+
+
 function AudioEngine() {
   const [scripts, setScripts] = useState<any[]>([]);
   const [selectedScriptId, setSelectedScriptId] = useState<string>("");
