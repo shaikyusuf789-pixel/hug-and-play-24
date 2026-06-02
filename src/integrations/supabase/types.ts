@@ -377,6 +377,7 @@ export type Database = {
         Row: {
           annotations: Json | null
           audio_job_error: string | null
+          audio_job_model: string | null
           audio_job_provider: string | null
           audio_job_started_at: string | null
           audio_job_status: string
@@ -401,6 +402,7 @@ export type Database = {
         Insert: {
           annotations?: Json | null
           audio_job_error?: string | null
+          audio_job_model?: string | null
           audio_job_provider?: string | null
           audio_job_started_at?: string | null
           audio_job_status?: string
@@ -425,6 +427,7 @@ export type Database = {
         Update: {
           annotations?: Json | null
           audio_job_error?: string | null
+          audio_job_model?: string | null
           audio_job_provider?: string | null
           audio_job_started_at?: string | null
           audio_job_status?: string

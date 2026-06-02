@@ -36,12 +36,34 @@ const GOOGLE_VOICES = [
   "Vindemiatrix", "Sadachbia", "Sadaltager", "Sulafat"
 ];
 
+const GOOGLE_MODELS = [
+  "gemini-2.5-pro-preview-tts",
+  "gemini-2.5-flash-preview-tts",
+];
+
+const CARTESIA_MODELS = [
+  "sonic-2",
+  "sonic-2-2025-03-07",
+  "sonic-turbo",
+  "sonic",
+  "sonic-multilingual",
+];
+
+const ELEVENLABS_MODELS = [
+  "eleven_v3",
+  "eleven_multilingual_v2",
+  "eleven_turbo_v2_5",
+  "eleven_flash_v2_5",
+];
+
+
 function AudioEngine() {
   const [scripts, setScripts] = useState<any[]>([]);
   const [selectedScriptId, setSelectedScriptId] = useState<string>("");
   const [chunks, setChunks] = useState<any[]>([]);
   const [model, setModel] = useState<string>("google");
-  const [voiceId, setVoiceId] = useState<string>("Zephyr");
+  const [voiceId, setVoiceId] = useState<string>("Charon");
+  const [ttsModel, setTtsModel] = useState<string>("gemini-2.5-pro-preview-tts");
   const [loading, setLoading] = useState(false);
   const [generatingChunkId, setGeneratingChunkId] = useState<string | null>(null);
 
@@ -64,14 +86,20 @@ function AudioEngine() {
     return () => clearInterval(t);
   }, [selectedScriptId, chunks]);
 
-  // Auto-fill default voice when switching providers (user can still edit)
+  // Auto-fill default voice + model when switching providers (user can still edit)
   useEffect(() => {
     if (model === "elevenlabs") {
       setVoiceId("UusdT1frXE5G4cvEE2dJ");
+      setTtsModel("eleven_v3");
     } else if (model === "google") {
-      setVoiceId("Zephyr");
+      setVoiceId("Charon");
+      setTtsModel("gemini-2.5-pro-preview-tts");
+    } else if (model === "cartesia") {
+      setVoiceId("4987882a-488c-480a-ace8-f1127032a83b");
+      setTtsModel("sonic-2");
     }
   }, [model]);
+
 
   const fetchScripts = async () => {
     const { data, error } = await supabase
@@ -111,13 +139,11 @@ function AudioEngine() {
           chunkId, 
           provider: model, 
           voiceId,
-          model: model === "google" ? "gemini-2.5-pro-preview-tts" : undefined
+          model: ttsModel,
         },
       });
 
       if (res.error) throw res.error;
-      const data = res.data;
-
 
       toast.success("Audio generated successfully.");
       fetchChunks(selectedScriptId);
@@ -145,6 +171,7 @@ function AudioEngine() {
           audio_job_status: "queued",
           audio_job_provider: model,
           audio_job_voice_id: voiceId,
+          audio_job_model: ttsModel,
           audio_job_error: null,
         })
         .in("id", eligibleIds);
@@ -152,6 +179,7 @@ function AudioEngine() {
 
       // Fire-and-forget the background worker
       supabase.functions.invoke("process-queue", { body: { scriptId: selectedScriptId } }).catch(() => {});
+
 
       toast.success(`Queued ${eligibleIds.length} audio clips — running in background. You can leave this page.`);
       await fetchChunks(selectedScriptId);
@@ -258,14 +286,34 @@ function AudioEngine() {
             </div>
 
             <div className="space-y-2">
-              <Label>Model Provider</Label>
+              <Label>Provider</Label>
               <Select value={model} onValueChange={setModel}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="elevenlabs">ElevenLabs</SelectItem>
                   <SelectItem value="google">Google AI Studio</SelectItem>
-                  <SelectItem value="elevenlabs">Eleven Labs</SelectItem>
+                  <SelectItem value="cartesia">Cartesia</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>TTS Model</Label>
+              <Select value={ttsModel} onValueChange={setTtsModel}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(model === "google"
+                    ? GOOGLE_MODELS
+                    : model === "cartesia"
+                      ? CARTESIA_MODELS
+                      : ELEVENLABS_MODELS
+                  ).map((m) => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -284,9 +332,21 @@ function AudioEngine() {
                   </SelectContent>
                 </Select>
               </div>
+            ) : model === "cartesia" ? (
+              <div className="space-y-2">
+                <Label>Cartesia Voice ID</Label>
+                <Input
+                  placeholder="Paste Cartesia Voice ID..."
+                  value={voiceId}
+                  onChange={(e) => setVoiceId(e.target.value)}
+                />
+                <p className="text-[10px] text-slate-400">
+                  Default = your cloned voice. Telugu language sent by default. CARTESIA_API_KEY required.
+                </p>
+              </div>
             ) : (
               <div className="space-y-2">
-                <Label>Eleven Labs Voice ID</Label>
+                <Label>ElevenLabs Voice ID</Label>
                 <Input 
                   placeholder="Paste Voice ID here..." 
                   value={voiceId} 
@@ -295,6 +355,7 @@ function AudioEngine() {
                 <p className="text-[10px] text-slate-400">Make sure ELEVEN_LABS_API_KEY is in secrets.</p>
               </div>
             )}
+
           </CardContent>
         </Card>
 

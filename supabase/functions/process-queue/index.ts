@@ -56,7 +56,7 @@ async function claimSlide(sb: any, scriptId?: string) {
 }
 
 async function claimAudio(sb: any, scriptId?: string) {
-  const q = sb.from("script_chunks").select("id, script_id, audio_job_provider, audio_job_voice_id")
+  const q = sb.from("script_chunks").select("id, script_id, audio_job_provider, audio_job_voice_id, audio_job_model")
     .eq("audio_job_status", "queued").order("chunk_index", { ascending: true }).limit(1);
   if (scriptId) q.eq("script_id", scriptId);
   const { data, error } = await q;
@@ -66,10 +66,11 @@ async function claimAudio(sb: any, scriptId?: string) {
   const { data: updated, error: upErr } = await sb.from("script_chunks")
     .update({ audio_job_status: "processing", audio_job_started_at: new Date().toISOString(), audio_job_error: null })
     .eq("id", row.id).eq("audio_job_status", "queued")
-    .select("id, audio_job_provider, audio_job_voice_id").maybeSingle();
+    .select("id, audio_job_provider, audio_job_voice_id, audio_job_model").maybeSingle();
   if (upErr) throw upErr;
   return updated;
 }
+
 
 async function processOneSlide(sb: any, scriptId?: string): Promise<boolean> {
   const claim = await claimSlide(sb, scriptId);
@@ -95,7 +96,9 @@ async function processOneAudio(sb: any, scriptId?: string): Promise<boolean> {
       chunkId: claim.id,
       provider: claim.audio_job_provider || "elevenlabs",
       voiceId: claim.audio_job_voice_id || undefined,
+      model: claim.audio_job_model || undefined,
     });
+
     await sb.from("script_chunks").update({ audio_job_status: "done", audio_job_error: null }).eq("id", claim.id);
   } catch (e: any) {
     await sb.from("script_chunks").update({ audio_job_status: "failed", audio_job_error: String(e?.message || e) }).eq("id", claim.id);

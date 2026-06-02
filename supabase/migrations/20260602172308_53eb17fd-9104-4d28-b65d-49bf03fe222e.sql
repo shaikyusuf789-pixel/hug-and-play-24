@@ -1,0 +1,1 @@
+ALTER TABLE public.script_chunks ADD COLUMN IF NOT EXISTS audio_job_model TEXT;
