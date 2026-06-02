@@ -379,12 +379,14 @@ def _ai_all_job(script_id: str, slide_source: str) -> None:
             if not ts_words:
                 continue
             chunk_text   = chunk.get("content", "") or ""
-            slide_url    = chunk.get("slide_url")
             slide_prompt = chunk.get("slide_prompt")
+            from lib.storage import slide_path, SLIDES_BUCKET, _public_url
+            slide_image_url = _public_url(SLIDES_BUCKET, slide_path(script_id, chunk_number))
             annotations = generate_annotations(
                 ocr_words, ts_words, chunk_text, chunk_number,
-                slide_image_url=slide_url, slide_prompt=slide_prompt,
+                slide_image_url=slide_image_url, slide_prompt=slide_prompt,
             )
+
             _upsert_ai(script_id, chunk_id, chunk_number, slide_source, annotations)
             print(f"[AI/run-all] chunk {chunk_number} done — {len(annotations)} annotations")
 
