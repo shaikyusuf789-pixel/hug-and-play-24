@@ -211,7 +211,7 @@ Return ONLY the JSON object."""
     if slide_image_url:
         user_content.append({
             "type": "image_url",
-            "image_url": {"url": slide_image_url, "detail": "high"},
+            "image_url": {"url": slide_image_url, "detail": "auto"},
         })
 
     import time as _time
