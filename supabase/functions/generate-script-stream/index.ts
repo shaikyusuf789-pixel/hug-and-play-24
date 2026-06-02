@@ -338,23 +338,32 @@ serve(async (req) => {
     }
     const scriptId = row.id as string;
 
-    // Open AI gateway in streaming mode.
-    const aiRes = await geminiStreamResponse(googleApiKey, {
-      model,
-      system: systemPrompt,
-      user: userPrompt,
-      temperature: 0.2,
-    });
+    // Open AI gateway in streaming mode (Anthropic or Gemini).
+    const aiRes = useClaude
+      ? await anthropicStreamResponse(anthropicApiKey, {
+          model,
+          system: systemPrompt,
+          user: userPrompt,
+          temperature: 0.2,
+          maxTokens: Math.min(16000, Math.max(2048, targetWords * 6)),
+        })
+      : await geminiStreamResponse(googleApiKey, {
+          model,
+          system: systemPrompt,
+          user: userPrompt,
+          temperature: 0.2,
+        });
 
     if (!aiRes.ok || !aiRes.body) {
       const t = await aiRes.text().catch(() => "");
+      const providerLabel = useClaude ? "Anthropic" : "Google";
       await supa.from("scripts").update({
         status: "FAILED",
-        script_error: `AI gateway ${aiRes.status}: ${t.slice(0, 500)}`,
+        script_error: `${providerLabel} ${aiRes.status}: ${t.slice(0, 500)}`,
       }).eq("id", scriptId);
       return new Response(
         JSON.stringify({
-          error: "Google AI error",
+          error: `${providerLabel} AI error`,
           status: aiRes.status,
           detail: t.slice(0, 500),
         }),
