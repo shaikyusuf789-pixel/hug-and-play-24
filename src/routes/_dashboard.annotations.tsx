@@ -119,7 +119,7 @@ function AnnotationsPage() {
   const runOcr = async (chunk: any) => {
     const k = `ocr:${chunk.id}`; setRowBusy(k, true);
     try {
-      const res: any = await runOcr({ data: { scriptId, chunkId: chunk.id, chunkNumber: chunk.chunk_index, slideSource } });
+      const res: any = await runOcrFn({ data: { scriptId, chunkId: chunk.id, chunkNumber: chunk.chunk_index, slideSource } });
       toast.success(`OCR done — chunk ${chunk.chunk_index} (${res.word_count} words via Google Vision)`);
       await refreshAll(scriptId, slideSource);
     } catch (e: any) { toast.error(`OCR failed: ${e.message}`); }
