@@ -67,6 +67,8 @@ function AnnotationsPage() {
   const [aiMap, setAiMap] = useState<Record<string, any>>({});
   const [clipMap, setClipMap] = useState<Record<string, any>>({});
   const [busy, setBusy] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const toggleExp = (k: string) => setExpanded((e) => ({ ...e, [k]: !e[k] }));
   const [bulkBusy, setBulkBusy] = useState<string | null>(null);
   const [mergeState, setMergeState] = useState<{ status: string; url?: string | null; error?: string | null; clip_count?: number }>({ status: "idle" });
 
@@ -288,9 +290,10 @@ function AnnotationsPage() {
           const aiCount = ai?.annotations ? safeLen(ai.annotations) : 0;
 
           const slideImgUrl = getSlidePreviewUrl(chunk, slideSource);
-          const ocrText = parseWordsText(ocr?.words);
-          const tsText = parseWordsText(ts?.words);
+          const ocrRaw = parseOcrRaw(ocr?.words);
+          const tsRaw = parseTsRaw(ts?.words);
           const aiText = parseAnnotationsText(ai?.annotations);
+          const aiRaw = parseAnnotationsRaw(ai?.annotations);
 
           return (
             <div key={chunk.id} className="bg-white rounded-2xl border shadow-sm overflow-hidden">
@@ -338,7 +341,13 @@ function AnnotationsPage() {
                   }
                 >
                   {ocr ? (
-                    <div className="text-xs text-slate-700 whitespace-pre-wrap line-clamp-6 leading-relaxed">{ocrText || `${ocrWords} words`}</div>
+                    <RawBlock
+                      lines={ocrRaw}
+                      expanded={!!expanded[`ocr:${chunk.id}`]}
+                      onToggle={() => toggleExp(`ocr:${chunk.id}`)}
+                      emptyLabel={`${ocrWords} words`}
+                      mono
+                    />
                   ) : (
                     <p className="text-xs text-slate-400 italic">No OCR yet</p>
                   )}
@@ -361,7 +370,13 @@ function AnnotationsPage() {
                   }
                 >
                   {ts ? (
-                    <div className="text-xs text-slate-700 whitespace-pre-wrap line-clamp-6 leading-relaxed">{tsText || `${tsWords} words`}</div>
+                    <RawBlock
+                      lines={tsRaw}
+                      expanded={!!expanded[`ts:${chunk.id}`]}
+                      onToggle={() => toggleExp(`ts:${chunk.id}`)}
+                      emptyLabel={`${tsWords} words`}
+                      mono
+                    />
                   ) : (
                     <p className="text-xs text-slate-400 italic">No timestamps yet</p>
                   )}
@@ -382,7 +397,13 @@ function AnnotationsPage() {
                   }
                 >
                   {ai ? (
-                    <div className="text-xs text-slate-700 whitespace-pre-wrap line-clamp-6 leading-relaxed">{aiText || `${aiCount} annotations`}</div>
+                    <RawBlock
+                      lines={(expanded[`ai:${chunk.id}`] ? aiRaw : aiText.split("\n")).filter(Boolean)}
+                      expanded={!!expanded[`ai:${chunk.id}`]}
+                      onToggle={() => toggleExp(`ai:${chunk.id}`)}
+                      emptyLabel={`${aiCount} annotations`}
+                      mono={!!expanded[`ai:${chunk.id}`]}
+                    />
                   ) : (
                     <p className="text-xs text-slate-400 italic">{ocr && ts ? "Ready to run" : "Run OCR + TS first"}</p>
                   )}
@@ -444,6 +465,96 @@ function parseWordsText(v: any): string {
     return arr.map((w: any) => (typeof w === "string" ? w : w?.text ?? w?.word ?? "")).filter(Boolean).join(" ");
   } catch { return ""; }
 }
+
+/** OCR raw rows:  "TEXT  [x,y w×h] conf%" */
+function parseOcrRaw(v: any): string[] {
+  try {
+    const arr = typeof v === "string" ? JSON.parse(v) : v;
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .map((w: any) => {
+        if (typeof w === "string") return w;
+        const txt = (w?.text ?? w?.word ?? "").toString();
+        if (!txt) return "";
+        const x = w?.x ?? w?.left;
+        const y = w?.y ?? w?.top;
+        const ww = w?.w ?? w?.width;
+        const hh = w?.h ?? w?.height;
+        const conf = w?.conf ?? w?.confidence;
+        const coord = x != null && y != null ? `[${x},${y}${ww != null && hh != null ? ` ${ww}×${hh}` : ""}]` : "";
+        const c = conf != null ? `  ${typeof conf === "number" ? conf.toFixed(0) : conf}%` : "";
+        return `${txt.padEnd(24, " ")} ${coord}${c}`;
+      })
+      .filter(Boolean);
+  } catch { return []; }
+}
+
+/** Timestamp raw rows:  "  12.34s →  12.78s   word   (original)" */
+function parseTsRaw(v: any): string[] {
+  try {
+    const arr = typeof v === "string" ? JSON.parse(v) : v;
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .map((w: any) => {
+        if (typeof w === "string") return w;
+        const word = (w?.word ?? w?.text ?? "").toString();
+        if (!word) return "";
+        const s = w?.start;
+        const e = w?.end;
+        const orig = w?.original && w.original !== word ? `   (${w.original})` : "";
+        const fmt = (t: any) => (typeof t === "number" ? `${t.toFixed(2).padStart(7, " ")}s` : "       ");
+        return `${fmt(s)} → ${fmt(e)}   ${word}${orig}`;
+      })
+      .filter(Boolean);
+  } catch { return []; }
+}
+
+/** Annotations raw rows: JSON-stringified entries, one per line. */
+function parseAnnotationsRaw(v: any): string[] {
+  try {
+    const arr = typeof v === "string" ? JSON.parse(v) : v;
+    if (!Array.isArray(arr)) return [];
+    return arr.map((a: any, i: number) => `${String(i + 1).padStart(2, " ")}. ${JSON.stringify(a)}`);
+  } catch { return []; }
+}
+
+function RawBlock({
+  lines, expanded, onToggle, emptyLabel, mono,
+}: {
+  lines: string[];
+  expanded: boolean;
+  onToggle: () => void;
+  emptyLabel?: string;
+  mono?: boolean;
+}) {
+  if (!lines.length) {
+    return <p className="text-xs text-slate-400 italic">{emptyLabel || "—"}</p>;
+  }
+  const shown = expanded ? lines : lines.slice(0, 6);
+  return (
+    <div className="space-y-1">
+      <pre
+        className={cn(
+          "text-[11px] text-slate-700 whitespace-pre leading-relaxed overflow-x-auto",
+          expanded ? "max-h-72 overflow-y-auto pr-1" : "",
+          mono ? "font-mono" : "font-sans",
+        )}
+      >
+        {shown.join("\n")}
+      </pre>
+      {lines.length > 6 && (
+        <button
+          type="button"
+          onClick={onToggle}
+          className="text-[11px] text-slate-500 hover:text-slate-800 underline underline-offset-2"
+        >
+          {expanded ? "Show less" : `Show all ${lines.length} rows`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 
 function parseAnnotationsText(v: any): string {
   try {
