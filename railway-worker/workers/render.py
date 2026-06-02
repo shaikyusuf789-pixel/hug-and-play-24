@@ -16,6 +16,7 @@ Annotation colors:
 
 import io
 import math
+import random
 import subprocess
 import tempfile
 import os
@@ -26,21 +27,23 @@ from PIL import Image
 
 W, H, FPS = 1920, 1080, 30
 
+# Warmer "marker" palette — feels more like a tutor's highlighter than a UI accent
 STROKE_COLORS = {
-    "underline":         "#3b82f6",
-    "double_underline":  "#0ea5e9",
-    "circle":            "#f59e0b",
-    "box":               "#10b981",
-    "arrow":             "#8b5cf6",
+    "underline":         "#ffd54a",  # marker yellow
+    "double_underline":  "#ff7043",  # orange-red (heading)
+    "circle":            "#ff5252",  # red ink
+    "box":               "#26c6da",  # cyan ink
+    "arrow":             "#ab47bc",  # purple ink
 }
 
 DRAW_SECONDS = {
-    "underline":         1.2,
-    "double_underline":  1.6,
-    "circle":            1.8,
-    "box":               2.0,
-    "arrow":             1.2,
+    "underline":         0.9,
+    "double_underline":  1.4,
+    "circle":            1.6,
+    "box":               1.8,
+    "arrow":             1.0,
 }
+
 
 
 # ── Coordinate transform (OCR source → 1920×1080) ───────────────────────────
