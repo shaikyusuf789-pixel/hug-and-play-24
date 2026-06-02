@@ -177,62 +177,55 @@ def _build_frame_svg(
 ) -> str:
     paths_svg = []
 
+    def _stroke(d: str, color: str, sw: float, opacity: float = 0.92) -> str:
+        return (
+            f'<path d="{d}" stroke="{color}" stroke-width="{sw:.1f}" '
+            f'fill="none" stroke-linecap="round" stroke-linejoin="round" '
+            f'opacity="{opacity:.2f}"/>'
+        )
+
     for idx, ann in enumerate(annotations):
         prog = progress_map.get(idx)
         if prog is None or prog <= 0:
             continue
 
         ann_type = ann["type"]
-        color    = STROKE_COLORS.get(ann_type, "#ffffff")
-        sw       = "8" if ann_type in ("circle", "box") else "6"
+        color    = STROKE_COLORS.get(ann_type, "#ffd54a")
         x, y, w, h = _scale_bbox(ann["bbox"], src_w, src_h)
+        seed = f"{idx}-{ann.get('target_text','')[:24]}"
 
         if ann_type == "underline":
-            pts  = _underline_pts(x, y + h, w)
-            n    = max(2, round(len(pts) * prog))
-            d    = _pts_to_path(pts[:n])
-            paths_svg.append(
-                f'<path d="{d}" stroke="{color}" stroke-width="{sw}" '
-                f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
-            )
+            pts = _underline_pts(x, y + h, w, seed=seed)
+            n   = max(2, round(len(pts) * prog))
+            # Two slightly offset passes → marker ink texture
+            paths_svg.append(_stroke(_pts_to_path(pts[:n]), color, 7.0, 0.85))
+            paths_svg.append(_stroke(_pts_to_path(pts[:n]), color, 3.5, 0.55))
 
         elif ann_type == "double_underline":
-            for line_pts in _double_underline_pts(x, y + h, w):
-                n  = max(2, round(len(line_pts) * prog))
-                d  = _pts_to_path(line_pts[:n])
-                paths_svg.append(
-                    f'<path d="{d}" stroke="{color}" stroke-width="6" '
-                    f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
-                )
+            for li, line_pts in enumerate(_double_underline_pts(x, y + h, w, seed=seed)):
+                n = max(2, round(len(line_pts) * prog))
+                paths_svg.append(_stroke(_pts_to_path(line_pts[:n]), color, 6.0, 0.9))
+                paths_svg.append(_stroke(_pts_to_path(line_pts[:n]), color, 2.8, 0.5))
 
         elif ann_type == "circle":
             cx, cy = x + w / 2, y + h / 2
-            rx, ry = w / 2 + 14, h / 2 + 12
-            pts  = _circle_pts(cx, cy, rx, ry)
-            n    = max(2, round(len(pts) * prog))
-            d    = _pts_to_path(pts[:n])
-            paths_svg.append(
-                f'<path d="{d}" stroke="{color}" stroke-width="{sw}" '
-                f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
-            )
+            rx, ry = w / 2 + 18, h / 2 + 14
+            pts = _circle_pts(cx, cy, rx, ry, seed=seed)
+            n   = max(2, round(len(pts) * prog))
+            paths_svg.append(_stroke(_pts_to_path(pts[:n]), color, 6.5, 0.9))
 
         elif ann_type == "box":
-            pts = _box_pts(x - 6, y - 4, w + 12, h + 8)
+            pts = _box_pts(x - 8, y - 6, w + 16, h + 12, seed=seed)
             n   = max(2, round(len(pts) * prog))
-            d   = _pts_to_path(pts[:n])
-            paths_svg.append(
-                f'<path d="{d}" stroke="{color}" stroke-width="{sw}" '
-                f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
-            )
+            paths_svg.append(_stroke(_pts_to_path(pts[:n]), color, 6.0, 0.9))
 
         elif ann_type == "arrow":
-            pts = _arrow_pts(x, y + h // 2)
-            n   = max(2, round(len(pts) * prog))
-            d   = _pts_to_path(pts[:n])
-            paths_svg.append(
-                f'<path d="{d}" stroke="{color}" stroke-width="{sw}" '
-                f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
-            )
+            shaft, h1, h2 = _arrow_pts(x, y + h // 2, seed=seed)
+            n = max(2, round(len(shaft) * prog))
+            paths_svg.append(_stroke(_pts_to_path(shaft[:n]), color, 6.0, 0.9))
+            if prog > 0.85:
+                paths_svg.append(_stroke(_pts_to_path(h1), color, 6.0, 0.9))
+                paths_svg.append(_stroke(_pts_to_path(h2), color, 6.0, 0.9))
 
     if not paths_svg:
         return ""
@@ -242,6 +235,7 @@ def _build_frame_svg(
         + "".join(paths_svg)
         + "</svg>"
     )
+
 
 
 # ── Audio duration ────────────────────────────────────────────────────────────
