@@ -5,60 +5,76 @@ function countWords(s: string): number {
   return s.trim().split(/\s+/).filter(Boolean).length;
 }
 
-// Deterministic re-balancer: ensures every chunk (except possibly the last)
-// has at least `min` words by merging undersized chunks with their neighbour,
-// and splits oversized chunks at sentence boundaries.
-function rebalance(chunks: string[], min: number, max: number, target: number): string[] {
-  // 1) Merge tiny chunks forward
-  const merged: string[] = [];
-  for (const c of chunks) {
-    const text = c.trim();
-    if (!text) continue;
-    if (merged.length === 0) {
-      merged.push(text);
-      continue;
+function normalizeSkyAcademy(text: string): string {
+  return text.replace(/\bSKY\s+Academy\b/g, "sky academy").replace(/\bSky\s+Academy\b/g, "sky academy");
+}
+
+function isSentenceEnd(word: string): boolean {
+  return /[.!?।॥]$/.test(word) || /--$/.test(word);
+}
+
+function chooseChunkCount(totalWords: number, target: number, min: number, max: number): number {
+  if (totalWords <= max) return 1;
+
+  let count = Math.max(1, Math.round(totalWords / target));
+
+  while (count > 1 && totalWords / count < min) count -= 1;
+  while (totalWords / count > max) count += 1;
+
+  return count;
+}
+
+function chooseBoundary(words: string[], start: number, idealEnd: number, minEnd: number, maxEnd: number): number {
+  const lower = Math.max(start + 1, minEnd);
+  const upper = Math.min(words.length, maxEnd);
+  let best = Math.min(Math.max(idealEnd, lower), upper);
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  for (let end = lower; end <= upper; end += 1) {
+    if (!isSentenceEnd(words[end - 1] ?? "")) continue;
+    const distance = Math.abs(end - idealEnd);
+    if (distance < bestDistance) {
+      best = end;
+      bestDistance = distance;
     }
-    const prev = merged[merged.length - 1];
-    if (countWords(prev) < min) {
-      merged[merged.length - 1] = prev + " " + text;
-    } else {
-      merged.push(text);
-    }
-  }
-  // Final pass: if last chunk is tiny, fold it into previous
-  if (merged.length > 1 && countWords(merged[merged.length - 1]) < min) {
-    const tail = merged.pop()!;
-    merged[merged.length - 1] = merged[merged.length - 1] + " " + tail;
   }
 
-  // 2) Split oversized chunks at sentence boundaries
-  const out: string[] = [];
-  for (const c of merged) {
-    if (countWords(c) <= max) {
-      out.push(c);
-      continue;
-    }
-    // Split at sentence-ish boundaries (. ! ? । ॥ or newline)
-    const sentences = c.match(/[^.!?।॥\n]+[.!?।॥\n]?/g) ?? [c];
-    let buf = "";
-    for (const s of sentences) {
-      const candidate = buf ? buf + " " + s.trim() : s.trim();
-      if (countWords(candidate) >= target) {
-        out.push(candidate);
-        buf = "";
-      } else {
-        buf = candidate;
-      }
-    }
-    if (buf) {
-      if (out.length > 0 && countWords(buf) < min) {
-        out[out.length - 1] = out[out.length - 1] + " " + buf;
-      } else {
-        out.push(buf);
-      }
-    }
+  return best;
+}
+
+// Deterministic chunker: the slider value is treated as the source of truth.
+// It distributes the whole script evenly first, so the last chunk cannot collapse
+// into 70/44-word leftovers, then nudges cuts to nearby sentence boundaries.
+function chunkDeterministically(scriptContent: string, target: number, min: number, max: number): string[] {
+  const normalized = normalizeSkyAcademy(scriptContent).replace(/\s+/g, " ").trim();
+  if (!normalized) return [];
+
+  const words = normalized.split(/\s+/).filter(Boolean);
+  const chunkCount = chooseChunkCount(words.length, target, min, max);
+  if (chunkCount <= 1) return [normalized];
+
+  const chunks: string[] = [];
+  let start = 0;
+
+  for (let chunkIndex = 0; chunkIndex < chunkCount - 1; chunkIndex += 1) {
+    const remainingWords = words.length - start;
+    const remainingChunks = chunkCount - chunkIndex;
+    const chunksAfterThis = remainingChunks - 1;
+    const idealSize = Math.round(remainingWords / remainingChunks);
+    const idealEnd = start + idealSize;
+
+    const minEnd = Math.max(start + 1, words.length - chunksAfterThis * max);
+    const maxEnd = Math.min(words.length - chunksAfterThis, words.length - chunksAfterThis * min);
+    const boundedMinEnd = Math.max(minEnd, start + Math.min(min, idealSize));
+    const boundedMaxEnd = Math.max(boundedMinEnd, Math.min(maxEnd, start + Math.max(max, idealSize)));
+    const end = chooseBoundary(words, start, idealEnd, boundedMinEnd, boundedMaxEnd);
+
+    chunks.push(words.slice(start, end).join(" "));
+    start = end;
   }
-  return out;
+
+  chunks.push(words.slice(start).join(" "));
+  return chunks.filter(Boolean);
 }
 
 export const processChunks = createServerFn({ method: "POST" })
