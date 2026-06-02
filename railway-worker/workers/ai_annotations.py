@@ -65,7 +65,15 @@ ANNOTATION TYPES (vary them intentionally based on slide layout):
                      underlines per chunk; the rest must be short phrases.
   circle           → PREFERRED for spotlighting a single keyword, number,
                      name, or 1–3 word phrase. Use this most often.
+                     HARD RULE: target_text for a circle MUST be ≤ 4 words
+                     AND ≤ 30 characters AND fit on a single visual line.
+                     NEVER circle a whole bullet, sentence, or multi-line
+                     block — circles are tight keyword loops, not lassos
+                     around paragraphs. If the bbox height is more than
+                     1.8× the average word height, it's too tall for a
+                     circle — switch to a short underline instead.
   box              → frame a statistic, formula, or grouped block
+                     (only for already-grouped callouts, not bullets).
   arrow            → point to a list item or a concept being introduced
 
 TIMING RULES
