@@ -147,8 +147,23 @@ def generate_annotations(
           f"slide_image={'yes' if slide_image_url else 'no'})")
 
     total_dur = ts_words[-1].get("end", 10.0) if ts_words else 10.0
+    speech_start = float(ts_words[0].get("start", 0.0)) if ts_words else 0.0
+    speech_end   = float(ts_words[-1].get("end",   total_dur)) if ts_words else float(total_dur)
+    speech_window = max(0.1, speech_end - speech_start)
 
     user_text = f"""CHUNK {chunk_number}  —  audio duration: {float(total_dur):.2f}s
+
+=== SPEECH WINDOW (CRITICAL) ===
+First spoken word starts at: {speech_start:.2f}s
+Last spoken word ends at:    {speech_end:.2f}s
+Total speech window:         {speech_window:.2f}s
+The audio has ~{speech_start:.1f}s of intro/silence before the narrator begins.
+HARD RULES:
+  • NEVER place an annotation with start_time < {speech_start:.2f}s.
+  • All annotations MUST fall within [{speech_start:.2f}s, {speech_end:.2f}s].
+  • Space annotations at LEAST 4–5 seconds apart across the speech window.
+  • Match each start_time to when that specific word is actually spoken,
+    using the WORD-LEVEL TIMESTAMPS below as ground truth.
 
 === GAMMA SLIDE PROMPT (original creative intent) ===
 {slide_prompt or "(not available)"}
@@ -168,9 +183,9 @@ def generate_annotations(
 === TASK ===
 1. Look at the slide image — note the heading, bullets, layout.
 2. Read the script and identify EVERY meaningful concept the narrator says
-   (key terms, numbers, names, definitions, phrases). Aim for one annotation
-   roughly every 3–5 seconds of audio, distributed across the WHOLE chunk
-   (NOT clustered at the end).
+   (key terms, numbers, names, definitions, phrases). Distribute annotations
+   evenly across the SPEECH WINDOW above — roughly one annotation every
+   4–5 seconds. Do NOT place anything before {speech_start:.2f}s.
 3. For each concept, find the matching word/phrase/line on the slide
    (semantic match — slide wording is paraphrased from the script).
 4. STRONGLY PREFER short keyword targets: single words, numbers, names, or
@@ -178,17 +193,16 @@ def generate_annotations(
    key term ("Focus", "Facts", "20", "Kohli"). Full-line underlines are
    visually heavy; cap them at MAX 2 per chunk, and only use them when the
    narrator literally summarises the whole bullet.
-5. start_time = the timestamp of the FIRST word the narrator says that
-   maps to this concept. Use the transliterated timestamps as ground truth.
+5. start_time = the timestamp of the FIRST word the narrator actually says
+   that maps to this concept (from the WORD-LEVEL TIMESTAMPS — not guessed).
 6. target_text MUST be the EXACT OCR text (copy character-for-character).
    For multi-word targets, concatenate consecutive OCR words with single
    spaces in the order they appear in the OCR dump.
 7. Vary types. double_underline at most ONCE (the heading). Lean heavily
    on `circle` for keywords. Mix in short `underline`, occasional `box`
    or `arrow` so it feels like a real tutor.
-8. Return 15–25 annotations, chronologically ordered, spread across the
-   full duration. NEVER cluster more than 3 annotations in the same 2-second
-   window.
+8. Return 12–20 annotations, chronologically ordered, with start_times
+   spaced at least 4 seconds apart and ALL within the speech window.
 
 Return ONLY the JSON object."""
 
@@ -287,7 +301,26 @@ Return ONLY the JSON object."""
 
     clean.sort(key=lambda a: a["start_time"])
 
-    print(f"[AI] {len(clean)} annotations generated for chunk {chunk_number}")
+    # Safety net: enforce speech window + min 4s spacing.
+    if clean and ts_words:
+        sw_start = float(ts_words[0].get("start", 0.0))
+        sw_end   = float(ts_words[-1].get("end",   total_dur))
+        last_t   = -10.0
+        spaced: list[dict[str, Any]] = []
+        for ann in clean:
+            t = max(sw_start, min(sw_end, float(ann["start_time"])))
+            if t - last_t < 4.0:
+                t = last_t + 4.0
+            if t > sw_end:
+                break
+            ann["start_time"] = round(t, 3)
+            spaced.append(ann)
+            last_t = t
+        clean = spaced
+
+    print(f"[AI] {len(clean)} annotations generated for chunk {chunk_number} "
+          f"(window {ts_words[0].get('start',0) if ts_words else 0:.2f}s → "
+          f"{ts_words[-1].get('end',0) if ts_words else 0:.2f}s)")
     return clean
 
 
