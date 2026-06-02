@@ -341,7 +341,13 @@ function AnnotationsPage() {
                   }
                 >
                   {ocr ? (
-                    <div className="text-xs text-slate-700 whitespace-pre-wrap line-clamp-6 leading-relaxed">{ocrText || `${ocrWords} words`}</div>
+                    <RawBlock
+                      lines={ocrRaw}
+                      expanded={!!expanded[`ocr:${chunk.id}`]}
+                      onToggle={() => toggleExp(`ocr:${chunk.id}`)}
+                      emptyLabel={`${ocrWords} words`}
+                      mono
+                    />
                   ) : (
                     <p className="text-xs text-slate-400 italic">No OCR yet</p>
                   )}
@@ -364,7 +370,13 @@ function AnnotationsPage() {
                   }
                 >
                   {ts ? (
-                    <div className="text-xs text-slate-700 whitespace-pre-wrap line-clamp-6 leading-relaxed">{tsText || `${tsWords} words`}</div>
+                    <RawBlock
+                      lines={tsRaw}
+                      expanded={!!expanded[`ts:${chunk.id}`]}
+                      onToggle={() => toggleExp(`ts:${chunk.id}`)}
+                      emptyLabel={`${tsWords} words`}
+                      mono
+                    />
                   ) : (
                     <p className="text-xs text-slate-400 italic">No timestamps yet</p>
                   )}
@@ -385,7 +397,13 @@ function AnnotationsPage() {
                   }
                 >
                   {ai ? (
-                    <div className="text-xs text-slate-700 whitespace-pre-wrap line-clamp-6 leading-relaxed">{aiText || `${aiCount} annotations`}</div>
+                    <RawBlock
+                      lines={(expanded[`ai:${chunk.id}`] ? aiRaw : aiText.split("\n")).filter(Boolean)}
+                      expanded={!!expanded[`ai:${chunk.id}`]}
+                      onToggle={() => toggleExp(`ai:${chunk.id}`)}
+                      emptyLabel={`${aiCount} annotations`}
+                      mono={!!expanded[`ai:${chunk.id}`]}
+                    />
                   ) : (
                     <p className="text-xs text-slate-400 italic">{ocr && ts ? "Ready to run" : "Run OCR + TS first"}</p>
                   )}
