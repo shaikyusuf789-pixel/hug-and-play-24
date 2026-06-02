@@ -32,22 +32,27 @@ W, H, FPS = 1920, 1080, 30
 ANNOTATION_LEAD = float(os.environ.get("ANNOTATION_LEAD_SECONDS", "0.6"))
 
 
-# Warmer "marker" palette — feels more like a tutor's highlighter than a UI accent
-STROKE_COLORS = {
-    "underline":         "#ffd54a",  # marker yellow
-    "double_underline":  "#ff7043",  # orange-red (heading)
-    "circle":            "#ff5252",  # red ink
-    "box":               "#26c6da",  # cyan ink
-    "arrow":             "#ab47bc",  # purple ink
-}
+# Single-pen mode: ONE color per clip, chosen from slide background brightness.
+# Dark slide → light pen, light slide → dark pen. Set at render time.
+PEN_DARK  = "#111111"   # near-black ink for light slides
+PEN_LIGHT = "#f5f5f5"   # near-white ink for dark slides
 
 DRAW_SECONDS = {
     "underline":         0.9,
-    "double_underline":  1.4,
+    "double_underline":  0.9,   # rendered as a single underline now
     "circle":            1.6,
     "box":               1.8,
-    "arrow":             1.0,
+    "arrow":             1.1,
 }
+
+
+def _pick_pen(slide_rgba: "Image.Image") -> str:
+    """Sample the slide, average brightness → pick black or white pen."""
+    small = slide_rgba.convert("RGB").resize((40, 24), Image.BILINEAR)
+    px = list(small.getdata())
+    # Perceived luminance
+    avg = sum(0.299 * r + 0.587 * g + 0.114 * b for (r, g, b) in px) / len(px)
+    return PEN_LIGHT if avg < 110 else PEN_DARK
 
 
 
