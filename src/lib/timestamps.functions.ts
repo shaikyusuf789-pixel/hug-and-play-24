@@ -88,7 +88,7 @@ async function alignOneChunk(
   for (const w of rawWords) {
     const original = String(w.text ?? "").trim();
     if (!original) continue;
-    const latin = unidecode(original).trim();
+    const latin = anyAscii(original).trim();
     if (!latin) continue;
     words.push({
       word: latin,
