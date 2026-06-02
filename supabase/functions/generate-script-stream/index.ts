@@ -239,6 +239,7 @@ serve(async (req) => {
 
     let googleApiKey = "";
     try {
+      // Google key is always required (fact-checker uses Gemini).
       googleApiKey = requireGoogleApiKey();
     } catch (_) {
       return new Response(
@@ -248,6 +249,21 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
+    }
+
+    let anthropicApiKey = "";
+    if (useClaude) {
+      try {
+        anthropicApiKey = requireAnthropicApiKey();
+      } catch (e) {
+        return new Response(
+          JSON.stringify({ error: (e as Error).message }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
     }
 
     const supa = createClient(
