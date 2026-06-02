@@ -290,9 +290,10 @@ function AnnotationsPage() {
           const aiCount = ai?.annotations ? safeLen(ai.annotations) : 0;
 
           const slideImgUrl = getSlidePreviewUrl(chunk, slideSource);
-          const ocrText = parseWordsText(ocr?.words);
-          const tsText = parseWordsText(ts?.words);
+          const ocrRaw = parseOcrRaw(ocr?.words);
+          const tsRaw = parseTsRaw(ts?.words);
           const aiText = parseAnnotationsText(ai?.annotations);
+          const aiRaw = parseAnnotationsRaw(ai?.annotations);
 
           return (
             <div key={chunk.id} className="bg-white rounded-2xl border shadow-sm overflow-hidden">
