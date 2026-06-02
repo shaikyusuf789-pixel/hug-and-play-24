@@ -1,6 +1,66 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+function countWords(s: string): number {
+  return s.trim().split(/\s+/).filter(Boolean).length;
+}
+
+// Deterministic re-balancer: ensures every chunk (except possibly the last)
+// has at least `min` words by merging undersized chunks with their neighbour,
+// and splits oversized chunks at sentence boundaries.
+function rebalance(chunks: string[], min: number, max: number, target: number): string[] {
+  // 1) Merge tiny chunks forward
+  const merged: string[] = [];
+  for (const c of chunks) {
+    const text = c.trim();
+    if (!text) continue;
+    if (merged.length === 0) {
+      merged.push(text);
+      continue;
+    }
+    const prev = merged[merged.length - 1];
+    if (countWords(prev) < min) {
+      merged[merged.length - 1] = prev + " " + text;
+    } else {
+      merged.push(text);
+    }
+  }
+  // Final pass: if last chunk is tiny, fold it into previous
+  if (merged.length > 1 && countWords(merged[merged.length - 1]) < min) {
+    const tail = merged.pop()!;
+    merged[merged.length - 1] = merged[merged.length - 1] + " " + tail;
+  }
+
+  // 2) Split oversized chunks at sentence boundaries
+  const out: string[] = [];
+  for (const c of merged) {
+    if (countWords(c) <= max) {
+      out.push(c);
+      continue;
+    }
+    // Split at sentence-ish boundaries (. ! ? । ॥ or newline)
+    const sentences = c.match(/[^.!?।॥\n]+[.!?।॥\n]?/g) ?? [c];
+    let buf = "";
+    for (const s of sentences) {
+      const candidate = buf ? buf + " " + s.trim() : s.trim();
+      if (countWords(candidate) >= target) {
+        out.push(candidate);
+        buf = "";
+      } else {
+        buf = candidate;
+      }
+    }
+    if (buf) {
+      if (out.length > 0 && countWords(buf) < min) {
+        out[out.length - 1] = out[out.length - 1] + " " + buf;
+      } else {
+        out.push(buf);
+      }
+    }
+  }
+  return out;
+}
+
 export const processChunks = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
@@ -16,12 +76,20 @@ export const processChunks = createServerFn({ method: "POST" })
     const min = Math.max(20, target - 20);
     const max = target + 20;
 
-    const systemPrompt = `You are an expert script editor for SKY Academy. Your task is to split a long Telugu script into smaller chunks for video production.
-Rules:
-1. Each chunk MUST be between ${min} and ${max} words (target ~${target} words, word count is based on Telugu words).
-2. Split the script intelligently at natural sentence boundaries or logical paragraph breaks.
-3. DO NOT change the text content. Just split it verbatim.
-4. Return the result as JSON with this exact shape: { "chunks": ["chunk 1 text...", "chunk 2 text..."] }`;
+    const systemPrompt = `You are an expert script editor for SKY Academy. Split a long Telugu script into chunks for video production.
+
+STRICT RULES:
+1. Each chunk MUST contain between ${min} and ${max} words (target ~${target} words). Count Telugu words as whitespace-separated tokens.
+2. DO NOT produce chunks smaller than ${min} words. If the remaining text would be too short, merge it into the previous chunk.
+3. Split at natural sentence/paragraph boundaries.
+4. Preserve ALL original text verbatim — no edits, additions, deletions, or reordering.
+5. Concatenating all chunks with a single space MUST reproduce the original script (whitespace-normalized).
+6. Output ONLY JSON: { "chunks": ["...", "..."] }`;
+
+    const userPrompt = `Split this script into chunks of ${min}-${max} words each (target ~${target}). Remember: NO chunk under ${min} words.
+
+SCRIPT:
+${scriptContent}`;
 
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -30,15 +98,13 @@ Rules:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         temperature: 0.1,
+        max_tokens: 16384,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: `Split this script into chunks of ${min}-${max} words each (target ~${target}):\n\n${scriptContent}`,
-          },
+          { role: "user", content: userPrompt },
         ],
       }),
     });
@@ -59,6 +125,9 @@ Rules:
       console.error("Failed to parse AI response", content);
       throw new Error("AI returned invalid JSON for chunks.");
     }
+
+    // Post-process: enforce min/max word bounds deterministically
+    chunks = rebalance(chunks.filter((c) => typeof c === "string" && c.trim().length > 0), min, max, target);
 
     return { chunks };
   });
