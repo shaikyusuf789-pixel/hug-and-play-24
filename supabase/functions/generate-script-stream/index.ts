@@ -406,7 +406,9 @@ serve(async (req) => {
               if (!payload || payload === "[DONE]") continue;
               try {
                 const j = JSON.parse(payload);
-                const delta: string = extractGeminiText(j);
+                const delta: string = useClaude
+                  ? extractAnthropicDelta(j)
+                  : extractGeminiText(j);
                 if (delta) {
                   full += delta;
                   controller.enqueue(
