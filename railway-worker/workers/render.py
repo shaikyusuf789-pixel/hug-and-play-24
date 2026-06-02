@@ -348,12 +348,15 @@ def render_clip(
             t = f_idx / FPS
             prog_map: dict[int, float] = {}
             for i, ann in enumerate(annotations):
-                start = float(ann.get("start_time") or 0)
+                start = float(ann.get("start_time") or 0) - ANNOTATION_LEAD
+                if start < 0:
+                    start = 0.0
                 dur   = draw_durations[i]
                 if t < start:
                     continue
                 elapsed = t - start
                 prog_map[i] = 1.0 if elapsed >= dur else _eased(elapsed / dur)
+
 
             if not prog_map:
                 ff.stdin.write(slide_bytes)
