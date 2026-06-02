@@ -129,19 +129,32 @@ def _double_underline_pts(x: int, y_bottom: int, w: int, seed: str = "d") -> lis
 
 
 def _circle_pts(cx: float, cy: float, rx: float, ry: float, seed: str = "c") -> list[tuple[float, float]]:
-    """Hand-drawn loop — slightly overshoots, varies radius."""
+    """Hand-drawn loop — irregular radius, slight tilt, noticeable overshoot,
+    and a tiny tail-out so it reads as a tutor's quick pen circle, not a CAD ellipse."""
     r = _rng(seed)
-    n = 110
-    start = -math.pi / 2 + r.uniform(-0.2, 0.2)
-    sweep = 2 * math.pi + r.uniform(0.1, 0.45)  # overshoot
+    n = 130
+    start = -math.pi / 2 + r.uniform(-0.5, 0.5)
+    sweep = 2 * math.pi + r.uniform(0.25, 0.7)   # bigger overshoot
+    tilt  = r.uniform(-0.18, 0.18)               # rotate the whole ellipse a touch
+    cos_t, sin_t = math.cos(tilt), math.sin(tilt)
+    # Per-axis low-frequency wobble + per-point jitter so radius varies all the way around
+    wob_amp_x = r.uniform(0.04, 0.09)
+    wob_amp_y = r.uniform(0.04, 0.09)
+    wob_freq_x = r.uniform(1.5, 3.0)
+    wob_freq_y = r.uniform(1.5, 3.0)
+    wob_phase_x = r.uniform(0, math.tau)
+    wob_phase_y = r.uniform(0, math.tau)
     pts: list[tuple[float, float]] = []
     for i in range(n + 1):
         t = i / n
         a = start - sweep * t
-        # Wobble radius
-        wob = 1 + 0.04 * math.sin(t * 6.0 + r.random() * 2) + r.uniform(-0.015, 0.015)
-        px = cx + rx * wob * math.cos(a)
-        py = cy + ry * wob * math.sin(a)
+        wx = 1 + wob_amp_x * math.sin(wob_phase_x + t * math.tau * wob_freq_x) + r.uniform(-0.025, 0.025)
+        wy = 1 + wob_amp_y * math.sin(wob_phase_y + t * math.tau * wob_freq_y) + r.uniform(-0.025, 0.025)
+        ex = rx * wx * math.cos(a)
+        ey = ry * wy * math.sin(a)
+        # apply tilt
+        px = cx + ex * cos_t - ey * sin_t + r.uniform(-0.8, 0.8)
+        py = cy + ex * sin_t + ey * cos_t + r.uniform(-0.8, 0.8)
         pts.append((px, py))
     return pts
 
@@ -165,19 +178,36 @@ def _box_pts(x: int, y: int, w: int, h: int, seed: str = "b") -> list[tuple[floa
 
 
 def _arrow_pts(x: int, y_mid: int, seed: str = "a") -> list[list[tuple[float, float]]]:
+    """Hand-drawn arrow with a slightly curved shaft + asymmetric arrowhead."""
     r = _rng(seed)
-    tip_x = x - 8 + r.uniform(-2, 2)
-    tip_y = y_mid + r.uniform(-3, 3)
-    tail_x = tip_x - 80
-    tail_y = tip_y + r.uniform(-6, 6)
+    tip_x = x - 10 + r.uniform(-3, 3)
+    tip_y = y_mid + r.uniform(-4, 4)
+    length = r.uniform(95, 130)
+    angle  = math.pi + r.uniform(-0.35, 0.35)   # mostly leftward, slight tilt
+    tail_x = tip_x + math.cos(angle) * length
+    tail_y = tip_y + math.sin(angle) * length
+    # Curved shaft via a quadratic-ish midpoint offset
+    mid_x = (tip_x + tail_x) / 2 + r.uniform(-14, 14)
+    mid_y = (tip_y + tail_y) / 2 + r.uniform(-18, 18)
     shaft = []
-    for i in range(40):
-        t = i / 39
-        px = tail_x + (tip_x - tail_x) * t + r.uniform(-1.0, 1.0)
-        py = tail_y + (tip_y - tail_y) * t + math.sin(t * 4) * 1.2
-        shaft.append((px, py))
-    head1 = [(tip_x, tip_y), (tip_x - 18 + r.uniform(-2,2), tip_y - 12 + r.uniform(-2,2))]
-    head2 = [(tip_x, tip_y), (tip_x - 18 + r.uniform(-2,2), tip_y + 12 + r.uniform(-2,2))]
+    steps = 48
+    for i in range(steps + 1):
+        t = i / steps
+        # Quadratic Bezier: tail → mid → tip
+        bx = (1 - t) ** 2 * tail_x + 2 * (1 - t) * t * mid_x + t ** 2 * tip_x
+        by = (1 - t) ** 2 * tail_y + 2 * (1 - t) * t * mid_y + t ** 2 * tip_y
+        shaft.append((bx + r.uniform(-0.6, 0.6), by + r.uniform(-0.6, 0.6)))
+    # Arrowhead pointing along incoming shaft direction
+    ang_in = math.atan2(tip_y - mid_y, tip_x - mid_x)
+    head_len = r.uniform(18, 24)
+    spread1 = r.uniform(0.45, 0.65)
+    spread2 = r.uniform(0.45, 0.65)
+    h1_end = (tip_x - head_len * math.cos(ang_in - spread1),
+              tip_y - head_len * math.sin(ang_in - spread1))
+    h2_end = (tip_x - head_len * math.cos(ang_in + spread2),
+              tip_y - head_len * math.sin(ang_in + spread2))
+    head1 = [(tip_x, tip_y), h1_end]
+    head2 = [(tip_x, tip_y), h2_end]
     return [shaft, head1, head2]
 
 
