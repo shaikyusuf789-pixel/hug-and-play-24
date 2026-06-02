@@ -286,14 +286,34 @@ function AudioEngine() {
             </div>
 
             <div className="space-y-2">
-              <Label>Model Provider</Label>
+              <Label>Provider</Label>
               <Select value={model} onValueChange={setModel}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="elevenlabs">ElevenLabs</SelectItem>
                   <SelectItem value="google">Google AI Studio</SelectItem>
-                  <SelectItem value="elevenlabs">Eleven Labs</SelectItem>
+                  <SelectItem value="cartesia">Cartesia</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>TTS Model</Label>
+              <Select value={ttsModel} onValueChange={setTtsModel}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(model === "google"
+                    ? GOOGLE_MODELS
+                    : model === "cartesia"
+                      ? CARTESIA_MODELS
+                      : ELEVENLABS_MODELS
+                  ).map((m) => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -312,9 +332,21 @@ function AudioEngine() {
                   </SelectContent>
                 </Select>
               </div>
+            ) : model === "cartesia" ? (
+              <div className="space-y-2">
+                <Label>Cartesia Voice ID</Label>
+                <Input
+                  placeholder="Paste Cartesia Voice ID..."
+                  value={voiceId}
+                  onChange={(e) => setVoiceId(e.target.value)}
+                />
+                <p className="text-[10px] text-slate-400">
+                  Default = your cloned voice. Telugu language sent by default. CARTESIA_API_KEY required.
+                </p>
+              </div>
             ) : (
               <div className="space-y-2">
-                <Label>Eleven Labs Voice ID</Label>
+                <Label>ElevenLabs Voice ID</Label>
                 <Input 
                   placeholder="Paste Voice ID here..." 
                   value={voiceId} 
@@ -323,6 +355,7 @@ function AudioEngine() {
                 <p className="text-[10px] text-slate-400">Make sure ELEVEN_LABS_API_KEY is in secrets.</p>
               </div>
             )}
+
           </CardContent>
         </Card>
 
