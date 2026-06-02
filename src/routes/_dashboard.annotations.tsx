@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ANNOTATIONS_WORKER_URL } from "@/lib/worker";
 import { runTimestamps, runTimestampsAll } from "@/lib/timestamps.functions";
+import { runOcr, runOcrAll } from "@/lib/ocr.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_dashboard/annotations")({
@@ -118,8 +119,8 @@ function AnnotationsPage() {
   const runOcr = async (chunk: any) => {
     const k = `ocr:${chunk.id}`; setRowBusy(k, true);
     try {
-      await workerPost("/ocr/run", { script_id: scriptId, chunk_id: chunk.id, chunk_number: chunk.chunk_index, slide_source: slideSource });
-      toast.success(`OCR done — chunk ${chunk.chunk_index}`);
+      const res: any = await runOcr({ data: { scriptId, chunkId: chunk.id, chunkNumber: chunk.chunk_index, slideSource } });
+      toast.success(`OCR done — chunk ${chunk.chunk_index} (${res.word_count} words via Google Vision)`);
       await refreshAll(scriptId, slideSource);
     } catch (e: any) { toast.error(`OCR failed: ${e.message}`); }
     finally { setRowBusy(k, false); }
@@ -166,6 +167,11 @@ function AnnotationsPage() {
       if (path === "/timestamps/run-all") {
         // Timestamps now run via ElevenLabs forced alignment (server fn).
         const res = await runTimestampsAll({ data: { scriptId } });
+        const failedMsg = res.failed ? `, ${res.failed} failed` : "";
+        toast.success(`${label}: ${res.succeeded}/${res.queued} chunks${failedMsg}`);
+      } else if (path === "/ocr/run-all") {
+        // OCR now runs via Google Cloud Vision (server fn).
+        const res: any = await runOcrAll({ data: { scriptId, slideSource } });
         const failedMsg = res.failed ? `, ${res.failed} failed` : "";
         toast.success(`${label}: ${res.succeeded}/${res.queued} chunks${failedMsg}`);
       } else {
