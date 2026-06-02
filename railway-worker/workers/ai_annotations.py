@@ -156,20 +156,29 @@ def generate_annotations(
 {_ocr_lines(ocr_words)}
 
 === TASK ===
-1. Look at the slide image carefully — note the heading, bullets, layout.
-2. Read the script and identify every meaningful concept the narrator says.
-3. For EACH concept, find the matching word/phrase/line on the slide
-   (semantic match, not keyword match — slide wording is paraphrased).
-4. Decide whether to annotate a single word, a phrase, or a whole line
-   based on what makes sense visually.
-5. Compute start_time by aligning the concept to the spoken word(s) in
-   the timestamps.
-6. Use bbox EXACTLY from the OCR list (for multi-word phrases, compute the
-   bounding rectangle covering all the OCR words in the phrase).
-7. Vary annotation types. Use double_underline at most ONCE (the heading).
-8. Return 12–25 annotations, chronologically ordered.
+1. Look at the slide image — note the heading, bullets, layout.
+2. Read the script and identify EVERY meaningful concept the narrator says
+   (key terms, numbers, names, definitions, phrases). Aim for one annotation
+   roughly every 3–5 seconds of audio, distributed across the WHOLE chunk
+   (NOT clustered at the end).
+3. For each concept, find the matching word/phrase/line on the slide
+   (semantic match — slide wording is paraphrased from the script).
+4. PREFER short targets: single keywords, numbers, names, or 2–4 word phrases.
+   Only annotate a full bullet line when the narrator clearly summarises
+   that whole point.
+5. start_time = the timestamp of the FIRST word the narrator says that
+   maps to this concept. Use the transliterated timestamps as ground truth.
+6. target_text MUST be the EXACT OCR text (copy character-for-character).
+   For multi-word targets, concatenate consecutive OCR words with single
+   spaces in the order they appear in the OCR dump.
+7. Vary types. double_underline at most ONCE (the heading). Mix underline,
+   circle, box, arrow so it feels like a real tutor.
+8. Return 15–25 annotations, chronologically ordered, spread across the
+   full duration. NEVER cluster more than 3 annotations in the same 2-second
+   window.
 
 Return ONLY the JSON object."""
+
 
     user_content: list[dict[str, Any]] = [{"type": "text", "text": user_text}]
     if slide_image_url:
