@@ -200,28 +200,111 @@ Return ONLY the JSON object."""
     if not isinstance(annotations, list):
         annotations = []
 
-    # Sanitise
+    # Sanitise + RECOMPUTE bbox from OCR (GPT often returns wrong bboxes for
+    # multi-word phrases — it copies the title's bbox or the first OCR bbox).
     allowed_types = {"underline", "double_underline", "circle", "box", "arrow"}
-    clean = []
+    clean: list[dict[str, Any]] = []
     for ann in annotations:
         t = ann.get("type")
         if t not in allowed_types:
             continue
-        bbox = ann.get("bbox")
-        if not isinstance(bbox, list) or len(bbox) != 4:
+        target = str(ann.get("target_text") or "").strip()
+        if not target:
             continue
+
+        located = _locate_phrase_bbox(target, ocr_words)
+        if located is None:
+            bbox = ann.get("bbox")
+            if not isinstance(bbox, list) or len(bbox) != 4:
+                continue
+            try:
+                located = [int(v) for v in bbox]
+            except (TypeError, ValueError):
+                continue
+
         try:
             clean.append({
                 "type":        t,
                 "start_time":  max(0.0, float(ann.get("start_time") or 0)),
-                "target_text": str(ann.get("target_text") or ""),
-                "bbox":        [int(v) for v in bbox],
+                "target_text": target,
+                "bbox":        located,
             })
         except (TypeError, ValueError):
             continue
 
-    # Sort chronologically
+    # Drop duplicate bboxes (GPT often collapses several phrases onto the same
+    # heading bbox — keep only the first occurrence per bbox).
+    seen: set[tuple[int, int, int, int]] = set()
+    deduped: list[dict[str, Any]] = []
+    for ann in clean:
+        key = tuple(ann["bbox"])
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(ann)
+    clean = deduped
+
     clean.sort(key=lambda a: a["start_time"])
 
     print(f"[AI] {len(clean)} annotations generated for chunk {chunk_number}")
     return clean
+
+
+# ── Phrase → bbox locator ────────────────────────────────────────────────────
+
+_NORM_RE = re.compile(r"[^a-z0-9]+")
+
+def _norm(s: str) -> str:
+    return _NORM_RE.sub("", s.lower())
+
+
+def _locate_phrase_bbox(phrase: str, ocr_words: list[dict]) -> list[int] | None:
+    """
+    Find the contiguous OCR word run whose joined text best matches `phrase`
+    and return the union bbox [x, y, w, h]. Returns None if no decent match.
+    """
+    if not phrase or not ocr_words:
+        return None
+    target = _norm(phrase)
+    if not target:
+        return None
+
+    norm_words = [_norm(w.get("text", "")) for w in ocr_words]
+    n = len(ocr_words)
+    best: tuple[float, int, int] | None = None
+
+    for i in range(n):
+        joined = ""
+        for j in range(i, min(n, i + 40)):
+            joined += norm_words[j]
+            if not joined:
+                continue
+            if target in joined:
+                overshoot = len(joined) - len(target)
+                score = 1.0 - (overshoot / max(len(target), 1)) * 0.2
+                if best is None or score > best[0]:
+                    best = (score, i, j + 1)
+                break
+            if joined in target:
+                cov = len(joined) / len(target)
+                if cov >= 0.6:
+                    score = cov * 0.9
+                    if best is None or score > best[0]:
+                        best = (score, i, j + 1)
+            if len(joined) > len(target) * 2:
+                break
+
+    if best is None:
+        return None
+    _, i, j = best
+
+    xs, ys, x2s, y2s = [], [], [], []
+    for k in range(i, j):
+        w = ocr_words[k]
+        x = int(w.get("x", 0)); y = int(w.get("y", 0))
+        ww = int(w.get("w", 0)); hh = int(w.get("h", 0))
+        xs.append(x); ys.append(y); x2s.append(x + ww); y2s.append(y + hh)
+    if not xs:
+        return None
+    return [min(xs), min(ys), max(x2s) - min(xs), max(y2s) - min(ys)]
+
