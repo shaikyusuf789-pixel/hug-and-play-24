@@ -220,7 +220,7 @@ Return ONLY the JSON object."""
     for attempt in range(6):
         try:
             response = _openai.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": _SYSTEM_PROMPT},
                     {"role": "user",   "content": user_content},
