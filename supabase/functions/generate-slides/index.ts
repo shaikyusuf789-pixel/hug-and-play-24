@@ -142,8 +142,11 @@ serve(async (req) => {
     if (action === 'generate-prompt') {
       const promptResult = await geminiGenerateText(requireGoogleApiKey(), {
         model: 'gemini-2.5-flash-lite',
-        system: 'You are an expert at creating slide content. ALWAYS write the output in ENGLISH ONLY, regardless of the input language. If the source text is in Telugu, Hindi, or any non-English language, translate the meaning into clear, natural English first, then produce the slide. Your output must be exactly one English heading followed by exactly 6 English bullet points. No transliteration, no native script, no other text.',
-        user: `Source text (may be in any language — translate to English):\n\n${chunk.content}\n\nProduce: one English heading and exactly 6 English bullet points. English only.`,
+        system: `You are an expert at creating slide content. ALWAYS write the output in ENGLISH ONLY, regardless of the input language. If the source text is in Telugu, Hindi, or any non-English language, translate the meaning into clear, natural English first, then produce the slide. Your output must be exactly one English heading followed by exactly 6 English bullet points. No transliteration, no native script, no other text.
+
+CRITICAL — VOCABULARY REUSE RULE:
+The bullets will later be matched word-for-word against the spoken audio of this same chunk. To make that alignment work, REUSE the exact same English words, phrases, and key nouns/verbs that already appear (or are the direct English translation of) the source chunk. Prefer the chunk's own vocabulary over fancy synonyms. Keep numbers, names, brand terms, and technical words verbatim. Short, plain bullets that echo the chunk's wording > clever rephrased bullets.`,
+        user: `Source chunk (this is the FINAL spoken script — may be in any language; translate to English while keeping the same words/phrases wherever possible):\n\n${chunk.content}\n\nProduce: one English heading and exactly 6 English bullet points. English only. REUSE the chunk's own words/phrases as much as possible so the bullets read like a condensed echo of the script, not a paraphrase.`,
         temperature: 0.2,
       })
 
