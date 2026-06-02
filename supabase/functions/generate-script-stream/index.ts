@@ -211,7 +211,10 @@ serve(async (req) => {
       150,
       Math.min(5000, Number(body.wordCount) || 1800),
     );
-    const model = normalizeGeminiModel(body.model, "gemini-2.5-pro");
+    const useClaude = isClaudeModel(body.model);
+    const model = useClaude
+      ? normalizeClaudeModel(body.model)
+      : normalizeGeminiModel(body.model, "gemini-2.5-pro");
     const factCheckModel = normalizeGeminiModel(body.factCheckModel, "gemini-2.5-pro");
 
     const parts: string[] = [];
