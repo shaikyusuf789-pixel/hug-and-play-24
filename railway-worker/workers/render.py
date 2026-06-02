@@ -331,6 +331,8 @@ def render_clip(
     bg.paste(resized, ((W - nw) // 2, (H - nh) // 2))
     slide_rgba = bg
     slide_bytes = slide_rgba.tobytes()  # reuse for blank frames
+    pen = _pick_pen(slide_rgba)
+    print(f"[RENDER] pen color = {pen} (single-pen mode)")
 
     # Per-annotation draw duration
     draw_durations = [
