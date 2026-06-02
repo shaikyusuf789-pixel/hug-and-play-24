@@ -1,5 +1,5 @@
 // supabase/functions/generate-script/index.ts
-// Generates a SKY Academy Telugu voiceover script as a SINGLE CONTINUOUS TEXT.
+// Generates a sky academy Telugu voiceover script as a SINGLE CONTINUOUS TEXT.
 // No segments / no chunking here -- chunking happens later on the chunks page.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -56,16 +56,16 @@ function buildSystemPrompt(
     : (overrides?.dna_general || DNA_GENERAL);
 
   const taskLine = inputMode === "transcript"
-    ? "REWRITE the provided competitor transcript into ONE continuous SKY Academy Telugu voiceover script."
+    ? "REWRITE the provided competitor transcript into ONE continuous sky academy Telugu voiceover script."
     : inputMode === "pdf"
-    ? "ADAPT the provided book / PDF text into ONE continuous SKY Academy Telugu teaching voiceover."
-    : "WRITE ONE complete, original SKY Academy Telugu voiceover script on the given topic / idea.";
+    ? "ADAPT the provided book / PDF text into ONE continuous sky academy Telugu teaching voiceover."
+    : "WRITE ONE complete, original sky academy Telugu voiceover script on the given topic / idea.";
 
   const min = Math.max(50, targetWords - 50);
   const max = targetWords + 50;
 
   return `
-You are an expert Telugu video script writer for SKY Academy.
+You are an expert Telugu video script writer for sky academy.
 ${taskLine}
 
 ================================================================
@@ -78,7 +78,7 @@ ABSOLUTE WORD-COUNT TARGET (HARDEST CONSTRAINT)
   reach ${min} words, you MUST expand using your own general knowledge:
   relevant exam context, real-world examples, motivational angles,
   Indian polity / history / current affairs links, study tips, PYQ
-  references, analogies, and SKY Academy-style anecdotes. NEVER stop
+  references, analogies, and sky academy-style anecdotes. NEVER stop
   short. NEVER pad with filler or repetition just to hit the count --
   add genuinely useful teaching content instead.
 - If the source is too long, condense without losing meaning so the
@@ -280,7 +280,7 @@ serve(async (req) => {
 
     const wordCount = countWords(script);
     const charCount = script.length;
-    const title = body.title || body.topic || "SKY Academy Script";
+    const title = body.title || body.topic || "sky academy Script";
 
     let scriptId: string | null = null;
     if (save) {

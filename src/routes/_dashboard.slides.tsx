@@ -181,7 +181,7 @@ function SlideMaker() {
           <div>
             <div className="flex items-center flex-wrap gap-2">
               <span className="text-[9px] md:text-[10px] font-bold bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Phase 2</span>
-              <span className="text-[9px] md:text-[10px] text-slate-400 font-medium tracking-wider">• SKY Academy DNA v4.1</span>
+              <span className="text-[9px] md:text-[10px] text-slate-400 font-medium tracking-wider">• sky academy DNA v4.1</span>
             </div>
             <h1 className="text-xl md:text-2xl font-bold text-slate-900">Slide Maker</h1>
           </div>
