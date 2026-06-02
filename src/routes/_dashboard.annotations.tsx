@@ -128,12 +128,15 @@ function AnnotationsPage() {
   const runTs = async (chunk: any) => {
     const k = `ts:${chunk.id}`; setRowBusy(k, true);
     try {
-      await workerPost("/timestamps/run", { script_id: scriptId, chunk_id: chunk.id, chunk_number: chunk.chunk_index });
-      toast.success(`Timestamps done — chunk ${chunk.chunk_index}`);
+      const res = await runTimestamps({
+        data: { scriptId: scriptId, chunkId: chunk.id, chunkNumber: chunk.chunk_index },
+      });
+      toast.success(`Timestamps done — chunk ${chunk.chunk_index} (${res.word_count} words via ElevenLabs)`);
       await refreshAll(scriptId, slideSource);
     } catch (e: any) { toast.error(`Timestamps failed: ${e.message}`); }
     finally { setRowBusy(k, false); }
   };
+
 
   const runAi = async (chunk: any) => {
     const k = `ai:${chunk.id}`; setRowBusy(k, true);
