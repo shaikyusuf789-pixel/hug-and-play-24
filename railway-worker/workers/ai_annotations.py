@@ -113,9 +113,8 @@ def _ocr_lines(ocr_words: list[dict]) -> str:
     out = []
     for i, w in enumerate(ocr_words):
         text = w.get("text", "")
-        conf = w.get("confidence") or w.get("conf") or 0
         out.append(
-            f'  [{i:03d}] "{text}"  bbox=[{w.get("x",0)},{w.get("y",0)},{w.get("w",0)},{w.get("h",0)}]  conf={conf}'
+            f'  [{i:03d}] "{text}"  bbox=[{w.get("x",0)},{w.get("y",0)},{w.get("w",0)},{w.get("h",0)}]'
         )
     return "\n".join(out)
 
