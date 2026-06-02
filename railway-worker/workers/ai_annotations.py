@@ -165,16 +165,19 @@ def generate_annotations(
    (NOT clustered at the end).
 3. For each concept, find the matching word/phrase/line on the slide
    (semantic match — slide wording is paraphrased from the script).
-4. PREFER short targets: single keywords, numbers, names, or 2–4 word phrases.
-   Only annotate a full bullet line when the narrator clearly summarises
-   that whole point.
+4. STRONGLY PREFER short keyword targets: single words, numbers, names, or
+   2–4 word phrases. CIRCLE them when possible — like a tutor circling a
+   key term ("Focus", "Facts", "20", "Kohli"). Full-line underlines are
+   visually heavy; cap them at MAX 2 per chunk, and only use them when the
+   narrator literally summarises the whole bullet.
 5. start_time = the timestamp of the FIRST word the narrator says that
    maps to this concept. Use the transliterated timestamps as ground truth.
 6. target_text MUST be the EXACT OCR text (copy character-for-character).
    For multi-word targets, concatenate consecutive OCR words with single
    spaces in the order they appear in the OCR dump.
-7. Vary types. double_underline at most ONCE (the heading). Mix underline,
-   circle, box, arrow so it feels like a real tutor.
+7. Vary types. double_underline at most ONCE (the heading). Lean heavily
+   on `circle` for keywords. Mix in short `underline`, occasional `box`
+   or `arrow` so it feels like a real tutor.
 8. Return 15–25 annotations, chronologically ordered, spread across the
    full duration. NEVER cluster more than 3 annotations in the same 2-second
    window.
