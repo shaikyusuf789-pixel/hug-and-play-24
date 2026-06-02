@@ -301,7 +301,26 @@ Return ONLY the JSON object."""
 
     clean.sort(key=lambda a: a["start_time"])
 
-    print(f"[AI] {len(clean)} annotations generated for chunk {chunk_number}")
+    # Safety net: enforce speech window + min 4s spacing.
+    if clean and ts_words:
+        sw_start = float(ts_words[0].get("start", 0.0))
+        sw_end   = float(ts_words[-1].get("end",   total_dur))
+        last_t   = -10.0
+        spaced: list[dict[str, Any]] = []
+        for ann in clean:
+            t = max(sw_start, min(sw_end, float(ann["start_time"])))
+            if t - last_t < 4.0:
+                t = last_t + 4.0
+            if t > sw_end:
+                break
+            ann["start_time"] = round(t, 3)
+            spaced.append(ann)
+            last_t = t
+        clean = spaced
+
+    print(f"[AI] {len(clean)} annotations generated for chunk {chunk_number} "
+          f"(window {ts_words[0].get('start',0) if ts_words else 0:.2f}s → "
+          f"{ts_words[-1].get('end',0) if ts_words else 0:.2f}s)")
     return clean
 
 
