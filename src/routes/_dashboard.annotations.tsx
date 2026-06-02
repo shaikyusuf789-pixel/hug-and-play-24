@@ -171,7 +171,7 @@ function AnnotationsPage() {
         toast.success(`${label}: ${res.succeeded}/${res.queued} chunks${failedMsg}`);
       } else if (path === "/ocr/run-all") {
         // OCR now runs via Google Cloud Vision (server fn).
-        const res: any = await runOcrAll({ data: { scriptId, slideSource } });
+        const res: any = await runOcrAllFn({ data: { scriptId, slideSource } });
         const failedMsg = res.failed ? `, ${res.failed} failed` : "";
         toast.success(`${label}: ${res.succeeded}/${res.queued} chunks${failedMsg}`);
       } else {
