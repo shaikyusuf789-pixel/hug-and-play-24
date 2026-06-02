@@ -28,7 +28,7 @@ function buildStyleReferenceInstructions(overrides?: TrainingOverrides) {
 ================================================================
 STYLE REFERENCE -- HIGHEST PRIORITY (HOW to speak)
 ================================================================
-Below are FOUR real SKY Academy video transcripts (full text, no truncation).
+Below are FOUR real sky academy video transcripts (full text, no truncation).
 Before writing a single line, READ EVERY ALPHABET AND EVERY WORD of all four
 transcripts. No skipping, no skimming, no exemptions. Internally study them
 and mimic EXACTLY:
@@ -108,8 +108,8 @@ PROMO B -- WHATSAPP MENTORSHIP (doubts + motivation + demo):
   would emotionally need support (after a tough-topic explanation, after a
   motivational beat, or near discussion of personal struggles).
 
-PROMO C -- SKY ACADEMY APP + 360 DEGREE STRONG HOLD PREPARATION:
-  Naturally mention the SKY Academy app offerings:
+PROMO C -- sky academy APP + 360 DEGREE STRONG HOLD PREPARATION:
+  Naturally mention the sky academy app offerings:
     - Full video courses for all competitive exams
     - PDFs
     - Quizzes
@@ -305,7 +305,7 @@ function buildSystem(
     (videoType === "SUBJECTIVE" ? overrides?.dna_subjective : overrides?.dna_general) ||
     dnaDefault;
   return `
-You are an expert Telugu video script writer for SKY Academy.
+You are an expert Telugu video script writer for sky academy.
 ${taskLine}
 
 ${PRIORITY_NOTE}
@@ -334,20 +334,20 @@ export function systemPromptFor(
 ) {
   if (mode === "transcript") {
     return buildSystem(
-      "Your task is to REWRITE the provided video transcript into a SKY Academy voiceover script. Keep technical facts and core information; change the delivery to match SKY Academy.",
+      "Your task is to REWRITE the provided video transcript into a sky academy voiceover script. Keep technical facts and core information; change the delivery to match sky academy.",
       videoType,
       overrides,
     );
   }
   if (mode === "pdf") {
     return buildSystem(
-      "Your task is to CREATE a SKY Academy video script based on the provided text from a book or PDF section. Translate and adapt the educational content into a clear, teaching-focused voiceover.",
+      "Your task is to CREATE a sky academy video script based on the provided text from a book or PDF section. Translate and adapt the educational content into a clear, teaching-focused voiceover.",
       videoType,
       overrides,
     );
   }
   return buildSystem(
-    "Write a COMPLETE, ORIGINAL SKY Academy voiceover script on the given topic.",
+    "Write a COMPLETE, ORIGINAL sky academy voiceover script on the given topic.",
     videoType,
     overrides,
   );

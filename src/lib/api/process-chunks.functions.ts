@@ -76,7 +76,7 @@ export const processChunks = createServerFn({ method: "POST" })
     const min = Math.max(20, target - 20);
     const max = target + 20;
 
-    const systemPrompt = `You are an expert script editor for SKY Academy. Split a long Telugu script into chunks for video production.
+    const systemPrompt = `You are an expert script editor for sky academy. Split a long Telugu script into chunks for video production.
 
 STRICT RULES:
 1. Each chunk MUST contain between ${min} and ${max} words (target ~${target} words). Count Telugu words as whitespace-separated tokens.
