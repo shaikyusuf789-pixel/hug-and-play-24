@@ -374,10 +374,16 @@ def _ai_all_job(script_id: str, slide_source: str) -> None:
             ts_words   = json.loads(ts_row["words"])
             if not ts_words:
                 continue
-            chunk_text = chunk.get("content", "")
-            annotations = generate_annotations(ocr_words, ts_words, chunk_text, chunk_number)
+            chunk_text   = chunk.get("content", "") or ""
+            slide_url    = chunk.get("slide_url")
+            slide_prompt = chunk.get("slide_prompt")
+            annotations = generate_annotations(
+                ocr_words, ts_words, chunk_text, chunk_number,
+                slide_image_url=slide_url, slide_prompt=slide_prompt,
+            )
             _upsert_ai(script_id, chunk_id, chunk_number, slide_source, annotations)
             print(f"[AI/run-all] chunk {chunk_number} done — {len(annotations)} annotations")
+
         except Exception as e:
             print(f"[AI/run-all] chunk {chunk.get('chunk_index')} FAILED: {e}")
 
