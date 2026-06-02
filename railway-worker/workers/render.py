@@ -29,7 +29,7 @@ W, H, FPS = 1920, 1080, 30
 # Annotations start drawing this many seconds BEFORE the spoken word so the
 # visual lands in sync with the voice (compensates for ElevenLabs alignment
 # bias + human perception lag). Override via env if needed.
-ANNOTATION_LEAD = float(os.environ.get("ANNOTATION_LEAD_SECONDS", "0.6"))
+ANNOTATION_LEAD = float(os.environ.get("ANNOTATION_LEAD_SECONDS", "1.1"))
 
 
 # Single-pen mode: ONE color per clip, chosen from slide background brightness.
@@ -38,11 +38,11 @@ PEN_DARK  = "#111111"   # near-black ink for light slides
 PEN_LIGHT = "#f5f5f5"   # near-white ink for dark slides
 
 DRAW_SECONDS = {
-    "underline":         0.9,
-    "double_underline":  0.9,   # rendered as a single underline now
-    "circle":            1.6,
-    "box":               1.8,
-    "arrow":             1.1,
+    "underline":         0.8,
+    "double_underline":  0.8,
+    "circle":            1.1,
+    "box":               1.2,
+    "arrow":             0.9,
 }
 
 
