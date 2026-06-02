@@ -254,6 +254,25 @@ Return ONLY the JSON object."""
         except (TypeError, ValueError):
             continue
 
+    # Safety net: demote oversized "circle" annotations to a short "underline".
+    # GPT sometimes circles entire bullets / multi-line blocks, which looks like
+    # a lasso around a paragraph. If the bbox is tall (multi-line) or the target
+    # text has too many words/chars, switch to underline so it reads as a
+    # highlight under the phrase instead of a giant loop.
+    if ocr_words:
+        avg_h = sum(int(w.get("h", 0)) for w in ocr_words) / max(len(ocr_words), 1)
+    else:
+        avg_h = 0
+    for ann in clean:
+        if ann["type"] != "circle":
+            continue
+        words = ann["target_text"].split()
+        bbox_h = ann["bbox"][3] if len(ann["bbox"]) == 4 else 0
+        too_tall = avg_h > 0 and bbox_h > avg_h * 1.8
+        too_wordy = len(words) > 4 or len(ann["target_text"]) > 30
+        if too_tall or too_wordy:
+            ann["type"] = "underline"
+
     # Drop duplicate bboxes (GPT often collapses several phrases onto the same
     # heading bbox — keep only the first occurrence per bbox).
     seen: set[tuple[int, int, int, int]] = set()
