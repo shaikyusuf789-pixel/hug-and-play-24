@@ -62,7 +62,8 @@ function AudioEngine() {
   const [selectedScriptId, setSelectedScriptId] = useState<string>("");
   const [chunks, setChunks] = useState<any[]>([]);
   const [model, setModel] = useState<string>("google");
-  const [voiceId, setVoiceId] = useState<string>("Zephyr");
+  const [voiceId, setVoiceId] = useState<string>("Charon");
+  const [ttsModel, setTtsModel] = useState<string>("gemini-2.5-pro-preview-tts");
   const [loading, setLoading] = useState(false);
   const [generatingChunkId, setGeneratingChunkId] = useState<string | null>(null);
 
@@ -85,14 +86,20 @@ function AudioEngine() {
     return () => clearInterval(t);
   }, [selectedScriptId, chunks]);
 
-  // Auto-fill default voice when switching providers (user can still edit)
+  // Auto-fill default voice + model when switching providers (user can still edit)
   useEffect(() => {
     if (model === "elevenlabs") {
       setVoiceId("UusdT1frXE5G4cvEE2dJ");
+      setTtsModel("eleven_v3");
     } else if (model === "google") {
-      setVoiceId("Zephyr");
+      setVoiceId("Charon");
+      setTtsModel("gemini-2.5-pro-preview-tts");
+    } else if (model === "cartesia") {
+      setVoiceId("4987882a-488c-480a-ace8-f1127032a83b");
+      setTtsModel("sonic-2");
     }
   }, [model]);
+
 
   const fetchScripts = async () => {
     const { data, error } = await supabase
