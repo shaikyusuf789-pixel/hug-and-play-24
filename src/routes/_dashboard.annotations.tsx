@@ -466,7 +466,7 @@ function getSlidePreviewUrl(chunk: any, source: SlideSource): string | null {
   // Fall back to the slide PNG the worker downloaded into the `slides` bucket.
   const base = import.meta.env.VITE_SUPABASE_URL as string | undefined;
   if (!base || !chunk?.script_id) return chunk?.slide_url || null;
-  const n = String(chunk.chunk_index).padStart(3, "0");
+  const n = String((Number(chunk.chunk_index) || 0) + 1).padStart(3, "0");
   return `${base}/storage/v1/object/public/slides/${chunk.script_id}/slide_${n}.png`;
 }
 
