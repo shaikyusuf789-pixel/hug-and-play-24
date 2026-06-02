@@ -67,6 +67,8 @@ function AnnotationsPage() {
   const [aiMap, setAiMap] = useState<Record<string, any>>({});
   const [clipMap, setClipMap] = useState<Record<string, any>>({});
   const [busy, setBusy] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const toggleExp = (k: string) => setExpanded((e) => ({ ...e, [k]: !e[k] }));
   const [bulkBusy, setBulkBusy] = useState<string | null>(null);
   const [mergeState, setMergeState] = useState<{ status: string; url?: string | null; error?: string | null; clip_count?: number }>({ status: "idle" });
 
