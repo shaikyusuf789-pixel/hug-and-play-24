@@ -235,7 +235,7 @@ def get_timestamps(audio_path: str) -> tuple[list[dict], float]:
     else:
         duration = 0.0
 
-    words = _extract_words(raw_words)
+    words = _split_multiword_entries(_extract_words(raw_words))
     cov = _coverage(words, duration)
     print(f"[TS] primary word coverage = {cov*100:.1f}% ({len(words)} words / {duration:.2f}s)")
 
@@ -247,6 +247,5 @@ def get_timestamps(audio_path: str) -> tuple[list[dict], float]:
             print(f"[TS] using synthesized timings (better coverage)")
             words = synth
 
-    phrases = _group_into_phrases(words)
-    print(f"[TS] {len(words)} words → {len(phrases)} phrases, duration={duration:.2f}s")
-    return phrases, duration
+    print(f"[TS] returning {len(words)} word-level timestamps, duration={duration:.2f}s")
+    return words, duration
