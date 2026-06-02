@@ -492,9 +492,17 @@ export const processApprovedIdeaStep = createServerFn({ method: "POST" })
       if (["READY", "RUNNING"].includes(run.status)) return { ok: true, status: run.status.toLowerCase() };
       if (run.status !== "SUCCEEDED" || !run.defaultDatasetId) throw new Error(`Transcript job failed: ${run.status}`);
       const transcript = extractTranscriptFromItems(await apifyDatasetItems(run.defaultDatasetId, token));
-      if (!transcript) throw new Error("Transcript job finished but returned empty transcript");
-      await supabaseAdmin.from("raw_content").update({ processing_step: "ai_pending", original_summary: transcript } as any).eq("id", id);
-      return { ok: true, status: "transcript_done" };
+      // Graceful fallback: some videos have no captions/transcript available.
+      // Instead of failing the whole pipeline, fall back to title + existing description
+      // so the AI step can still generate a proposal from metadata.
+      const fallbackSummary = [
+        idea.original_title ? `Title: ${idea.original_title}` : "",
+        (idea as any).description ? `Description: ${(idea as any).description}` : "",
+        (idea as any).original_summary ? `Notes: ${(idea as any).original_summary}` : "",
+      ].filter(Boolean).join("\n\n");
+      const finalSummary = transcript || fallbackSummary || `Title: ${idea.original_title || "(untitled)"} (no transcript available — video likely has no captions)`;
+      await supabaseAdmin.from("raw_content").update({ processing_step: "ai_pending", original_summary: finalSummary } as any).eq("id", id);
+      return { ok: true, status: transcript ? "transcript_done" : "transcript_empty_fallback" };
     }
 
     if (step === "ai_pending") {
