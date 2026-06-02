@@ -8,6 +8,13 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { extractGeminiText, geminiGenerateJson, geminiStreamResponse, normalizeGeminiModel, requireGoogleApiKey } from "../_shared/google-ai.ts";
 import {
+  anthropicStreamResponse,
+  extractAnthropicDelta,
+  isClaudeModel,
+  normalizeClaudeModel,
+  requireAnthropicApiKey,
+} from "../_shared/anthropic.ts";
+import {
   DNA_GENERAL,
   DNA_SUBJECTIVE,
   TELUGU_TTS_MASTER_PROMPT,
