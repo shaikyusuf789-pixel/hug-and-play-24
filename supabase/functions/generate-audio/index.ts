@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
       if (!key) return json({ error: "CARTESIA_API_KEY not set" }, 500);
       const vId = voiceId;
       if (!vId) return json({ error: "Cartesia voiceId required" }, 400);
-      const modelId = model || "sonic-2";
+      const modelId = model || "sonic-3-latest";
       const r = await fetch("https://api.cartesia.ai/tts/bytes", {
         method: "POST",
         headers: {
