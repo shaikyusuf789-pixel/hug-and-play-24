@@ -139,13 +139,11 @@ function AudioEngine() {
           chunkId, 
           provider: model, 
           voiceId,
-          model: model === "google" ? "gemini-2.5-pro-preview-tts" : undefined
+          model: ttsModel,
         },
       });
 
       if (res.error) throw res.error;
-      const data = res.data;
-
 
       toast.success("Audio generated successfully.");
       fetchChunks(selectedScriptId);
@@ -173,6 +171,7 @@ function AudioEngine() {
           audio_job_status: "queued",
           audio_job_provider: model,
           audio_job_voice_id: voiceId,
+          audio_job_model: ttsModel,
           audio_job_error: null,
         })
         .in("id", eligibleIds);
@@ -180,6 +179,7 @@ function AudioEngine() {
 
       // Fire-and-forget the background worker
       supabase.functions.invoke("process-queue", { body: { scriptId: selectedScriptId } }).catch(() => {});
+
 
       toast.success(`Queued ${eligibleIds.length} audio clips — running in background. You can leave this page.`);
       await fetchChunks(selectedScriptId);
