@@ -85,65 +85,13 @@ export const processChunks = createServerFn({ method: "POST" })
     })
   )
   .handler(async ({ data: { scriptContent, targetWords } }) => {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) throw new Error("OPENAI_API_KEY is not set in project secrets.");
-
     const target = targetWords ?? 185;
     const min = Math.max(20, target - 20);
     const max = target + 20;
+    const chunks = chunkDeterministically(scriptContent, target, min, max);
 
-    const systemPrompt = `You are an expert script editor for sky academy. Split a long Telugu script into chunks for video production.
-
-STRICT RULES:
-1. Each chunk MUST contain between ${min} and ${max} words (target ~${target} words). Count Telugu words as whitespace-separated tokens.
-2. DO NOT produce chunks smaller than ${min} words. If the remaining text would be too short, merge it into the previous chunk.
-3. Split at natural sentence/paragraph boundaries.
-4. Preserve ALL original text verbatim — no edits, additions, deletions, or reordering.
-5. Concatenating all chunks with a single space MUST reproduce the original script (whitespace-normalized).
-6. Output ONLY JSON: { "chunks": ["...", "..."] }`;
-
-    const userPrompt = `Split this script into chunks of ${min}-${max} words each (target ~${target}). Remember: NO chunk under ${min} words.
-
-SCRIPT:
-${scriptContent}`;
-
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        temperature: 0.1,
-        max_tokens: 16384,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      }),
-    });
-
-    if (!res.ok) {
-      const t = await res.text();
-      throw new Error(`OpenAI failed: ${res.status} ${t}`);
-    }
-
-    const json: any = await res.json();
-    const content: string = json.choices?.[0]?.message?.content ?? "";
-
-    let chunks: string[] = [];
-    try {
-      const parsed = JSON.parse(content);
-      chunks = Array.isArray(parsed) ? parsed : parsed.chunks ?? [];
-    } catch (e) {
-      console.error("Failed to parse AI response", content);
-      throw new Error("AI returned invalid JSON for chunks.");
-    }
-
-    // Post-process: enforce min/max word bounds deterministically
-    chunks = rebalance(chunks.filter((c) => typeof c === "string" && c.trim().length > 0), min, max, target);
-
-    return { chunks };
+    return {
+      chunks,
+      stats: chunks.map((chunk) => countWords(chunk)),
+    };
   });
