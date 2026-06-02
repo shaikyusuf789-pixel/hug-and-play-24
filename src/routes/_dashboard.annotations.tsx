@@ -466,6 +466,96 @@ function parseWordsText(v: any): string {
   } catch { return ""; }
 }
 
+/** OCR raw rows:  "TEXT  [x,y w×h] conf%" */
+function parseOcrRaw(v: any): string[] {
+  try {
+    const arr = typeof v === "string" ? JSON.parse(v) : v;
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .map((w: any) => {
+        if (typeof w === "string") return w;
+        const txt = (w?.text ?? w?.word ?? "").toString();
+        if (!txt) return "";
+        const x = w?.x ?? w?.left;
+        const y = w?.y ?? w?.top;
+        const ww = w?.w ?? w?.width;
+        const hh = w?.h ?? w?.height;
+        const conf = w?.conf ?? w?.confidence;
+        const coord = x != null && y != null ? `[${x},${y}${ww != null && hh != null ? ` ${ww}×${hh}` : ""}]` : "";
+        const c = conf != null ? `  ${typeof conf === "number" ? conf.toFixed(0) : conf}%` : "";
+        return `${txt.padEnd(24, " ")} ${coord}${c}`;
+      })
+      .filter(Boolean);
+  } catch { return []; }
+}
+
+/** Timestamp raw rows:  "  12.34s →  12.78s   word   (original)" */
+function parseTsRaw(v: any): string[] {
+  try {
+    const arr = typeof v === "string" ? JSON.parse(v) : v;
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .map((w: any) => {
+        if (typeof w === "string") return w;
+        const word = (w?.word ?? w?.text ?? "").toString();
+        if (!word) return "";
+        const s = w?.start;
+        const e = w?.end;
+        const orig = w?.original && w.original !== word ? `   (${w.original})` : "";
+        const fmt = (t: any) => (typeof t === "number" ? `${t.toFixed(2).padStart(7, " ")}s` : "       ");
+        return `${fmt(s)} → ${fmt(e)}   ${word}${orig}`;
+      })
+      .filter(Boolean);
+  } catch { return []; }
+}
+
+/** Annotations raw rows: JSON-stringified entries, one per line. */
+function parseAnnotationsRaw(v: any): string[] {
+  try {
+    const arr = typeof v === "string" ? JSON.parse(v) : v;
+    if (!Array.isArray(arr)) return [];
+    return arr.map((a: any, i: number) => `${String(i + 1).padStart(2, " ")}. ${JSON.stringify(a)}`);
+  } catch { return []; }
+}
+
+function RawBlock({
+  lines, expanded, onToggle, emptyLabel, mono,
+}: {
+  lines: string[];
+  expanded: boolean;
+  onToggle: () => void;
+  emptyLabel?: string;
+  mono?: boolean;
+}) {
+  if (!lines.length) {
+    return <p className="text-xs text-slate-400 italic">{emptyLabel || "—"}</p>;
+  }
+  const shown = expanded ? lines : lines.slice(0, 6);
+  return (
+    <div className="space-y-1">
+      <pre
+        className={cn(
+          "text-[11px] text-slate-700 whitespace-pre leading-relaxed overflow-x-auto",
+          expanded ? "max-h-72 overflow-y-auto pr-1" : "",
+          mono ? "font-mono" : "font-sans",
+        )}
+      >
+        {shown.join("\n")}
+      </pre>
+      {lines.length > 6 && (
+        <button
+          type="button"
+          onClick={onToggle}
+          className="text-[11px] text-slate-500 hover:text-slate-800 underline underline-offset-2"
+        >
+          {expanded ? "Show less" : `Show all ${lines.length} rows`}
+        </button>
+      )}
+    </div>
+  );
+}
+
+
 function parseAnnotationsText(v: any): string {
   try {
     const arr = typeof v === "string" ? JSON.parse(v) : v;
