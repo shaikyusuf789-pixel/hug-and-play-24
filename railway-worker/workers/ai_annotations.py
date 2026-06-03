@@ -16,6 +16,7 @@ find the closest matching word / phrase / line on the slide and annotate it.
 
 import json
 import re
+from difflib import SequenceMatcher
 from typing import Any
 
 from openai import OpenAI
@@ -289,16 +290,8 @@ Return ONLY the JSON object."""
         # ── bbox: locate via OCR (never trust GPT's bbox).
         located = _locate_phrase_bbox(target, ocr_words)
         if located is None:
-            bbox = ann.get("bbox")
-            if not isinstance(bbox, list) or len(bbox) != 4:
-                continue
-            try:
-                located = [int(v) for v in bbox]
-            except (TypeError, ValueError):
-                continue
-            # Reject obvious junk bboxes like [40,40,40,40] (GPT placeholders).
-            if located[2] < 5 or located[3] < 5:
-                continue
+            print(f"[AI] DROP: target_text '{target}' not found in OCR")
+            continue
 
         # ── start_time: look up script_phrase in real word timestamps.
         script_phrase = str(ann.get("script_phrase") or "").strip()
@@ -311,6 +304,15 @@ Return ONLY the JSON object."""
         real_start = _locate_phrase_start_time(
             script_phrase, ts_words, min_start=last_assigned_start
         )
+        target_start = _locate_target_start_time(
+            target, ts_words, min_start=last_assigned_start
+        )
+        if target_start is not None and (
+            real_start is None or abs(float(target_start) - float(real_start)) > 1.25
+        ):
+            if real_start is not None:
+                print(f"[AI] REPAIR: target '{target}' timing {real_start:.2f}s → {target_start:.2f}s")
+            real_start = target_start
         if real_start is None and gpt_start is not None:
             # Fallback: use GPT's number but warn loudly in logs.
             print(f"[AI] WARN: script_phrase '{script_phrase}' not found in "
@@ -515,3 +517,87 @@ def _locate_phrase_start_time(
     # Among the pool, take the best score; tie-break by smallest start.
     pool.sort(key=lambda c: (-c[0], c[2]))
     return pool[0][2]
+
+
+def _locate_target_start_time(
+    target_text: str,
+    ts_words: list[dict],
+    min_start: float = -1.0,
+) -> float | None:
+    """Map visible slide text back to spoken timestamp words.
+
+    GPT sometimes supplies a weak `script_phrase` for a good visual target
+    (for example target_text="acceleration" but script_phrase="adugutaru").
+    This deterministic repair looks for the target itself, plus common
+    Telugu-English phonetic spellings produced by forced alignment.
+    """
+    if not target_text or not ts_words:
+        return None
+
+    variants = _target_variants(target_text)
+    if not variants:
+        return None
+
+    norm_words = [_norm(w.get("word") or w.get("text") or "") for w in ts_words]
+    candidates: list[tuple[float, float]] = []  # (score, start)
+    for i in range(len(ts_words)):
+        joined = ""
+        for j in range(i, min(len(ts_words), i + 8)):
+            joined += norm_words[j]
+            if not joined:
+                continue
+            for variant in variants:
+                if not variant:
+                    continue
+                score = 0.0
+                if variant in joined or joined in variant:
+                    score = min(len(variant), len(joined)) / max(len(variant), len(joined), 1)
+                    score = max(score, 0.88)
+                else:
+                    score = SequenceMatcher(None, variant, joined).ratio()
+                if score >= 0.78:
+                    try:
+                        start = float(ts_words[i].get("start", 0.0) or 0.0)
+                    except (TypeError, ValueError):
+                        start = 0.0
+                    if start >= min_start - 0.01:
+                        candidates.append((score, start))
+            if len(joined) > 80:
+                break
+
+    if not candidates:
+        return None
+    candidates.sort(key=lambda c: (-c[0], c[1]))
+    return candidates[0][1]
+
+
+def _target_variants(target_text: str) -> list[str]:
+    words = re.findall(r"[A-Za-z0-9]+", target_text.lower())
+    variants: set[str] = set()
+    if words:
+        variants.add("".join(words))
+        for w in words:
+            if len(w) >= 3:
+                variants.add(w)
+
+    phrase_map = {
+        "skyacademy": ["skyacademy"],
+        "ssccgl2026": ["ssccgl2026", "ssccgl"],
+        "highyield": ["highyield", "haiyild", "yild"],
+        "topics": ["topics", "tapiks", "tapik"],
+        "physics": ["physics", "phijiks", "phijik", "fijiks"],
+        "motion": ["motion", "mosn"],
+        "force": ["force", "phors", "fors"],
+        "mass": ["mass", "mas"],
+        "important": ["important", "impartemt", "impartment"],
+        "acceleration": ["acceleration", "yaksilresn", "aksilresn", "accilresn"],
+        "fma": ["fma"],
+    }
+    compact = "".join(words)
+    for key, vals in phrase_map.items():
+        if key in compact or compact in key:
+            variants.update(vals)
+    for w in words:
+        variants.update(phrase_map.get(w, []))
+
+    return sorted({_norm(v) for v in variants if _norm(v)}, key=len, reverse=True)
