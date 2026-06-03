@@ -316,8 +316,6 @@ def render_clip(
     audio_path: str,
     annotations: list[dict[str, Any]],
     output_path: str,
-    ocr_src_w: int = 2400,
-    ocr_src_h: int = 1350,
 ) -> float:
     """
     Render an annotated MP4 clip.
