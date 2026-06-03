@@ -239,6 +239,37 @@ function AnnotationsPage() {
   };
 
 
+  const deleteAll = async (kind: "ocr" | "ts" | "ai" | "clip") => {
+    if (!scriptId) return toast.error("Pick a script first");
+    if (!confirm(`Are you sure you want to delete all ${kind} data for this script? This cannot be undone.`)) return;
+    
+    setBulkBusy(`Deleting ${kind}`);
+    try {
+      let query;
+      if (kind === "ocr") {
+        query = supabase.from("ocr_results").delete().eq("script_id", scriptId).eq("slide_source", slideSource);
+      } else if (kind === "ts") {
+        query = supabase.from("audio_timestamps").delete().eq("script_id", scriptId);
+      } else if (kind === "ai") {
+        query = supabase.from("clip_annotations").delete().eq("script_id", scriptId).eq("slide_source", slideSource);
+      } else if (kind === "clip") {
+        query = supabase.from("video_clips").delete().eq("script_id", scriptId).eq("slide_source", slideSource);
+      }
+
+      if (query) {
+        const { error } = await query;
+        if (error) throw error;
+      }
+
+      toast.success(`Deleted all ${kind} data`);
+      await refreshAll(scriptId, slideSource);
+    } catch (e: any) {
+      toast.error(`Delete failed: ${e.message}`);
+    } finally {
+      setBulkBusy(null);
+    }
+  };
+
   const mergeMega = async () => {
     if (!scriptId) return;
     setBulkBusy("Merge");
