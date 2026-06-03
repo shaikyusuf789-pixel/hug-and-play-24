@@ -290,16 +290,8 @@ Return ONLY the JSON object."""
         # ── bbox: locate via OCR (never trust GPT's bbox).
         located = _locate_phrase_bbox(target, ocr_words)
         if located is None:
-            bbox = ann.get("bbox")
-            if not isinstance(bbox, list) or len(bbox) != 4:
-                continue
-            try:
-                located = [int(v) for v in bbox]
-            except (TypeError, ValueError):
-                continue
-            # Reject obvious junk bboxes like [40,40,40,40] (GPT placeholders).
-            if located[2] < 5 or located[3] < 5:
-                continue
+            print(f"[AI] DROP: target_text '{target}' not found in OCR")
+            continue
 
         # ── start_time: look up script_phrase in real word timestamps.
         script_phrase = str(ann.get("script_phrase") or "").strip()
