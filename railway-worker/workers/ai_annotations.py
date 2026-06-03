@@ -110,13 +110,16 @@ HARD RULES:
 {_ocr_lines(ocr_words)}
 
 === TASK ===
-1. Analyze the slide image and script.
-2. For every concept mentioned, identify the matching text on the slide.
-3. Determine the EXACT start_time from the Word-Level Timestamps.
-4. Extract the EXACT target_text and calculate the bbox from the OCR Dump.
-5. Generate 12-25 annotations that make the slide feel interactive and alive.
+1. Analyze the slide image.
+2. Read the script and timestamps.
+3. For each concept mentioned, find the matching text in the "OCR DUMP".
+4. Extract the 'start' timestamp for when that concept is spoken.
+5. Extract the 'bbox' coordinates from the OCR dump.
+6. Generate 12-25 annotations.
 
-Return ONLY the JSON object. Do not include script_phrase in the output."""
+PRECISION IS KEY: If you choose "circle" for "Physics", you MUST find "Physics" in the OCR dump and use its bbox. Do not estimate coordinates.
+
+Return ONLY the JSON object. Do not explain your reasoning. Just the data. """
 
     user_content: list[dict[str, Any]] = [{"type": "text", "text": user_text}]
     if slide_image_url:
