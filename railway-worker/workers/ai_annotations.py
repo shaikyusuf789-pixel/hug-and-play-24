@@ -76,13 +76,24 @@ ANNOTATION TYPES (mix them so the slide feels alive, not just underlined):
   TARGET MIX per chunk (rough guideline, 15 annotations):
     ~4 circles · ~4 underlines · ~3 arrows · ~2 boxes
 
-TIMING RULES
-  • start_time = the audio time (in seconds) when the corresponding spoken
-    concept BEGINS in the timestamps. Use semantic alignment — find the
-    transliterated word(s) in the timestamps that correspond to the
-    concept, take the start time of the first such word.
-  • Annotations should flow in chronological order, matching the narration.
-  • Two annotations may share a start_time only when truly simultaneous.
+TIMING — CRITICAL CHANGE
+  • You DO NOT pick start_time anymore. Python will compute it from the
+    real word timestamps. Your job is to tell Python WHICH spoken words
+    correspond to each annotation, via `script_phrase`.
+  • `script_phrase` MUST be a short consecutive run of words (2–6 words
+    is ideal, 1 word OK for unique terms) copied VERBATIM from the
+    WORD-LEVEL TIMESTAMPS list (the Latin/transliterated column on the
+    right of the arrow). Example: if the timestamps contain
+       34.66s → 34.90s  "yild"
+       34.96s → 35.22s  "tapiks"
+    and the slide says "High Yield Topics", then for that annotation:
+       "script_phrase": "yild tapiks"
+  • Pick the script_phrase that BEST identifies WHEN the narrator is
+    talking about this concept. If a phrase repeats in the timestamps
+    (e.g. "SSC" appears twice), pick the occurrence that matches the
+    chronological order of the slide narration.
+  • Still keep `start_time` in the JSON as a fallback hint (your best
+    guess from the timestamps), but Python will overwrite it.
 
 TARGET TEXT RULES
   • target_text MUST be the EXACT OCR text from the slide (so the renderer
@@ -97,14 +108,15 @@ QUANTITY & DISTRIBUTION
   • Aim for 12–25 annotations per chunk (more if the slide is text-dense,
     fewer if it's very sparse — but always try to cover EVERY major concept
     spoken in the script).
-  • Spread annotations across the entire chunk duration. Do not cluster
-    them all in the first 2 seconds.
+  • Annotations MUST be in CHRONOLOGICAL ORDER of their script_phrase
+    appearance in the timestamps.
   • Do not annotate the same OCR text more than once unless the script
     references it at clearly distinct times.
 
 OUTPUT FORMAT — return ONLY valid JSON (no markdown fences, no commentary):
 {"annotations": [
-  {"type": "double_underline", "start_time": 0.0, "target_text": "IPL 2026", "bbox": [137, 349, 121, 65]},
+  {"type": "circle", "start_time": 6.40, "script_phrase": "SSC CGL", "target_text": "SSC CGL 2026", "bbox": [262,343,640,81]},
+  {"type": "arrow",  "start_time": 34.66, "script_phrase": "hai yild tapiks", "target_text": "high yield topics", "bbox": [356,971,280,34]},
   ...
 ]}"""
 
