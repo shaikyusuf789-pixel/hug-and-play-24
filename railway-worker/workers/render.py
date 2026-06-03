@@ -240,7 +240,8 @@ def render_clip(
     print(f"[RENDER] {total_frames} frames @ {FPS}fps, duration={audio_dur:.2f}s")
 
     # Resize slide to 1920×1080 letterboxed (black bars)
-    raw_slide = Image.open(slide_path).convert("RGBA")
+    with Image.open(slide_path) as img:
+        raw_slide = img.convert("RGBA")
     bg = Image.new("RGBA", (W, H), (0, 0, 0, 255))
     sw, sh = raw_slide.size
     scale  = min(W / sw, H / sh)
