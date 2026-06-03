@@ -14,11 +14,15 @@ Annotation colors:
   arrow            → #8b5cf6
 """
 
+import io
 import math
 import subprocess
+import tempfile
+import os
 from typing import Any
 
-from PIL import Image, ImageDraw
+import cairosvg
+from PIL import Image
 
 W, H, FPS = 1920, 1080, 30
 
@@ -117,27 +121,15 @@ def _arrow_pts(x: int, y_mid: int) -> list[tuple[int, int]]:
     )
 
 
-# ── Frame overlay builder ────────────────────────────────────────────────────
+# ── Frame SVG builder ────────────────────────────────────────────────────────
 
-def _build_frame_overlay(
+def _build_frame_svg(
     annotations: list[dict],
     progress_map: dict[int, float],  # ann_index → 0.0–1.0
     src_w: int,
     src_h: int,
-) -> Image.Image | None:
-    overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(overlay)
-    has_paths = False
-
-    def draw_path(points: list[tuple[int, int]], color: str, width: int) -> None:
-        nonlocal has_paths
-        if len(points) < 2:
-            return
-        draw.line(points, fill=color, width=width, joint="curve")
-        radius = max(2, width // 2)
-        for px, py in (points[0], points[-1]):
-            draw.ellipse((px - radius, py - radius, px + radius, py + radius), fill=color)
-        has_paths = True
+) -> str:
+    paths_svg = []
 
     for idx, ann in enumerate(annotations):
         prog = progress_map.get(idx)
@@ -146,37 +138,64 @@ def _build_frame_overlay(
 
         ann_type = ann["type"]
         color    = STROKE_COLORS.get(ann_type, "#ffffff")
-        sw       = 8 if ann_type in ("circle", "box") else 6
+        sw       = "8" if ann_type in ("circle", "box") else "6"
         x, y, w, h = _scale_bbox(ann["bbox"], src_w, src_h)
 
         if ann_type == "underline":
             pts  = _underline_pts(x, y + h, w)
             n    = max(2, round(len(pts) * prog))
-            draw_path(pts[:n], color, sw)
+            d    = _pts_to_path(pts[:n])
+            paths_svg.append(
+                f'<path d="{d}" stroke="{color}" stroke-width="{sw}" '
+                f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+            )
 
         elif ann_type == "double_underline":
             for line_pts in _double_underline_pts(x, y + h, w):
                 n  = max(2, round(len(line_pts) * prog))
-                draw_path(line_pts[:n], color, 6)
+                d  = _pts_to_path(line_pts[:n])
+                paths_svg.append(
+                    f'<path d="{d}" stroke="{color}" stroke-width="6" '
+                    f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+                )
 
         elif ann_type == "circle":
             cx, cy = x + w / 2, y + h / 2
             rx, ry = w / 2 + 14, h / 2 + 12
             pts  = _circle_pts(cx, cy, rx, ry)
             n    = max(2, round(len(pts) * prog))
-            draw_path(pts[:n], color, sw)
+            d    = _pts_to_path(pts[:n])
+            paths_svg.append(
+                f'<path d="{d}" stroke="{color}" stroke-width="{sw}" '
+                f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+            )
 
         elif ann_type == "box":
             pts = _box_pts(x - 6, y - 4, w + 12, h + 8)
             n   = max(2, round(len(pts) * prog))
-            draw_path(pts[:n], color, sw)
+            d   = _pts_to_path(pts[:n])
+            paths_svg.append(
+                f'<path d="{d}" stroke="{color}" stroke-width="{sw}" '
+                f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+            )
 
         elif ann_type == "arrow":
             pts = _arrow_pts(x, y + h // 2)
             n   = max(2, round(len(pts) * prog))
-            draw_path(pts[:n], color, sw)
+            d   = _pts_to_path(pts[:n])
+            paths_svg.append(
+                f'<path d="{d}" stroke="{color}" stroke-width="{sw}" '
+                f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+            )
 
-    return overlay if has_paths else None
+    if not paths_svg:
+        return ""
+
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}">'
+        + "".join(paths_svg)
+        + "</svg>"
+    )
 
 
 # ── Audio duration ────────────────────────────────────────────────────────────
@@ -241,33 +260,17 @@ def render_clip(
     ff = subprocess.Popen(
         [
             "ffmpeg",
-            "-hide_banner", "-loglevel", "error",
             "-f", "rawvideo", "-pix_fmt", "rgba",
             "-s", f"{W}x{H}", "-r", str(FPS), "-i", "pipe:0",
             "-i", audio_path,
-            "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
+            "-c:v", "libx264", "-preset", "fast", "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-b:a", "192k",
-            "-movflags", "+faststart", "-shortest", "-y", output_path,
+            "-shortest", "-y", output_path,
         ],
         stdin=subprocess.PIPE,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
     )
-
-    def _write_frame(frame_bytes: bytes) -> None:
-        if ff.stdin is None:
-            raise RuntimeError("ffmpeg stdin unavailable")
-        try:
-            ff.stdin.write(frame_bytes)
-        except BrokenPipeError as exc:
-            stderr_tail = b""
-            if ff.stderr is not None:
-                stderr_tail = ff.stderr.read()[-2000:]
-            ff.wait()
-            raise RuntimeError(
-                "ffmpeg stopped while receiving frames: "
-                + stderr_tail.decode(errors="replace")
-            ) from exc
 
     for f_idx in range(total_frames):
         t = f_idx / FPS
@@ -281,21 +284,23 @@ def render_clip(
             prog_map[i] = 1.0 if elapsed >= dur else _eased(elapsed / dur)
 
         if not prog_map:
-            _write_frame(slide_bytes)
+            ff.stdin.write(slide_bytes)
         else:
-            overlay = _build_frame_overlay(annotations, prog_map, ocr_src_w, ocr_src_h)
-            if overlay:
+            svg = _build_frame_svg(annotations, prog_map, ocr_src_w, ocr_src_h)
+            if svg:
+                png_bytes = cairosvg.svg2png(
+                    bytestring=svg.encode(),
+                    output_width=W,
+                    output_height=H,
+                )
+                overlay = Image.open(io.BytesIO(png_bytes)).convert("RGBA")
                 frame   = Image.alpha_composite(slide_rgba, overlay)
-                _write_frame(frame.tobytes())
+                ff.stdin.write(frame.tobytes())
             else:
-                _write_frame(slide_bytes)
+                ff.stdin.write(slide_bytes)
 
-    # Do not call communicate() after manually closing stdin. In Python 3.11+
-    # communicate() tries to flush stdin again and raises: ValueError("flush of closed file").
-    if ff.stdin is not None:
-        ff.stdin.close()
-    stderr_data = ff.stderr.read() if ff.stderr is not None else b""
-    ff.wait()
+    ff.stdin.close()
+    _, stderr_data = ff.communicate()
     if ff.returncode != 0:
         raise RuntimeError(
             f"ffmpeg exited {ff.returncode}: "

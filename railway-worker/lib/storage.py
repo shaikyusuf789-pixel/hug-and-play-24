@@ -56,8 +56,7 @@ def audio_path(script_id: str, chunk_number: int) -> str:
 
 
 def clip_storage_path(script_id: str, chunk_number: int, slide_source: str) -> str:
-    # Match slide/audio naming and all existing successful renders: chunk index 0 -> clip_001.
-    return f"{script_id}/clip_{(chunk_number + 1):03d}_{slide_source}.mp4"
+    return f"{script_id}/clip_{chunk_number:03d}_{slide_source}.mp4"
 
 
 def upload_clip(local_path: str, storage_path: str) -> str:
