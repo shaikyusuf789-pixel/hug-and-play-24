@@ -184,6 +184,59 @@ function AnnotationsPage() {
     finally { setTimeout(() => setBulkBusy(null), 1200); }
   };
 
+  // ── Skip-mode bulk: process only chunks missing the given output.
+  // kind picks which map to check and which per-chunk runner to call.
+  const skipBulk = async (
+    label: string,
+    kind: "ocr" | "ts" | "ai" | "clip",
+  ) => {
+    if (!scriptId) return toast.error("Pick a script first");
+    if (!chunks.length) return toast.error("No chunks loaded");
+    setBulkBusy(label);
+    try {
+      const pending = chunks.filter((c) => {
+        if (kind === "ocr")  return !ocrMap[c.id];
+        if (kind === "ts")   return !tsMap[c.id];
+        if (kind === "ai")   return !aiMap[c.id];
+        if (kind === "clip") {
+          const v = clipMap[c.id];
+          return !v || !v.file_url || (v.status && v.status !== "done");
+        }
+        return false;
+      });
+      if (!pending.length) {
+        toast.info(`${label}: nothing to do — all chunks already have output`);
+        return;
+      }
+      toast.info(`${label}: processing ${pending.length} missing chunk(s)…`);
+      let ok = 0, fail = 0;
+      for (const c of pending) {
+        try {
+          if (kind === "ocr") {
+            await runOcrFn({ data: { scriptId, chunkId: c.id, chunkNumber: c.chunk_index, slideSource } });
+          } else if (kind === "ts") {
+            await runTimestamps({ data: { scriptId, chunkId: c.id, chunkNumber: c.chunk_index } });
+          } else if (kind === "ai") {
+            await workerPost("/ai/run", { script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index, slide_source: slideSource });
+          } else if (kind === "clip") {
+            await workerPost("/clips/render", { script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index, slide_source: slideSource });
+          }
+          ok++;
+        } catch (e: any) {
+          fail++;
+          console.error(`[skipBulk:${kind}] chunk ${c.chunk_index + 1} failed`, e);
+        }
+      }
+      const failMsg = fail ? `, ${fail} failed` : "";
+      toast.success(`${label}: ${ok}/${pending.length} done${failMsg}`);
+      setTimeout(() => refreshAll(scriptId, slideSource), 1200);
+    } catch (e: any) {
+      toast.error(`${label} failed: ${e.message}`);
+    } finally {
+      setTimeout(() => setBulkBusy(null), 1200);
+    }
+  };
+
 
   const mergeMega = async () => {
     if (!scriptId) return;
