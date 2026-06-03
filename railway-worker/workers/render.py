@@ -69,15 +69,21 @@ def _pick_pen(slide_rgba: "Image.Image") -> str:
 # ── Coordinate transform (OCR source → 1920×1080) ───────────────────────────
 
 def _scale_bbox(
-    bbox: list[int],
+    bbox: Any,
     src_w: int,
     src_h: int,
 ) -> tuple[int, int, int, int]:
-    """Scale OCR bbox from source image dimensions to 1920×1080 letterboxed space."""
-    scale   = min(W / src_w, H / src_h)
-    off_x   = (W - src_w * scale) / 2
-    off_y   = (H - src_h * scale) / 2
-    x, y, w, h = bbox
+    \"\"\"Scale OCR bbox from source image dimensions to 1920×1080 letterboxed space.
+    Handles both list [x,y,w,h] and dict {'x':x, 'y':y, 'w':w, 'h':h} formats.
+    \"\"\"
+    if isinstance(bbox, dict):
+        x, y, w, h = bbox.get("x", 0), bbox.get("y", 0), bbox.get("w", 0), bbox.get("h", 0)
+    else:
+        x, y, w, h = bbox
+
+    scale = min(W / src_w, H / src_h)
+    off_x = (W - src_w * scale) / 2
+    off_y = (H - src_h * scale) / 2
     return (
         round(x * scale + off_x),
         round(y * scale + off_y),
@@ -310,8 +316,6 @@ def render_clip(
     audio_path: str,
     annotations: list[dict[str, Any]],
     output_path: str,
-    ocr_src_w: int = 2400,
-    ocr_src_h: int = 1350,
 ) -> float:
     """
     Render an annotated MP4 clip.
@@ -426,7 +430,7 @@ def render_clip(
                 ff.stdin.write(frame_cache[key])
                 continue
 
-            svg = _build_frame_svg(annotations, prog_map, ocr_src_w, ocr_src_h, pen)
+            svg = _build_frame_svg(annotations, prog_map, sw, sh, pen)
             if not svg:
                 frame_bytes = slide_bytes_half
             else:
