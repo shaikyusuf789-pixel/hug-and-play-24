@@ -51,7 +51,8 @@ To allow a single operator to manage a high-frequency YouTube channel by offload
 
 ### 5. Annotation & Render Pipeline (The "Worker")
 - **Purpose**: Adds dynamic visual cues (underlines, circles) and renders clips.
-- **Latest Fix**: Enforced strict schema in `ai_annotations.py` to ensure only `underline` and `circle` types are used.
+- **Implementation**: `supabase/functions/process-annotations/index.ts`.
+- **Latest Fix**: Migrated from Python to a 2-stage GPT-4o pipeline in Supabase Edge Functions. Enforces strict schema for `underline` and `circle` types.
 
 ---
 

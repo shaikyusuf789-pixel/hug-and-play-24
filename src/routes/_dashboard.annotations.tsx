@@ -143,13 +143,16 @@ function AnnotationsPage() {
   const runAi = async (chunk: any) => {
     const k = `ai:${chunk.id}`; setRowBusy(k, true);
     try {
-      const res = await workerPost("/ai/run", {
-        script_id: scriptId,
-        chunk_id: chunk.id,
-        chunk_number: chunk.chunk_index,
-        slide_source: slideSource
+      const { data, error } = await supabase.functions.invoke("process-annotations", {
+        body: {
+          script_id: scriptId,
+          chunk_id: chunk.id,
+          chunk_number: chunk.chunk_index,
+          slide_source: slideSource
+        }
       });
-      toast.success(`AI done — chunk ${chunk.chunk_index} (${res.annotation_count} annotations via GPT-4o)`);
+      if (error) throw error;
+      toast.success(`AI done — chunk ${chunk.chunk_index} (${data.annotation_count} annotations via GPT-4o)`);
       await refreshAll(scriptId, slideSource);
     } catch (e: any) { toast.error(`AI failed: ${e.message}`); }
     finally { setRowBusy(k, false); }
@@ -183,11 +186,14 @@ function AnnotationsPage() {
         const failedMsg = res.failed ? `, ${res.failed} failed` : "";
         toast.success(`${label}: ${res.succeeded}/${res.queued} chunks${failedMsg}`);
       } else if (path === "/ai/run-all") {
-        const res = await workerPost("/ai/run-all", {
-          script_id: scriptId,
-          slide_source: slideSource
+        // AI annotations now run via Supabase Edge Function (calling 2x GPT-4o pipeline)
+        const pending = chunks.map(async (c) => {
+          return supabase.functions.invoke("process-annotations", {
+            body: { script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index, slide_source: slideSource }
+          });
         });
-        toast.success(`${label}: queued ${res.queued} chunks via GPT-4o`);
+        await Promise.all(pending);
+        toast.success(`${label}: Processed all chunks via GPT-4o pipeline`);
 
 
 
@@ -234,12 +240,15 @@ function AnnotationsPage() {
           } else if (kind === "ts") {
             await runTimestamps({ data: { scriptId, chunkId: c.id, chunkNumber: c.chunk_index } });
           } else if (kind === "ai") {
-            await workerPost("/ai/run", {
-              script_id: scriptId,
-              chunk_id: c.id,
-              chunk_number: c.chunk_index,
-              slide_source: slideSource
+            const { error } = await supabase.functions.invoke("process-annotations", {
+              body: {
+                script_id: scriptId,
+                chunk_id: c.id,
+                chunk_number: c.chunk_index,
+                slide_source: slideSource
+              }
             });
+            if (error) throw error;
 
 
 
