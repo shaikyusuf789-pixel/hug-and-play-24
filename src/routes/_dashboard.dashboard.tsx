@@ -31,27 +31,38 @@ function Dashboard() {
   const stats = useQuery({
     queryKey: ["stats"],
     queryFn: async () => {
-      const [total, pending, approved, priority, scriptDone, audioDone] = await Promise.all([
-        supabase.from("raw_content").select("*", { count: "exact", head: true }),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Pending"),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Approved"),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Priority"),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Script Done"),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Audio Done"),
-      ]);
-      
-      if (total.error) {
-        console.error("Dashboard Stats Error:", total.error);
-        toast.error("Error loading dashboard stats: " + total.error.message);
+      console.log("Fetching dashboard stats...");
+      try {
+        const { data: rawData, error, count } = await supabase
+          .from("raw_content")
+          .select("status", { count: "exact" });
+        
+        if (error) {
+          console.error("Dashboard Stats Fetch Error:", error);
+          toast.error("Error loading dashboard stats: " + error.message);
+          throw error;
+        }
+
+        console.log("Raw dashboard data fetched:", rawData?.length, "rows, count:", count);
+
+        const statsMap = (rawData || []).reduce((acc: any, item: any) => {
+          const status = item.status || "Pending";
+          acc[status] = (acc[status] || 0) + 1;
+          return acc;
+        }, {});
+
+        return {
+          total: count ?? 0,
+          pending: statsMap["Pending"] || 0,
+          approved: statsMap["Approved"] || 0,
+          priority: statsMap["Priority"] || 0,
+          scriptDone: statsMap["Script Done"] || 0,
+          audioDone: statsMap["Audio Done"] || 0,
+        };
+      } catch (err: any) {
+        console.error("Dashboard stats logic error:", err);
+        throw err;
       }
-      return {
-        total: total.count ?? 0,
-        pending: pending.count ?? 0,
-        approved: approved.count ?? 0,
-        priority: priority.count ?? 0,
-        scriptDone: scriptDone.count ?? 0,
-        audioDone: audioDone.count ?? 0,
-      };
     },
     refetchInterval: 5000,
   });
