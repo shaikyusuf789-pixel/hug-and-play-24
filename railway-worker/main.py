@@ -35,7 +35,7 @@ from lib.storage import (
 )
 from workers.ocr import run_ocr
 from workers.timestamps import get_timestamps
-from workers.ai_annotations import run_ai_annotations
+# (run_ai_annotations import removed)
 
 from workers.render import render_clip, get_audio_duration
 
