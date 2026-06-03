@@ -53,21 +53,23 @@ INPUTS:
 
 TASK:
 - Pick 8–12 strong annotations per chunk.
-- Include the main heading, key subtopics, and a few important supporting keywords/phrases.
-- Do not collapse everything into only 3–4 annotations.
-- Every chosen annotation must map to visible OCR text.
-- Avoid duplicates, filler, empty/black areas, and weak concepts.
+- Include the main heading, key subtopics, and important supporting keywords/phrases.
+- EVERY chosen annotation must map to visible OCR text.
 - Spread annotations across the slide content, not only on the title.
-- Identify which spoken word/phrase from the script corresponds to this visual element for timing later. Store this in "match_text".
+- Identify the exact spoken word/phrase from the script that corresponds to this visual element for timing later. Store this in "match_text".
+
+CRITICAL QUALITY RULES:
+1. NO OVER-COMBINING: Keep annotations separate and specific. Do not merge unrelated concepts (e.g., "Laws of Motion and Gravitation" should be separate from specific laws if they are spoken separately).
+2. VISUAL CLARITY: Prefer fewer strong annotations over many weak ones if the slide is crowded, but ensure the result is not too sparse.
+3. SPECIFICITY: Each annotation should highlight one distinct concept or phrase at a time.
 
 RULES:
 - ONLY 'circle' and 'underline' types are allowed.
-- Prefer 'circle' for short key terms and 'underline' for key phrases.
 - Return a JSON object with a key "annotations" which is a list of:
   { 
     "type": "circle"|"underline", 
     "target_text": "text as it appears in OCR", 
-    "match_text": "corresponding word/phrase from the script to match timing",
+    "match_text": "exact word/phrase from the script to match timing",
     "bbox": {"x":0, "y":0, "w":0, "h":0}
   }
 `;
@@ -82,7 +84,7 @@ RULES:
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are an expert educational video director. You choose only the most impactful keywords to highlight. Balance: not too sparse, not too crowded. Return only JSON." },
+          { role: "system", content: "You are an expert educational video director. You choose only the most impactful keywords to highlight. You never merge unrelated concepts. Return only JSON." },
           { role: "user", content: stage1_prompt },
         ],
         response_format: { type: "json_object" },
@@ -102,40 +104,42 @@ RULES:
       });
     }
 
-    // --- STAGE 2: GPT-4o-mini (Timing Sync) ---
+    // --- STAGE 2: GPT-4o (Timing Sync) ---
     const stage2_prompt = `
 Fix the timing of selected annotations using the provided timestamps.
 
 INPUTS:
-1. PROPOSED ANNOTATIONS: ${JSON.stringify(proposed_annotations)}
-2. EXACT WORD TIMESTAMPS: ${JSON.stringify(ts_words.map((w: any) => ({ w: w.text, s: w.start })))}
+1. SCRIPT TEXT: "${script_text}"
+2. PROPOSED ANNOTATIONS: ${JSON.stringify(proposed_annotations)}
+3. EXACT WORD TIMESTAMPS: ${JSON.stringify(ts_words.map((w: any) => ({ w: w.text, s: w.start })))}
 
 TASK:
 - Match each "match_text" to the exact spoken word or phrase in the timestamp list.
 - "start_time" must be the exact moment the word begins (from the timestamp list).
-- Do not use the slide title time just because the text appears on screen early.
-- If the exact phrase is not found, use the first meaningful spoken word of that phrase.
-- If a timing match is uncertain, drop that item instead of guessing (set start_time to null).
-- Remove or reject annotations that are too early, duplicated, or poorly matched.
+
+TIMING RULES (CRITICAL):
+1. NO EARLY TIMING: Do not use the slide title time as the default. The annotation must appear exactly when the word is SPOKEN in the narrative flow.
+2. NARRATIVE FLOW: Use the SCRIPT TEXT to understand which occurrence of a word (like "SSC" or "Science") is being referred to. If it's spoken at 0.1s in the intro but again at 6.4s in the explanation, pick 6.4s if it belongs to the explanation part.
+3. EXACT MATCH: If the phrase is not found exactly, use the first meaningful spoken word of that phrase.
+4. DROP UNCERTAIN: If timing is uncertain or if the word isn't spoken in this chunk, set "start_time" to null (it will be filtered out).
+5. NO GUESSING: If the timing would be "too early" (near 0s) for a concept that appears later in the script, it is likely a mismatch.
 
 BALANCE RULES:
-- The final output should feel complete: enough annotations to guide the viewer.
-- If the result has fewer than 6 annotations and the slide has more useful content, keep more strong items.
-- If too many items share the same time, keep the strongest ones and remove the rest.
+- If too many items share the same time, keep the strongest one and remove the rest.
+- Ensure the result is well-distributed over the clip duration.
 
-SELF-CHECK BEFORE RETURNING:
-1. Is the annotation useful?
-2. Is the bbox on actual visible text?
-3. Is the timing exact, not early?
-4. Is the output too sparse?
-5. Does the clip feel well covered?
+SELF-CHECK:
+- Is this annotation useful?
+- Is the bbox on actual visible text?
+- Is the timing EXACT, not early?
+- Does the clip feel well covered?
 
 RULES:
 - Return a JSON object with a key "annotations".
 - ONLY include annotations with a valid numeric start_time.
 `;
 
-    console.log("[AI] Stage 2: Running GPT-4o-mini (Timing Sync)...");
+    console.log("[AI] Stage 2: Running GPT-4o (Timing Sync)...");
     const res2 = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -143,9 +147,9 @@ RULES:
         Authorization: `Bearer ${openAiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are a precise audio-visual sync specialist. You ensure timings are exact and the final result is balanced. Return only JSON." },
+          { role: "system", content: "You are a precise audio-visual sync specialist. You ensure timings are exact based on the spoken script. You avoid early timing at all costs. Return only JSON." },
           { role: "user", content: stage2_prompt },
         ],
         response_format: { type: "json_object" },
@@ -153,7 +157,7 @@ RULES:
     });
 
     const data2 = await res2.json();
-    if (!res2.ok) throw new Error(`GPT-4o-mini failed: ${JSON.stringify(data2)}`);
+    if (!res2.ok) throw new Error(`GPT-4o failed: ${JSON.stringify(data2)}`);
 
     const stage2_content = JSON.parse(data2.choices[0].message.content || "{}");
     let final_annotations = stage2_content.annotations || [];
