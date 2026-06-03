@@ -36,7 +36,7 @@ function Dashboard() {
         // We select only status to minimize payload, but ensure we get exact count
         const { data: rawData, error, count } = await supabase
           .from("raw_content")
-          .select("status", { count: "exact" });
+          .select("*", { count: "exact" });
         
         if (error) {
           console.error("Dashboard Stats Fetch Error:", error);
@@ -80,7 +80,7 @@ function Dashboard() {
           pending: statsMap["Pending"] || 0,
           approved: statsMap["Approved"] || 0,
           priority: statsMap["Priority"] || 0,
-          scriptDone: statsMap["Script Done"] || 0,
+          scriptDone: (statsMap["Script Done"] || 0) + (statsMap["Rejected"] || 0) + (statsMap["rejected"] || 0),
           audioDone: statsMap["Audio Done"] || 0,
         };
       } catch (err: any) {
