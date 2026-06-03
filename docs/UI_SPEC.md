@@ -1,15 +1,17 @@
-# Sky Studio — Full UI & System Biography (v5.0)
+# Sky Studio — Full UI & System Biography (v5.1)
 
 > **Purpose.** Canonical, pixel-and-byte description of Sky Studio. Hand this single file + `docs/backup/` SQL to another AI builder (Lovable, Replit, Bolt, Cursor, v0) and they MUST be able to rebuild a **1:1 replica**: same routes, same layout, same colors, same wiring, same secrets contract, same database.
 >
-> **Last full refresh:** 2026-06-02. Screenshots live in `docs/screenshots/v5/`.
+> **Last full refresh:** 2026-06-03. Screenshots live in `docs/screenshots/v5/`.
 >
-> **What changed since v4.2 (2026-06-01):**
-> - 🆕 **OCR is now Google Cloud Vision** (`DOCUMENT_TEXT_DETECTION`), called directly from a TanStack server function. Railway `/ocr` is no longer wired.
-> - 🆕 **Per-word timestamps are now ElevenLabs Forced Alignment** (audio + known text → ±50-100 ms accuracy). Railway `/timestamps` is no longer wired.
-> - 🆕 **`ANNOTATION_LEAD_SECONDS`** env var (default `0.6`) added to the Railway render worker so annotations land ~0.5-1 s **before** the matching voice line — fixes the perceptual "voice first, overlay late" lag.
-> - 🆕 **Active Supabase project** is `eozteueesaemhcmbqcxt` (managed via Lovable Cloud). Earlier docs referenced `klhcrdacefntzqwqwiiu` — that project is retired.
-> - 🆕 Production data is live: 223 ideas, 194 pending triage, 3 approved, 1 priority, 7 scripts, real per-chunk OCR/TS/AI/CLIP rows visible on `/annotations`.
+> **What changed since v5.0 (2026-06-02):**
+> - 🚀 **Railway Memory Optimization:** Render worker (Python) implemented a "memory diet" (half-res compositing + 8-frame LRU cache + aggressive GC) to prevent OOM crashes on the 512MB Railway tier. Peak RSS reduced from ~500MB+ to ~220MB.
+> - ⚡ **Annotation Timing Repair:** `ai_annotations.py` now trust ElevenLabs Forced Alignment ground truth. Python repair logic aligns overlays to the EXACT word spoken, fixing the "drifting timing" issue on dense slides.
+> - 🆕 **Skip-Mode Bulk Actions:** Added "Skip & Run" buttons for OCR, Timestamps, and Rendering. Allows processing only missing chunks instead of re-running everything (saves time/API cost).
+> - 🆕 **ElevenLabs Forced Alignment:** Fully operational as a TanStack server function. Replaces the old Railway `/timestamps` wire with ±50ms accuracy.
+> - 🆕 **Google Cloud Vision:** Fully operational as a TanStack server function for OCR. Replaces the legacy Tesseract worker.
+> - 🆕 **Railway Mega-Video:** Concatenation logic updated to handle 4K merge more reliably.
+
 
 ---
 
