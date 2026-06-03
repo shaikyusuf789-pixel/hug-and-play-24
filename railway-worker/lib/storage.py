@@ -47,7 +47,10 @@ def slide_path(script_id: str, chunk_number: int) -> str:
 
 
 def audio_path(script_id: str, chunk_number: int) -> str:
-    return f"{script_id}/audio_{chunk_number}.mp3"
+    # Match the generate-audio edge function: 1-indexed, zero-padded to 3 digits
+    audio_number = str(chunk_number + 1).zfill(3)
+    return f"{script_id}/audio_{audio_number}.mp3"
+
 
 
 def clip_storage_path(script_id: str, chunk_number: int, slide_source: str) -> str:
