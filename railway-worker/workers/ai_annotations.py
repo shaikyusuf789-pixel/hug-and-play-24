@@ -107,10 +107,11 @@ HARD RULES:
 === TASK ===
 1. Analyze the slide image.
 2. Read the script and timestamps.
-3. For each concept mentioned, find the matching text in the "OCR DUMP".
+3. For each KEY concept (only the most important ones), find the matching text in the "OCR DUMP".
 4. Extract the 'start' timestamp for when that concept is spoken.
 5. Extract the 'bbox' coordinates from the OCR dump.
-6. Generate 12-25 annotations.
+6. Generate ONLY 6–10 annotations total. Use ONLY "circle" and "underline".
+   Mostly small circles on keywords; at most 1–2 underlines that span a full bullet line.
 
 PRECISION IS KEY: If you choose "circle" for "Physics", you MUST find "Physics" in the OCR dump and use its bbox. Do not estimate coordinates.
 
