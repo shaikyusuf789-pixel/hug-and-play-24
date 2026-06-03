@@ -16,8 +16,7 @@ def _require(name: str) -> str:
 class Config:
     SUPABASE_URL:              str = _require("SUPABASE_URL")
     SUPABASE_SERVICE_ROLE_KEY: str = _require("SUPABASE_SERVICE_ROLE_KEY")
-    # OPENAI_API_KEY no longer required as AI is handled by Supabase
-    # OPENAI_API_KEY:            str = _require("OPENAI_API_KEY")
+    OPENAI_API_KEY:            str = _require("OPENAI_API_KEY")
     PORT:                      int = int(os.environ.get("PORT", "8000"))
 
 
