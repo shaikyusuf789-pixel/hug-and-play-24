@@ -14,6 +14,7 @@ Annotation colors:
   arrow            → #8b5cf6
 """
 
+import gc
 import io
 import math
 import random
@@ -26,6 +27,10 @@ import cairosvg
 from PIL import Image
 
 W, H, FPS = 1920, 1080, 30
+# To save memory (Railway 512MB limit), we render the overlay at 0.5x scale
+# and let ffmpeg scale it up during composite. CairoSVG + Pillow are 4x faster.
+DOWNSCALE = 2
+OW, OH = W // DOWNSCALE, H // DOWNSCALE
 # Annotations start drawing this many seconds BEFORE the spoken word so the
 # visual lands in sync with the voice (compensates for ElevenLabs alignment
 # bias + human perception lag). Override via env if needed.
