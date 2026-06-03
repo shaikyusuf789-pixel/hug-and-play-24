@@ -335,36 +335,56 @@ function AnnotationsPage() {
         <div className="w-px h-8 bg-slate-200 mx-2" />
 
         {/* OCR */}
-        <Button disabled={!!bulkBusy || !scriptId} onClick={() => bulk("All OCR", "/ocr/run-all")} className="bg-sky-500 hover:bg-sky-600 rounded-xl gap-2 h-10" title="Re-runs OCR on every chunk (overwrites existing).">
-          {bulkBusy === "All OCR" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} All OCR
-        </Button>
-        <Button disabled={!!bulkBusy || !scriptId} onClick={() => skipBulk("Skip & Run OCR", "ocr")} variant="outline" className="border-sky-300 text-sky-700 hover:bg-sky-50 rounded-xl gap-2 h-10" title="Runs OCR only for chunks that don't have OCR yet.">
-          {bulkBusy === "Skip & Run OCR" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Skip & Run OCR
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button disabled={!!bulkBusy || !scriptId} onClick={() => bulk("All OCR", "/ocr/run-all")} className="bg-sky-500 hover:bg-sky-600 rounded-xl gap-2 h-10" title="Re-runs OCR on every chunk (overwrites existing).">
+            {bulkBusy === "All OCR" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} All OCR
+          </Button>
+          <Button disabled={!!bulkBusy || !scriptId} onClick={() => skipBulk("Skip & Run OCR", "ocr")} variant="outline" className="border-sky-300 text-sky-700 hover:bg-sky-50 rounded-xl gap-2 h-10" title="Runs OCR only for chunks that don't have OCR yet.">
+            {bulkBusy === "Skip & Run OCR" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Skip & Run OCR
+          </Button>
+          <Button disabled={!!bulkBusy || !scriptId} onClick={() => deleteAll("ocr")} variant="ghost" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl h-10 w-10 p-0" title="Delete all OCR results">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
 
         {/* Timestamps */}
-        <Button disabled={!!bulkBusy || !scriptId} onClick={() => bulk("All Timestamps", "/timestamps/run-all")} className="bg-emerald-500 hover:bg-emerald-600 rounded-xl gap-2 h-10" title="Re-runs ElevenLabs alignment on every chunk (overwrites existing).">
-          {bulkBusy === "All Timestamps" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} All Timestamps
-        </Button>
-        <Button disabled={!!bulkBusy || !scriptId} onClick={() => skipBulk("Skip & Run Timestamps", "ts")} variant="outline" className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 rounded-xl gap-2 h-10" title="Runs timestamps only for chunks that don't have them yet.">
-          {bulkBusy === "Skip & Run Timestamps" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Skip & Run TS
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button disabled={!!bulkBusy || !scriptId} onClick={() => bulk("All Timestamps", "/timestamps/run-all")} className="bg-emerald-500 hover:bg-emerald-600 rounded-xl gap-2 h-10" title="Re-runs ElevenLabs alignment on every chunk (overwrites existing).">
+            {bulkBusy === "All Timestamps" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} All Timestamps
+          </Button>
+          <Button disabled={!!bulkBusy || !scriptId} onClick={() => skipBulk("Skip & Run Timestamps", "ts")} variant="outline" className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 rounded-xl gap-2 h-10" title="Runs timestamps only for chunks that don't have them yet.">
+            {bulkBusy === "Skip & Run Timestamps" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Skip & Run TS
+          </Button>
+          <Button disabled={!!bulkBusy || !scriptId} onClick={() => deleteAll("ts")} variant="ghost" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl h-10 w-10 p-0" title="Delete all timestamps">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
 
         {/* Annotations */}
-        <Button disabled={!!bulkBusy || !scriptId} onClick={() => bulk("All Annotations", "/ai/run-all")} className="bg-violet-500 hover:bg-violet-600 rounded-xl gap-2 h-10" title="Re-runs AI annotations on every chunk (overwrites existing).">
-          {bulkBusy === "All Annotations" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} All Annotations
-        </Button>
-        <Button disabled={!!bulkBusy || !scriptId} onClick={() => skipBulk("Skip & Run Annotations", "ai")} variant="outline" className="border-violet-300 text-violet-700 hover:bg-violet-50 rounded-xl gap-2 h-10" title="Runs annotations only for chunks that don't have them yet.">
-          {bulkBusy === "Skip & Run Annotations" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Skip & Run AI
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button disabled={!!bulkBusy || !scriptId} onClick={() => bulk("All Annotations", "/ai/run-all")} className="bg-violet-500 hover:bg-violet-600 rounded-xl gap-2 h-10" title="Re-runs AI annotations on every chunk (overwrites existing).">
+            {bulkBusy === "All Annotations" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} All Annotations
+          </Button>
+          <Button disabled={!!bulkBusy || !scriptId} onClick={() => skipBulk("Skip & Run Annotations", "ai")} variant="outline" className="border-violet-300 text-violet-700 hover:bg-violet-50 rounded-xl gap-2 h-10" title="Runs annotations only for chunks that don't have them yet.">
+            {bulkBusy === "Skip & Run Annotations" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Skip & Run AI
+          </Button>
+          <Button disabled={!!bulkBusy || !scriptId} onClick={() => deleteAll("ai")} variant="ghost" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl h-10 w-10 p-0" title="Delete all annotations">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
 
         {/* Render */}
-        <Button disabled={!!bulkBusy || !scriptId} onClick={() => bulk("Render All", "/clips/render-all")} className="bg-rose-500 hover:bg-rose-600 rounded-xl gap-2 h-10" title="Re-renders every clip (overwrites existing).">
-          {bulkBusy === "Render All" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Render All
-        </Button>
-        <Button disabled={!!bulkBusy || !scriptId} onClick={() => skipBulk("Skip & Render", "clip")} variant="outline" className="border-rose-300 text-rose-700 hover:bg-rose-50 rounded-xl gap-2 h-10" title="Renders only clips that aren't done yet.">
-          {bulkBusy === "Skip & Render" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Skip & Render
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button disabled={!!bulkBusy || !scriptId} onClick={() => bulk("Render All", "/clips/render-all")} className="bg-rose-500 hover:bg-rose-600 rounded-xl gap-2 h-10" title="Re-renders every clip (overwrites existing).">
+            {bulkBusy === "Render All" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Render All
+          </Button>
+          <Button disabled={!!bulkBusy || !scriptId} onClick={() => skipBulk("Skip & Render", "clip")} variant="outline" className="border-rose-300 text-rose-700 hover:bg-rose-50 rounded-xl gap-2 h-10" title="Renders only clips that aren't done yet.">
+            {bulkBusy === "Skip & Render" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Skip & Render
+          </Button>
+          <Button disabled={!!bulkBusy || !scriptId} onClick={() => deleteAll("clip")} variant="ghost" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl h-10 w-10 p-0" title="Delete all renders">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Mega-video banner */}
