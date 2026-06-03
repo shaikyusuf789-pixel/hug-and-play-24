@@ -170,7 +170,7 @@ Return ONLY the JSON object. Do not explain your reasoning. Just the data. """
 
     # Replit-style: Trust the LLM's grounding completely.
     # We only perform basic validation to ensure the JSON matches the schema.
-    allowed_types = {"underline", "circle", "box", "arrow"}
+    allowed_types = {"underline", "circle"}
     clean: list[dict[str, Any]] = []
 
     for ann in annotations:
