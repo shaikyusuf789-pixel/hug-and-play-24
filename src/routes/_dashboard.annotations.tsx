@@ -141,9 +141,15 @@ function AnnotationsPage() {
 
 
   const runAi = async (chunk: any) => {
-    // Unwired by user request
-    toast.info(`AI logic for chunk ${chunk.chunk_index + 1} has been unwired.`);
+    const k = `ai:${chunk.id}`; setRowBusy(k, true);
+    try {
+      const res = await workerPost("/ai/run", { script_id: scriptId, chunk_id: chunk.id, chunk_number: chunk.chunk_index, slide_source: slideSource });
+      toast.success(`AI done — chunk ${chunk.chunk_index} (${res.annotation_count} annotations via 2-stage GPT)`);
+      await refreshAll(scriptId, slideSource);
+    } catch (e: any) { toast.error(`AI failed: ${e.message}`); }
+    finally { setRowBusy(k, false); }
   };
+
 
   const renderClip = async (chunk: any) => {
     const k = `clip:${chunk.id}`; setRowBusy(k, true);
@@ -171,8 +177,10 @@ function AnnotationsPage() {
         const failedMsg = res.failed ? `, ${res.failed} failed` : "";
         toast.success(`${label}: ${res.succeeded}/${res.queued} chunks${failedMsg}`);
       } else if (path === "/ai/run-all") {
-        toast.info("Bulk AI annotations have been unwired.");
-        return;
+        const body: any = { script_id: scriptId, slide_source: slideSource };
+        const res = await workerPost(path, body);
+        toast.success(`${label}: queued ${res.queued ?? ""} chunks`);
+
       } else {
         const body: any = { script_id: scriptId, slide_source: slideSource };
         const res = await workerPost(path, body);
@@ -216,8 +224,8 @@ function AnnotationsPage() {
           } else if (kind === "ts") {
             await runTimestamps({ data: { scriptId, chunkId: c.id, chunkNumber: c.chunk_index } });
           } else if (kind === "ai") {
-            // Unwired
-            continue;
+            await workerPost("/ai/run", { script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index, slide_source: slideSource });
+
           } else if (kind === "clip") {
             await workerPost("/clips/render", { script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index, slide_source: slideSource });
           }
