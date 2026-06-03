@@ -92,15 +92,8 @@ class RenderAllReq(BaseModel):
     script_id:    str
     slide_source: str = "gamma"
 
-class AiRunReq(BaseModel):
-    script_id:    str
-    chunk_id:     str
-    chunk_number: int
-    slide_source: str = "gamma"
+# (AiRunReq and AiRunAllReq removed as they are now handled by Supabase Edge Functions)
 
-class AiRunAllReq(BaseModel):
-    script_id:    str
-    slide_source: str = "gamma"
 
 
 
