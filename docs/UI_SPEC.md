@@ -183,36 +183,50 @@ Each page lists: purpose, key sections, server fns, data sources, mobile notes, 
 - **Server fns:** `generateSlideOutline`, `generateGammaSlide`. PNGs uploaded to `slides/{script_id}/slide_{nnn}.png`.
 - **Secret:** `GAMMA_API_KEY`.
 
-### 3.9 Annotations — `/annotations`  ⚡ **NEW WIRING**
-![Annotations desktop](screenshots/v5/09-annotations-desktop.png)
+### 3.9 Annotations — `/annotations`  ⚡ **SYSTEM REFINED v5.1**
 ![Annotations full detail](screenshots/v5/09-annotations-detail-full.png)
-![Annotations mobile](screenshots/v5/09-annotations-mobile.png)
 
-- **Phase 6 — Annotation Pipeline.** Five-step bar: **OCR → Timestamps → AI Annotations → Render Clips → Merge Mega Video**.
-- "Select a script…" dropdown at top.
-- Mode chips: **DALL·E · Gamma · Replit** (selects the slide source style).
-- Bulk CTAs: **All OCR · All Timestamps · All Annotations · Render All**.
-- **Per-chunk row** (visible once a script with completed audio + slides is loaded): chunk number badge · chunk title · status pills (`OCR 119` · `TS 115` · `AI 12` · `CLIP`) · expandable detail with 6 panels:
-  1. **Original Script** — paragraph from `script_chunks.content`.
-  2. **Slide · Gamma** — the rendered Gamma deck PNG.
-  3. **OCR Output** — Google Vision word + bbox list (e.g. `SSC [273,147 145×71] 97%`), with `Show all N rows` expander. **Regenerate** re-runs OCR.
-  4. **Timestamps** — ElevenLabs forced-alignment per-word timings (`0.10s → 0.32s   hlo  (హలో)`). The original column is ASCII-normalized via `any-ascii` before being sent to ElevenLabs and stored alongside the original glyphs. **Regenerate** re-runs alignment.
-  5. **Annotations** — JSON list of overlays (`{"type":"underline","start_time":1.1,"target_text":"Welcome to Sky Academy","bbox":[...]}`).
-  6. **Final Clip** — embedded `<video>` of the rendered MP4 from `video-clips/{script_id}/clip_{nnn}.mp4` with duration chip (e.g. `66.6s`). **Re-render** triggers Railway.
-- **Mega Video** card (purple gradient, full-width above rows) → **Merge Mega Video** concats all rendered chunks into a single YouTube-ready MP4.
-- **Footer (desktop only):** small grey line `Worker: sky-annotations-worker-production.up.railway.app` for ops visibility.
+- **Phase 6 — Annotation Pipeline.** Five-step progress bar: **OCR → Timestamps → AI Annotations → Render Clips → Merge Mega Video**.
+- **Top Controls:**
+  - Select Script dropdown (most recent first).
+  - Mode chips: **DALL·E · Gamma · Replit** (selects slide source).
+  - **Bulk Actions (Destructive):** All OCR · All Timestamps · All Annotations · Render All (overwrites existing data).
+  - **Bulk Actions (Safe/Skip):** Skip & Run OCR · Skip & Run TS · Skip & Run AI · Skip & Render (processes only missing output).
+- **Per-chunk row** (collapsible, ordered by `chunk_index`):
+  - Badge: Chunk Number (001, 002, ...).
+  - Title: Snippet of script.
+  - Status Pills: `OCR [count]` (Blue) · `TS [count]` (Green) · `AI [count]` (Purple) · `CLIP` (Rose).
+  - **Details (Expanded View):**
+    1. **Original Script:** Raw Telugu text.
+    2. **Slide · Gamma:** 2400×1350 PNG preview.
+    3. **OCR Output:** Google Vision word list with confidence scores. **Regenerate** triggers `runOcr` server fn.
+    4. **Timestamps:** ElevenLabs Forced Alignment list (Latin + Telugu glyphs). **Regenerate` triggers `runTimestamps` server fn.
+    5. **Annotations:** AI-generated JSON overlay instructions. **Regenerate** calls Railway `/ai/run`.
+    6. **Final Clip:** Video player showing the rendered MP4. **Re-render** calls Railway `/clips/render`.
+- **Mega Video Card:** Purple gradient header. Displays merge status (idle/running/done). **Download MP4** appears when ready. **Merge Mega Video** triggers Railway `/merge/run`.
+- **Footer:** `Worker: sky-annotations-worker-production.up.railway.app` (active monitoring link).
 
-- **Server fns + endpoints:**
-  | Step | Server fn | Provider | Where it runs |
+- **Technical Architecture:**
+  | Component | Implementation | Provider | Logic Location |
   |---|---|---|---|
-  | OCR | `runOcrForChunk`, `runOcrForScript` (`src/lib/ocr.functions.ts`) | **Google Cloud Vision** `DOCUMENT_TEXT_DETECTION` | TanStack server fn (edge) |
-  | Timestamps | `runTimestampsForChunk`, `runTimestampsForScript` (`src/lib/timestamps.functions.ts`) | **ElevenLabs Forced Alignment** | TanStack server fn (edge) |
-  | AI Annotations | `runAnnotations` | OpenAI / Gemini (picks salient OCR words to underline / highlight given the timestamps) | TanStack server fn (edge) |
-  | Render Clip | `renderClip` | Railway worker (`POST /render`) — ffmpeg + Pillow burn-in | Railway |
-  | Merge Mega Video | `mergeMega` | Railway worker (`POST /merge`) — ffmpeg concat demuxer | Railway |
-- **Sync compensation:** Render worker subtracts `ANNOTATION_LEAD_SECONDS` (default `0.6`) from every annotation `start_time` before drawing, so overlays appear ~0.5-1 s **before** the matching voice line. Override per deploy by setting `ANNOTATION_LEAD_SECONDS` on Railway. Safe range: `0.4` (subtle) – `1.0` (very early). Negative values would push overlays later if ever needed.
-- **Data:** `ocr_results`, `audio_timestamps`, `clip_annotations`, `video_clips`.
-- **Secrets used:** `GOOGLE_VISION_API_KEY` (Vision AI API), `ELEVEN_LABS_API_KEY` (alignment), `OPENAI_API_KEY` (annotation reasoning).
+  | **OCR** | `runOcr` | Google Vision | TanStack Server Fn (Edge) |
+  | **Timestamps** | `runTimestamps` | ElevenLabs FA | TanStack Server Fn (Edge) |
+  | **AI Annotations** | `generate_annotations` | GPT-4o (Vision) | Railway Python (`/ai/run`) |
+  | **Rendering** | `render_clip` | FFmpeg + Pillow | Railway Python (`/clips/render`) |
+  | **Mega Merge** | `mergeMega` | FFmpeg Concat | Railway Python (`/merge/run`) |
+
+- **Railway Memory Diet (v5.1):**
+  - Compositing layer downscaled 2x (960×540) to save RAM.
+  - FFmpeg neighbor-scaling back to 1080p for output.
+  - 8-frame LRU cache replaces the old 48-frame mega-cache.
+  - Aggressive `gc.collect()` every 300 frames.
+  - Peak RAM on Railway: **~180MB - 220MB**.
+
+- **Annotation Logic:**
+  - `ANNOTATION_LEAD_SECONDS` (env var) shifts visual start earlier.
+  - `script_phrase` lookup ensures overlays align exactly with spoken words.
+  - Types: `underline`, `circle` (max 4 words), `box`, `arrow`.
+
 
 ### 3.10 Master Video — `/master-video`
 ![Master Video desktop](screenshots/v5/10-master-video-desktop.png)
