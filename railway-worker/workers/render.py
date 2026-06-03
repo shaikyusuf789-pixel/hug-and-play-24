@@ -283,14 +283,8 @@ def render_clip(
         if not prog_map:
             _write_frame(slide_bytes)
         else:
-            svg = _build_frame_svg(annotations, prog_map, ocr_src_w, ocr_src_h)
-            if svg:
-                png_bytes = cairosvg.svg2png(
-                    bytestring=svg.encode(),
-                    output_width=W,
-                    output_height=H,
-                )
-                overlay = Image.open(io.BytesIO(png_bytes)).convert("RGBA")
+            overlay = _build_frame_overlay(annotations, prog_map, ocr_src_w, ocr_src_h)
+            if overlay:
                 frame   = Image.alpha_composite(slide_rgba, overlay)
                 _write_frame(frame.tobytes())
             else:
