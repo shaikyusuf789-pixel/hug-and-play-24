@@ -45,22 +45,24 @@ serve(async (req) => {
 
     // --- STAGE 1: GPT-4o (Decision & BBoxes) ---
     const stage1_prompt = `
-Improve the annotation pipeline by choosing only the best annotation targets.
+Improve the annotation pipeline by choosing the best annotation targets for an educational video.
 
 INPUTS:
 1. SCRIPT TEXT: "${script_text}"
 2. OCR DATA (Words found on slide with coordinates): ${JSON.stringify(ocr_words)}
 
 TASK:
-- Select important, visually meaningful text from the OCR and script.
-- Prefer strong exam-relevant keywords and important phrases.
-- Keep output sparse and clean. Do not over-generate (aim for 5-8 high-quality annotations).
-- Avoid duplicates, filler, and weak targets.
-- Ensure each chosen annotation has a visible OCR bbox.
+- Pick 8–12 strong annotations per chunk.
+- Include the main heading, key subtopics, and a few important supporting keywords/phrases.
+- Do not collapse everything into only 3–4 annotations.
+- Every chosen annotation must map to visible OCR text.
+- Avoid duplicates, filler, empty/black areas, and weak concepts.
+- Spread annotations across the slide content, not only on the title.
 - Identify which spoken word/phrase from the script corresponds to this visual element for timing later. Store this in "match_text".
 
 RULES:
 - ONLY 'circle' and 'underline' types are allowed.
+- Prefer 'circle' for short key terms and 'underline' for key phrases.
 - Return a JSON object with a key "annotations" which is a list of:
   { 
     "type": "circle"|"underline", 
@@ -80,7 +82,7 @@ RULES:
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are an expert educational video director. You choose only the most impactful keywords to highlight. Return only JSON." },
+          { role: "system", content: "You are an expert educational video director. You choose only the most impactful keywords to highlight. Balance: not too sparse, not too crowded. Return only JSON." },
           { role: "user", content: stage1_prompt },
         ],
         response_format: { type: "json_object" },
@@ -102,7 +104,7 @@ RULES:
 
     // --- STAGE 2: GPT-4o-mini (Timing Sync) ---
     const stage2_prompt = `
-Fix the timing of selected annotations.
+Fix the timing of selected annotations using the provided timestamps.
 
 INPUTS:
 1. PROPOSED ANNOTATIONS: ${JSON.stringify(proposed_annotations)}
@@ -110,17 +112,26 @@ INPUTS:
 
 TASK:
 - Match each "match_text" to the exact spoken word or phrase in the timestamp list.
-- "start_time" must be the exact moment the word begins, not an estimate.
-- If the exact phrase is not found, match the first meaningful word and use that timestamp.
-- Never return a start_time that is earlier than the spoken word.
-- If you cannot confidently match timing, drop that annotation by setting start_time to null.
+- "start_time" must be the exact moment the word begins (from the timestamp list).
+- Do not use the slide title time just because the text appears on screen early.
+- If the exact phrase is not found, use the first meaningful spoken word of that phrase.
+- If a timing match is uncertain, drop that item instead of guessing (set start_time to null).
 - Remove or reject annotations that are too early, duplicated, or poorly matched.
+
+BALANCE RULES:
+- The final output should feel complete: enough annotations to guide the viewer.
+- If the result has fewer than 6 annotations and the slide has more useful content, keep more strong items.
+- If too many items share the same time, keep the strongest ones and remove the rest.
+
+SELF-CHECK BEFORE RETURNING:
+1. Is the annotation useful?
+2. Is the bbox on actual visible text?
+3. Is the timing exact, not early?
+4. Is the output too sparse?
+5. Does the clip feel well covered?
 
 RULES:
 - Return a JSON object with a key "annotations".
-- Keep annotations clear, useful, and visually balanced.
-- Do not place annotations on empty or black areas.
-- Prefer fewer strong annotations over many weak ones.
 - ONLY include annotations with a valid numeric start_time.
 `;
 
@@ -134,7 +145,7 @@ RULES:
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [
-          { role: "system", content: "You are a precise audio-visual sync specialist. Return only JSON." },
+          { role: "system", content: "You are a precise audio-visual sync specialist. You ensure timings are exact and the final result is balanced. Return only JSON." },
           { role: "user", content: stage2_prompt },
         ],
         response_format: { type: "json_object" },
