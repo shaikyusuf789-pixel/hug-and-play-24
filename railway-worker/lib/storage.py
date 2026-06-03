@@ -43,7 +43,9 @@ def download_to_tmp(bucket: str, path: str, suffix: str = "") -> str:
 
 
 def slide_path(script_id: str, chunk_number: int) -> str:
-    return f"{script_id}/slide_{chunk_number:03d}.png"
+    # Match the project convention: 1-indexed, zero-padded to 3 digits
+    return f"{script_id}/slide_{(chunk_number + 1):03d}.png"
+
 
 
 def audio_path(script_id: str, chunk_number: int) -> str:
