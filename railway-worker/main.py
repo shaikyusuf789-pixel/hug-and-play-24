@@ -35,7 +35,7 @@ from lib.storage import (
 )
 from workers.ocr import run_ocr
 from workers.timestamps import get_timestamps
-from workers.ai_annotations import run_ai_annotations
+# (run_ai_annotations import removed)
 
 from workers.render import render_clip, get_audio_duration
 
@@ -92,15 +92,8 @@ class RenderAllReq(BaseModel):
     script_id:    str
     slide_source: str = "gamma"
 
-class AiRunReq(BaseModel):
-    script_id:    str
-    chunk_id:     str
-    chunk_number: int
-    slide_source: str = "gamma"
+# (AiRunReq and AiRunAllReq removed as they are now handled by Supabase Edge Functions)
 
-class AiRunAllReq(BaseModel):
-    script_id:    str
-    slide_source: str = "gamma"
 
 
 
@@ -136,18 +129,8 @@ def _upsert_timestamps(script_id: str, chunk_id: str, chunk_number: int,
     ).execute()
 
 
-def _upsert_ai(script_id: str, chunk_id: str, chunk_number: int,
-               slide_source: str, annotations: list[dict]) -> None:
-    get_supabase().table("clip_annotations").upsert(
-        {
-            "script_id":    script_id,
-            "chunk_id":     chunk_id,
-            "chunk_number": chunk_number,
-            "slide_source": slide_source,
-            "annotations":  json.dumps(annotations),
-        },
-        on_conflict="script_id,chunk_id,slide_source",
-    ).execute()
+# (_upsert_ai removed - handled by edge function)
+
 
 
 
@@ -333,63 +316,8 @@ def timestamps_run_all(req: TsRunAllReq, bg: BackgroundTasks):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# AI ANNOTATIONS ROUTES
-# ══════════════════════════════════════════════════════════════════════════════
+# (AI ANNOTATIONS ROUTES removed - now handled by Supabase Edge Functions)
 
-@app.post("/ai/run")
-def ai_run(req: AiRunReq):
-    try:
-        print(f"[AI/run] chunk {req.chunk_number} ({req.chunk_id})")
-        ocr_row = _get_ocr(req.chunk_id, req.slide_source)
-        ts_row  = _get_ts(req.chunk_id)
-        if not ocr_row: raise HTTPException(status_code=400, detail="OCR not found")
-        if not ts_row:  raise HTTPException(status_code=400, detail="Timestamps not found")
-
-        script_text = _get_chunk_text(req.chunk_id)
-        ocr_words = json.loads(ocr_row["words"])
-        ts_words  = json.loads(ts_row["words"])
-
-        annotations = run_ai_annotations(script_text, ocr_words, ts_words)
-        _upsert_ai(req.script_id, req.chunk_id, req.chunk_number, req.slide_source, annotations)
-
-        return {"ok": True, "annotation_count": len(annotations)}
-    except Exception as e:
-        print(f"[AI/run] ERROR: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-def _ai_all_job(script_id: str, slide_source: str) -> None:
-    chunks = _get_chunks(script_id)
-    print(f"[AI/run-all] processing {len(chunks)} chunks")
-    for chunk in chunks:
-        try:
-            chunk_id     = chunk["id"]
-            chunk_number = chunk["chunk_index"]
-            ocr_row = _get_ocr(chunk_id, slide_source)
-            ts_row  = _get_ts(chunk_id)
-            if not ocr_row or not ts_row:
-                print(f"[AI/run-all] skipping chunk {chunk_number} — missing OCR or TS")
-                continue
-
-            script_text = (chunk.get("content") or "").strip() or _get_chunk_text(chunk_id)
-            ocr_words = json.loads(ocr_row["words"])
-            ts_words  = json.loads(ts_row["words"])
-
-            annotations = run_ai_annotations(script_text, ocr_words, ts_words)
-            _upsert_ai(script_id, chunk_id, chunk_number, slide_source, annotations)
-            print(f"[AI/run-all] chunk {chunk_number} done — {len(annotations)} annotations")
-        except Exception as e:
-            print(f"[AI/run-all] chunk {chunk.get('chunk_index')} FAILED: {e}")
-
-@app.post("/ai/run-all")
-def ai_run_all(req: AiRunAllReq, bg: BackgroundTasks):
-    try:
-        chunks = _get_chunks(req.script_id)
-        bg.add_task(_ai_all_job, req.script_id, req.slide_source)
-        return {"ok": True, "queued": len(chunks)}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 
