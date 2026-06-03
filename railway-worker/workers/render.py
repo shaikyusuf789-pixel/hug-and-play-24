@@ -343,6 +343,28 @@ def render_clip(
         for ann in annotations
     ]
 
+    # ── Serialize annotation visual starts (pen-lift) ──────────────────────
+    # A real tutor only draws one stroke at a time. We pre-compute the
+    # effective on-screen start for each annotation by chronological order:
+    # if its scheduled start would overlap the previous stroke's animation,
+    # push it to (prev_effective_start + prev_draw_duration + PEN_LIFT).
+    # Only the visual draw is serialized — original ordering / spoken-word
+    # anchors are otherwise preserved.
+    order = sorted(
+        range(len(annotations)),
+        key=lambda i: float(annotations[i].get("start_time") or 0),
+    )
+    effective_start: list[float] = [0.0] * len(annotations)
+    prev_end = -1e9
+    for i in order:
+        scheduled = float(annotations[i].get("start_time") or 0) - ANNOTATION_LEAD
+        if scheduled < 0:
+            scheduled = 0.0
+        start = max(scheduled, prev_end + ANNOTATION_PEN_LIFT)
+        effective_start[i] = start
+        prev_end = start + draw_durations[i]
+
+
     # Start FFmpeg in a 2-pass-friendly way: write raw frames to a temp file
     # first (avoids pipe-buffer/encoder back-pressure issues that have been
     # causing "flush of closed file" errors), then encode in one shot.
