@@ -281,7 +281,7 @@ def _build_frame_svg(
         return ""
 
     return (
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}">'
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{OW}" height="{OH}" viewBox="0 0 {W} {H}">'
         + "".join(paths_svg)
         + "</svg>"
     )
