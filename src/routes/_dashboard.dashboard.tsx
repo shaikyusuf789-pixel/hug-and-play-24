@@ -80,7 +80,7 @@ function Dashboard() {
           pending: statsMap["Pending"] || 0,
           approved: statsMap["Approved"] || 0,
           priority: statsMap["Priority"] || 0,
-          scriptDone: statsMap["Script Done"] || 0,
+          scriptDone: (statsMap["Script Done"] || 0) + (statsMap["Rejected"] || 0) + (statsMap["rejected"] || 0),
           audioDone: statsMap["Audio Done"] || 0,
         };
       } catch (err: any) {
