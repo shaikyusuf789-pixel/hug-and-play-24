@@ -1,4 +1,4 @@
-# Updated: 2026-06-03 17:35
+# Updated: 2026-06-03 18:50 - Add key check
 """
 workers/ai_annotations.py — GPT-4o generates annotation events.
 
@@ -18,7 +18,9 @@ from typing import Any
 from openai import OpenAI
 from lib.config import config
 
-_openai = OpenAI(api_key=config.OPENAI_API_KEY)
+def _get_openai_client():
+    return OpenAI(api_key=config.OPENAI_API_KEY)
+
 
 _SYSTEM_PROMPT = """You are a video annotation assistant for English educational slides.
 
@@ -86,6 +88,11 @@ def generate_annotations(
     chunk_text: str,
     chunk_number: int,
 ) -> list[dict[str, Any]]:
+    print(f"[DEBUG] OPENAI_API_KEY value: '{config.OPENAI_API_KEY}'")
+    if not config.OPENAI_API_KEY or len(config.OPENAI_API_KEY) < 20:
+        raise ValueError(f"Invalid OPENAI_API_KEY format (len={len(config.OPENAI_API_KEY)})")
+
+
     """
     Call GPT-4o to generate annotation events.
 
@@ -116,16 +123,21 @@ def generate_annotations(
 
 Generate 3–8 annotations. Return JSON only."""
 
-    response = _openai.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": _SYSTEM_PROMPT},
-            {"role": "user",   "content": user_prompt},
-        ],
-        response_format=_ANNOTATION_RESPONSE_FORMAT,
-        max_tokens=1500,
-        temperature=0.2,
-    )
+    try:
+        response = _get_openai_client().chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": _SYSTEM_PROMPT},
+                {"role": "user",   "content": user_prompt},
+            ],
+            response_format=_ANNOTATION_RESPONSE_FORMAT,
+            max_tokens=1500,
+            temperature=0.2,
+        )
+    except Exception as e:
+        print(f"[AI] OpenAI error: {e}")
+        raise RuntimeError(f"OpenAI error: {str(e)}")
+
 
     raw = response.choices[0].message.content or "{}"
     try:
