@@ -33,6 +33,8 @@
 ## 1. Identity, Brand, Theme
 
 - **Product name:** Sky Studio (sidebar header reads `SKY Studio / AI VIDEO BOT V4.2`).
+- **Worker Version:** `2026-06-03.elevenlabs-forced-alignment-017-target-timing-repair` (v5.1).
+
 - **Tagline:** "Your AI-driven content command center."
 - **Logo mark:** Rounded-square gradient tile, text `SKY` in white 700-weight; gradient `--primary` → `--accent`.
 - **Font:** System UI sans (Inter-style Tailwind default). No custom web font.
