@@ -141,7 +141,7 @@ Return ONLY the JSON object. Do not explain your reasoning. Just the data. """
                 ],
                 response_format={"type": "json_object"},
                 max_tokens=4000,
-                temperature=0.3,
+                temperature=0.0,
             )
             break
         except Exception as e:
