@@ -267,20 +267,26 @@ Return ONLY the JSON object."""
     if not isinstance(annotations, list):
         annotations = []
 
-    # Sanitise + RECOMPUTE bbox from OCR (GPT often returns wrong bboxes for
-    # multi-word phrases — it copies the title's bbox or the first OCR bbox).
+    # Sanitise + RECOMPUTE bbox from OCR + RECOMPUTE start_time from real
+    # ElevenLabs timestamps using the model-supplied `script_phrase`.
+    # GPT can't be trusted with numeric grounding — it hallucinates timestamps
+    # 10–20 seconds off the actual spoken word. We use Python to look up the
+    # phrase in ts_words and copy the real start time.
     allowed_types = {"underline", "double_underline", "circle", "box", "arrow"}
     clean: list[dict[str, Any]] = []
+    last_assigned_start = -1.0  # enforce chronological ordering for repeats
+
     for ann in annotations:
         t = ann.get("type")
         if t == "double_underline":
-            t = "underline"   # deprecated — collapse to single underline
+            t = "underline"
         if t not in allowed_types:
             continue
         target = str(ann.get("target_text") or "").strip()
         if not target:
             continue
 
+        # ── bbox: locate via OCR (never trust GPT's bbox).
         located = _locate_phrase_bbox(target, ocr_words)
         if located is None:
             bbox = ann.get("bbox")
@@ -290,16 +296,39 @@ Return ONLY the JSON object."""
                 located = [int(v) for v in bbox]
             except (TypeError, ValueError):
                 continue
+            # Reject obvious junk bboxes like [40,40,40,40] (GPT placeholders).
+            if located[2] < 5 or located[3] < 5:
+                continue
 
+        # ── start_time: look up script_phrase in real word timestamps.
+        script_phrase = str(ann.get("script_phrase") or "").strip()
+        gpt_start = None
         try:
-            clean.append({
-                "type":        t,
-                "start_time":  max(0.0, float(ann.get("start_time") or 0)),
-                "target_text": target,
-                "bbox":        located,
-            })
+            gpt_start = float(ann.get("start_time") or 0)
         except (TypeError, ValueError):
+            gpt_start = None
+
+        real_start = _locate_phrase_start_time(
+            script_phrase, ts_words, min_start=last_assigned_start
+        )
+        if real_start is None and gpt_start is not None:
+            # Fallback: use GPT's number but warn loudly in logs.
+            print(f"[AI] WARN: script_phrase '{script_phrase}' not found in "
+                  f"ts_words for target '{target}' — falling back to GPT "
+                  f"start_time {gpt_start:.2f}s")
+            real_start = gpt_start
+        if real_start is None:
+            print(f"[AI] DROP: no script_phrase and no start_time for '{target}'")
             continue
+
+        last_assigned_start = max(last_assigned_start, real_start)
+
+        clean.append({
+            "type":        t,
+            "start_time":  max(0.0, float(real_start)),
+            "target_text": target,
+            "bbox":        located,
+        })
 
     # Safety net: demote oversized "circle" annotations to a short "underline".
     # GPT sometimes circles entire bullets / multi-line blocks, which looks like
