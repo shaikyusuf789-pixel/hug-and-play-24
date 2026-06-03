@@ -4,12 +4,12 @@
 >
 > **Last full refresh:** 2026-06-03. Screenshots live in `docs/screenshots/v6/`.
 >
-> **What changed since v5.1:**
-> - 🚀 **Audio Engine Upgrade:** Integrated Cartesia Sonic 3.5 and Google Gemini TTS models.
-> - ⚡ **Strict Annotation Schema:** `ai_annotations.py` now enforces a strict JSON schema for `underline` and `circle` types only, eliminating "phantom arrows".
-> - 🆕 **Unified Pipeline Watchdog:** Automated competitor monitoring and content generation (Ideas -> Scripts -> Audio -> Slides).
-> - 🆕 **Hook Engine:** New utility for generating viral hooks for content.
-> - 🆕 **ElevenLabs Forced Alignment:** Fully operational as a TanStack server function.
+> **What changed since v6.0 (Latest Fixes):**
+> - 🛠️ **Railway Worker Fix:** Upgraded `supabase-py` to `2.18.1` to support new `sb_secret_...` key formats.
+> - ⚡ **Rendering Stability:** Fixed `MainProcess` hangs in `main.py` (v1.0.7-bbox-fix) for clip rendering.
+> - 🔐 **Database Grants:** Restored missing `service_role` and `authenticated` grants for all 14+ public tables (migration `20260603200423`).
+> - 🧩 **UI State Fix:** Resolved `SelectValue` rendering bug in `/annotations` dropdown that prevented selected script names from appearing.
+
 
 ---
 
@@ -31,7 +31,7 @@
 ## 1. Identity, Brand, Theme
 
 - **Product name:** Sky Studio (sidebar header reads `SKY Studio / AI VIDEO BOT V4.2`).
-- **Worker Version:** `2026-06-03.elevenlabs-forced-alignment-018-strict-schema`.
+- **Worker Version:** `v1.0.7-bbox-fix` (2026-06-03) — requires `supabase-py==2.18.1`.
 - **Tagline:** "Your AI-driven content command center."
 - **Logo mark:** Rounded-square gradient tile, text `SKY` in white 700-weight.
 - **Color tokens (`src/styles.css`):**
