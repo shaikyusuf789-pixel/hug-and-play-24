@@ -172,13 +172,13 @@ Return ONLY the JSON object. Do not explain your reasoning. Just the data. """
     if not isinstance(annotations, list):
         annotations = []
 
-    # Replit-style: Trust the LLM's grounding but apply minimal sanity checks.
+    # Replit-style: Trust the LLM's grounding completely.
+    # We only perform basic validation to ensure the JSON matches the schema.
     allowed_types = {"underline", "circle", "box", "arrow"}
     clean: list[dict[str, Any]] = []
 
     for ann in annotations:
         t = ann.get("type")
-        if t == "double_underline": t = "underline"
         if t not in allowed_types: continue
         
         target = str(ann.get("target_text") or "").strip()
@@ -188,76 +188,18 @@ Return ONLY the JSON object. Do not explain your reasoning. Just the data. """
         if not target or not isinstance(bbox, list) or len(bbox) != 4 or start_time is None:
             continue
 
-        # In Replit-style, we trust the LLM for coordinates and timing,
-        # only ensuring the values are within reasonable bounds.
         clean.append({
             "type":        t,
-            "start_time":  max(0.0, float(start_time)),
+            "start_time":  round(float(start_time), 3),
             "target_text": target,
             "bbox":        [int(v) for v in bbox],
         })
 
-    # Safety net: demote oversized "circle" annotations to a short "underline".
-    # GPT sometimes circles entire bullets / multi-line blocks, which looks like
-    # a lasso around a paragraph. If the bbox is tall (multi-line) or the target
-    # text has too many words/chars, switch to underline so it reads as a
-    # highlight under the phrase instead of a giant loop.
-    if ocr_words:
-        avg_h = sum(int(w.get("h", 0)) for w in ocr_words) / max(len(ocr_words), 1)
-    else:
-        avg_h = 0
-    for ann in clean:
-        if ann["type"] != "circle":
-            continue
-        words = ann["target_text"].split()
-        bbox_h = ann["bbox"][3] if len(ann["bbox"]) == 4 else 0
-        too_tall = avg_h > 0 and bbox_h > avg_h * 1.8
-        too_wordy = len(words) > 4 or len(ann["target_text"]) > 30
-        if too_tall or too_wordy:
-            ann["type"] = "underline"
-
-    # Drop duplicate bboxes (GPT often collapses several phrases onto the same
-    # heading bbox — keep only the first occurrence per bbox).
-    seen: set[tuple[int, int, int, int]] = set()
-    deduped: list[dict[str, Any]] = []
-    for ann in clean:
-        key = tuple(ann["bbox"])
-        if key in seen:
-            continue
-        seen.add(key)
-        deduped.append(ann)
-    clean = deduped
-
+    # Basic chronological sort - no nudging or de-clustering.
     clean.sort(key=lambda a: a["start_time"])
 
-    # Safety net: clamp into speech window + de-cluster ONLY exact overlaps.
-    # The old +4s cascade was destroying timing on dense slides — a single
-    # tight cluster early on shoved every later annotation 4s, 8s, 12s late,
-    # which is why "B12" was firing 20s+ after the narrator said it.
-    # Now: trust GPT's timestamps (they came from real word timestamps), only
-    # nudge true overlaps by 0.4s and DO NOT propagate the nudge further.
-    if clean and ts_words:
-        sw_start = float(ts_words[0].get("start", 0.0))
-        sw_end   = float(ts_words[-1].get("end",   total_dur))
-        spaced: list[dict[str, Any]] = []
-        used: list[float] = []
-        for ann in clean:
-            t = max(sw_start, min(sw_end, float(ann["start_time"])))
-            # Soft de-cluster: if within 0.4s of an already-placed annotation,
-            # nudge by 0.4s. Single-pass — never cascade.
-            for u in used:
-                if abs(t - u) < 0.4:
-                    t = min(sw_end, u + 0.4)
-                    break
-            ann["start_time"] = round(t, 3)
-            spaced.append(ann)
-            used.append(t)
-        clean = spaced
-        clean.sort(key=lambda a: a["start_time"])
+    print(f"[AI] {len(clean)} annotations generated for chunk {chunk_number}")
 
-    print(f"[AI] {len(clean)} annotations generated for chunk {chunk_number} "
-          f"(window {ts_words[0].get('start',0) if ts_words else 0:.2f}s → "
-          f"{ts_words[-1].get('end',0) if ts_words else 0:.2f}s)")
     return clean
 
 def _ts_lines(ts_words: list[dict]) -> str:
