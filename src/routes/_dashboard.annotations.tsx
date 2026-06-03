@@ -183,18 +183,12 @@ function AnnotationsPage() {
         const failedMsg = res.failed ? `, ${res.failed} failed` : "";
         toast.success(`${label}: ${res.succeeded}/${res.queued} chunks${failedMsg}`);
       } else if (path === "/ai/run-all") {
+        const res = await workerPost("/ai/run-all", {
+          script_id: scriptId,
+          slide_source: slideSource
+        });
+        toast.success(`${label}: queued ${res.queued} chunks via Replit Python pipeline`);
 
-        toast.info("Processing all annotations…");
-        let ok = 0;
-        for (const c of chunks) {
-          try {
-            const { error } = await supabase.functions.invoke("process-annotations", {
-              body: { script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index, slide_source: slideSource }
-            });
-            if (!error) ok++;
-          } catch (e) { console.error(e); }
-        }
-        toast.success(`${label}: ${ok}/${chunks.length} chunks processed`);
 
 
       } else {
