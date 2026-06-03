@@ -73,13 +73,17 @@ def _scale_bbox(
     src_w: int,
     src_h: int,
 ) -> tuple[int, int, int, int]:
-    \"\"\"Scale OCR bbox from source image dimensions to 1920×1080 letterboxed space.
-    Handles both list [x,y,w,h] and dict {'x':x, 'y':y, 'w':w, 'h':h} formats.
-    \"\"\"
+    """Scale OCR bbox from source image dimensions to 1920×1080 letterboxed space.
+    Handles both list [x,y,w,h] and dict {'x':..,'y':..,'w':..,'h':..} formats,
+    and coerces any string numerics from JSON.
+    """
     if isinstance(bbox, dict):
-        x, y, w, h = bbox.get("x", 0), bbox.get("y", 0), bbox.get("w", 0), bbox.get("h", 0)
+        x = float(bbox.get("x", 0) or 0)
+        y = float(bbox.get("y", 0) or 0)
+        w = float(bbox.get("w", bbox.get("width", 0)) or 0)
+        h = float(bbox.get("h", bbox.get("height", 0)) or 0)
     else:
-        x, y, w, h = bbox
+        x, y, w, h = [float(v or 0) for v in bbox]
 
     scale = min(W / src_w, H / src_h)
     off_x = (W - src_w * scale) / 2
