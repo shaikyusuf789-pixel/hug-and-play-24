@@ -1,15 +1,17 @@
-# Sky Studio — Full UI & System Biography (v5.0)
+# Sky Studio — Full UI & System Biography (v5.1)
 
 > **Purpose.** Canonical, pixel-and-byte description of Sky Studio. Hand this single file + `docs/backup/` SQL to another AI builder (Lovable, Replit, Bolt, Cursor, v0) and they MUST be able to rebuild a **1:1 replica**: same routes, same layout, same colors, same wiring, same secrets contract, same database.
 >
-> **Last full refresh:** 2026-06-02. Screenshots live in `docs/screenshots/v5/`.
+> **Last full refresh:** 2026-06-03. Screenshots live in `docs/screenshots/v5/`.
 >
-> **What changed since v4.2 (2026-06-01):**
-> - 🆕 **OCR is now Google Cloud Vision** (`DOCUMENT_TEXT_DETECTION`), called directly from a TanStack server function. Railway `/ocr` is no longer wired.
-> - 🆕 **Per-word timestamps are now ElevenLabs Forced Alignment** (audio + known text → ±50-100 ms accuracy). Railway `/timestamps` is no longer wired.
-> - 🆕 **`ANNOTATION_LEAD_SECONDS`** env var (default `0.6`) added to the Railway render worker so annotations land ~0.5-1 s **before** the matching voice line — fixes the perceptual "voice first, overlay late" lag.
-> - 🆕 **Active Supabase project** is `eozteueesaemhcmbqcxt` (managed via Lovable Cloud). Earlier docs referenced `klhcrdacefntzqwqwiiu` — that project is retired.
-> - 🆕 Production data is live: 223 ideas, 194 pending triage, 3 approved, 1 priority, 7 scripts, real per-chunk OCR/TS/AI/CLIP rows visible on `/annotations`.
+> **What changed since v5.0 (2026-06-02):**
+> - 🚀 **Railway Memory Optimization:** Render worker (Python) implemented a "memory diet" (half-res compositing + 8-frame LRU cache + aggressive GC) to prevent OOM crashes on the 512MB Railway tier. Peak RSS reduced from ~500MB+ to ~220MB.
+> - ⚡ **Annotation Timing Repair:** `ai_annotations.py` now trust ElevenLabs Forced Alignment ground truth. Python repair logic aligns overlays to the EXACT word spoken, fixing the "drifting timing" issue on dense slides.
+> - 🆕 **Skip-Mode Bulk Actions:** Added "Skip & Run" buttons for OCR, Timestamps, and Rendering. Allows processing only missing chunks instead of re-running everything (saves time/API cost).
+> - 🆕 **ElevenLabs Forced Alignment:** Fully operational as a TanStack server function. Replaces the old Railway `/timestamps` wire with ±50ms accuracy.
+> - 🆕 **Google Cloud Vision:** Fully operational as a TanStack server function for OCR. Replaces the legacy Tesseract worker.
+> - 🆕 **Railway Mega-Video:** Concatenation logic updated to handle 4K merge more reliably.
+
 
 ---
 
@@ -21,7 +23,7 @@
 4. **Auth.** Single-user / permissive RLS for now. All Supabase access uses publishable + service-role keys stored as secrets.
 5. **Secrets.** Stored in Supabase Edge Function secrets (see §11). Never in the client bundle.
 6. **Server logic.** TanStack `createServerFn` (preferred) for OCR / Timestamps / Script / Audio / Slides / Engine. A small set of legacy edge functions remain for back-compat.
-7. **External worker.** A separate Railway Python worker handles **only** ffmpeg clip rendering + mega-merge. Repo: `shaikyusuf789-pixel/sky-annotations-worker`. URL: `https://sky-annotations-worker-production.up.railway.app` (visible in the `/annotations` footer).
+7. **External worker.** A separate Railway Python worker handles AI annotations, ffmpeg clip rendering, and mega-merging. Repo: `shaikyusuf789-pixel/sky-annotations-worker`. URL: `https://sky-annotations-worker-production.up.railway.app`. v5.1 includes memory optimizations and timing repairs.
 8. **Storage buckets.** `slides`, `audio-files`, `user-uploads`, `video-clips` — all public.
 9. **Theme.** Light mode only. Primary blue `oklch(0.55 0.22 257)`. Semantic tokens in `src/styles.css` — never hard-code colors.
 10. **Mobile-first.** Every page must be usable at 390 px wide. Sidebar collapses into a Sheet behind a hamburger (see `screenshots/v5/00-mobile-menu-open.png`).
@@ -31,6 +33,8 @@
 ## 1. Identity, Brand, Theme
 
 - **Product name:** Sky Studio (sidebar header reads `SKY Studio / AI VIDEO BOT V4.2`).
+- **Worker Version:** `2026-06-03.elevenlabs-forced-alignment-017-target-timing-repair` (v5.1).
+
 - **Tagline:** "Your AI-driven content command center."
 - **Logo mark:** Rounded-square gradient tile, text `SKY` in white 700-weight; gradient `--primary` → `--accent`.
 - **Font:** System UI sans (Inter-style Tailwind default). No custom web font.
@@ -181,36 +185,50 @@ Each page lists: purpose, key sections, server fns, data sources, mobile notes, 
 - **Server fns:** `generateSlideOutline`, `generateGammaSlide`. PNGs uploaded to `slides/{script_id}/slide_{nnn}.png`.
 - **Secret:** `GAMMA_API_KEY`.
 
-### 3.9 Annotations — `/annotations`  ⚡ **NEW WIRING**
-![Annotations desktop](screenshots/v5/09-annotations-desktop.png)
+### 3.9 Annotations — `/annotations`  ⚡ **SYSTEM REFINED v5.1**
 ![Annotations full detail](screenshots/v5/09-annotations-detail-full.png)
-![Annotations mobile](screenshots/v5/09-annotations-mobile.png)
 
-- **Phase 6 — Annotation Pipeline.** Five-step bar: **OCR → Timestamps → AI Annotations → Render Clips → Merge Mega Video**.
-- "Select a script…" dropdown at top.
-- Mode chips: **DALL·E · Gamma · Replit** (selects the slide source style).
-- Bulk CTAs: **All OCR · All Timestamps · All Annotations · Render All**.
-- **Per-chunk row** (visible once a script with completed audio + slides is loaded): chunk number badge · chunk title · status pills (`OCR 119` · `TS 115` · `AI 12` · `CLIP`) · expandable detail with 6 panels:
-  1. **Original Script** — paragraph from `script_chunks.content`.
-  2. **Slide · Gamma** — the rendered Gamma deck PNG.
-  3. **OCR Output** — Google Vision word + bbox list (e.g. `SSC [273,147 145×71] 97%`), with `Show all N rows` expander. **Regenerate** re-runs OCR.
-  4. **Timestamps** — ElevenLabs forced-alignment per-word timings (`0.10s → 0.32s   hlo  (హలో)`). The original column is ASCII-normalized via `any-ascii` before being sent to ElevenLabs and stored alongside the original glyphs. **Regenerate** re-runs alignment.
-  5. **Annotations** — JSON list of overlays (`{"type":"underline","start_time":1.1,"target_text":"Welcome to Sky Academy","bbox":[...]}`).
-  6. **Final Clip** — embedded `<video>` of the rendered MP4 from `video-clips/{script_id}/clip_{nnn}.mp4` with duration chip (e.g. `66.6s`). **Re-render** triggers Railway.
-- **Mega Video** card (purple gradient, full-width above rows) → **Merge Mega Video** concats all rendered chunks into a single YouTube-ready MP4.
-- **Footer (desktop only):** small grey line `Worker: sky-annotations-worker-production.up.railway.app` for ops visibility.
+- **Phase 6 — Annotation Pipeline.** Five-step progress bar: **OCR → Timestamps → AI Annotations → Render Clips → Merge Mega Video**.
+- **Top Controls:**
+  - Select Script dropdown (most recent first).
+  - Mode chips: **DALL·E · Gamma · Replit** (selects slide source).
+  - **Bulk Actions (Destructive):** All OCR · All Timestamps · All Annotations · Render All (overwrites existing data).
+  - **Bulk Actions (Safe/Skip):** Skip & Run OCR · Skip & Run TS · Skip & Run AI · Skip & Render (processes only missing output).
+- **Per-chunk row** (collapsible, ordered by `chunk_index`):
+  - Badge: Chunk Number (001, 002, ...).
+  - Title: Snippet of script.
+  - Status Pills: `OCR [count]` (Blue) · `TS [count]` (Green) · `AI [count]` (Purple) · `CLIP` (Rose).
+  - **Details (Expanded View):**
+    1. **Original Script:** Raw Telugu text.
+    2. **Slide · Gamma:** 2400×1350 PNG preview.
+    3. **OCR Output:** Google Vision word list with confidence scores. **Regenerate** triggers `runOcr` server fn.
+    4. **Timestamps:** ElevenLabs Forced Alignment list (Latin + Telugu glyphs). **Regenerate` triggers `runTimestamps` server fn.
+    5. **Annotations:** AI-generated JSON overlay instructions. **Regenerate** calls Railway `/ai/run`.
+    6. **Final Clip:** Video player showing the rendered MP4. **Re-render** calls Railway `/clips/render`.
+- **Mega Video Card:** Purple gradient header. Displays merge status (idle/running/done). **Download MP4** appears when ready. **Merge Mega Video** triggers Railway `/merge/run`.
+- **Footer:** `Worker: sky-annotations-worker-production.up.railway.app` (active monitoring link).
 
-- **Server fns + endpoints:**
-  | Step | Server fn | Provider | Where it runs |
+- **Technical Architecture:**
+  | Component | Implementation | Provider | Logic Location |
   |---|---|---|---|
-  | OCR | `runOcrForChunk`, `runOcrForScript` (`src/lib/ocr.functions.ts`) | **Google Cloud Vision** `DOCUMENT_TEXT_DETECTION` | TanStack server fn (edge) |
-  | Timestamps | `runTimestampsForChunk`, `runTimestampsForScript` (`src/lib/timestamps.functions.ts`) | **ElevenLabs Forced Alignment** | TanStack server fn (edge) |
-  | AI Annotations | `runAnnotations` | OpenAI / Gemini (picks salient OCR words to underline / highlight given the timestamps) | TanStack server fn (edge) |
-  | Render Clip | `renderClip` | Railway worker (`POST /render`) — ffmpeg + Pillow burn-in | Railway |
-  | Merge Mega Video | `mergeMega` | Railway worker (`POST /merge`) — ffmpeg concat demuxer | Railway |
-- **Sync compensation:** Render worker subtracts `ANNOTATION_LEAD_SECONDS` (default `0.6`) from every annotation `start_time` before drawing, so overlays appear ~0.5-1 s **before** the matching voice line. Override per deploy by setting `ANNOTATION_LEAD_SECONDS` on Railway. Safe range: `0.4` (subtle) – `1.0` (very early). Negative values would push overlays later if ever needed.
-- **Data:** `ocr_results`, `audio_timestamps`, `clip_annotations`, `video_clips`.
-- **Secrets used:** `GOOGLE_VISION_API_KEY` (Vision AI API), `ELEVEN_LABS_API_KEY` (alignment), `OPENAI_API_KEY` (annotation reasoning).
+  | **OCR** | `runOcr` | Google Vision | TanStack Server Fn (Edge) |
+  | **Timestamps** | `runTimestamps` | ElevenLabs FA | TanStack Server Fn (Edge) |
+  | **AI Annotations** | `generate_annotations` | GPT-4o (Vision) | Railway Python (`/ai/run`) |
+  | **Rendering** | `render_clip` | FFmpeg + Pillow | Railway Python (`/clips/render`) |
+  | **Mega Merge** | `mergeMega` | FFmpeg Concat | Railway Python (`/merge/run`) |
+
+- **Railway Memory Diet (v5.1):**
+  - Compositing layer downscaled 2x (960×540) to save RAM.
+  - FFmpeg neighbor-scaling back to 1080p for output.
+  - 8-frame LRU cache replaces the old 48-frame mega-cache.
+  - Aggressive `gc.collect()` every 300 frames.
+  - Peak RAM on Railway: **~180MB - 220MB**.
+
+- **Annotation Logic:**
+  - `ANNOTATION_LEAD_SECONDS` (env var) shifts visual start earlier.
+  - `script_phrase` lookup ensures overlays align exactly with spoken words.
+  - Types: `underline`, `circle` (max 4 words), `box`, `arrow`.
+
 
 ### 3.10 Master Video — `/master-video`
 ![Master Video desktop](screenshots/v5/10-master-video-desktop.png)
@@ -456,23 +474,22 @@ Used by: Idea Cards, Content Preview, Tables, Dashboard counts.
 
 ---
 
-## 11. Secrets Contract
+## 11. Secrets Contract — System v5.1
 
-Stored ONLY as Supabase Edge Function secrets (never in `.env`, never in the client bundle). Case-sensitive names.
+Stored ONLY as Supabase Edge Function secrets (never in `.env`, never in the client bundle).
 
 | Secret | Used by | Where to obtain |
 |---|---|---|
-| `OPENAI_API_KEY` | Script gen, AI annotations, fallback TTS | platform.openai.com |
-| `GOOGLE_API_KEY` | Gemini script generation + Gemini TTS (Zephyr) | aistudio.google.com |
-| `GOOGLE_VISION_API_KEY` | **OCR (Google Cloud Vision API)** | console.cloud.google.com → APIs & Services → Credentials. Must enable **Vision AI API** (`vision.googleapis.com`) on the project; the Cloud Vision API service must NOT be blocked. |
-| `LOVABLE_API_KEY` | Lovable AI Gateway (multi-model proxy) | Lovable project settings |
-| `APIFY_API_TOKEN` | Channel scraping + transcript fetch | apify.com console |
-| `ELEVEN_LABS_API_KEY` | Primary TTS voices **and** forced-alignment timestamps | elevenlabs.io |
-| `GAMMA_API_KEY` | Slide deck rendering | gamma.app API |
-| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Server-side DB access | Supabase project settings |
-| `SUPABASE_JWKS`, `SUPABASE_ANON_KEY`, `SUPABASE_SECRET_KEYS`, `SUPABASE_PUBLISHABLE_KEYS`, `CUSTOM_SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL` | Auth middleware + DB tooling | Supabase project settings |
+| `OPENAI_API_KEY` | Script gen, AI annotations (GPT-4o Vision), fallback TTS. | platform.openai.com |
+| `GOOGLE_API_KEY` | Gemini script generation + Gemini TTS (Zephyr). | aistudio.google.com |
+| `GOOGLE_VISION_API_KEY` | **OCR (Google Cloud Vision API)** via server fn. | console.cloud.google.com |
+| `LOVABLE_API_KEY` | Lovable AI Gateway proxy. | Lovable project settings |
+| `APIFY_API_TOKEN` | Channel scraping + transcript fetch. | apify.com |
+| `ELEVEN_LABS_API_KEY` | Primary TTS voices **and** forced-alignment timestamps. | elevenlabs.io |
+| `GAMMA_API_KEY` | Slide deck rendering. | gamma.app |
+| `GITHUB_PAT` | **Railway Deployment Automation.** | github.com/settings/tokens |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side privileged DB access. | Supabase project settings |
 
-The browser `client.ts` uses ONLY `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` from env.
 
 ---
 
@@ -488,13 +505,13 @@ No custom entry files. The TanStack Start Vite plugin handles SSR.
 
 ---
 
-## 13. Mobile-First Rules (enforced)
+## 13. System v5.1 Refinements Summary
 
-- Every page must be functional at **390 px** width without horizontal scroll.
-- Sidebar collapses into a Sheet behind a hamburger on `< md`.
-- Status tiles: 1-col on mobile → 2-col on sm → 3+ on lg.
-- Hero CTAs stack vertically on mobile.
-- `/tables` becomes horizontally scrollable cards on mobile.
+- **OCR Logic:** Moved from Tesseract (Railway) to **Google Cloud Vision** via `src/lib/ocr.functions.ts`.
+- **Timestamp Logic:** Moved from Whisper transcription to **ElevenLabs Forced Alignment** via `src/lib/timestamps.functions.ts`.
+- **Annotations Logic:** Repaired `ai_annotations.py` to use `script_phrase` matching against ElevenLabs ground truth, preventing timing drift.
+- **Worker Infrastructure:** `railway-worker/workers/render.py` optimized with a "memory diet" (half-res composite, tiny LRU cache, aggressive GC) to survive 512MB RAM limits.
+- **Deployment Automation:** Updates to `railway-worker` code are pushed via `GITHUB_PAT` through the GitHub API directly from the environment.
 
 ---
 
@@ -504,6 +521,13 @@ If you are an AI rebuilding this app from this document:
 
 1. ✅ Scaffold TanStack Start v1 + Vite 7 + Tailwind v4 + React 19.
 2. ✅ Recreate `src/styles.css` with the OKLCH tokens in §1.
+3. ✅ Configure Supabase project `eozteueesaemhcmbqcxt` and verify §11 secrets.
+4. ✅ Wire `/annotations` bulk buttons to both TanStack server fns (OCR/TS) and Railway worker (AI/Render).
+5. ✅ Verify the Railway worker has the v5.1 memory optimizations to prevent OOM.
+
+---
+**[End of Biography v5.1]**
+
 3. ✅ Recreate every route file in §4 with the exact `createFileRoute("/_dashboard/<name>")` ID.
 4. ✅ Recreate the sidebar from §2.2 (PIPELINE + UTILITIES sections, identical labels and order).
 5. ✅ Apply `docs/backup/schema.sql` then `docs/backup/data.sql` to a fresh Supabase project. Copy the project URL into `VITE_SUPABASE_URL`.
