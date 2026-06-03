@@ -63,6 +63,64 @@ OUTPUT FORMAT: Return ONLY a JSON object:
   ...
 ]}"""
 
+def generate_annotations(
+    ocr_words: list[dict],
+    ts_words: list[dict],
+    chunk_text: str,
+    chunk_number: int,
+    slide_image_url: str | None = None,
+    slide_prompt: str | None = None,
+    original_script: str | None = None,
+) -> list[dict[str, Any]]:
+    """
+    Call GPT-4o (vision) to generate rich, semantically-aligned annotations.
+    """
+    print(f"[AI] generating annotations for chunk {chunk_number} "
+          f"(ocr_words={len(ocr_words)}, ts_words={len(ts_words)}, "
+          f"slide_image={'yes' if slide_image_url else 'no'})")
+
+    total_dur = ts_words[-1].get("end", 10.0) if ts_words else 10.0
+    speech_start = float(ts_words[0].get("start", 0.0)) if ts_words else 0.0
+    speech_end   = float(ts_words[-1].get("end",   total_dur)) if ts_words else float(total_dur)
+    speech_window = max(0.1, speech_end - speech_start)
+
+    user_text = f"""CHUNK {chunk_number}  —  audio duration: {float(total_dur):.2f}s
+
+=== SPEECH WINDOW (CRITICAL) ===
+First spoken word starts at: {speech_start:.2f}s
+Last spoken word ends at:    {speech_end:.2f}s
+Total speech window:         {speech_window:.2f}s
+The audio has ~{speech_start:.1f}s of intro/silence before the narrator begins.
+HARD RULES:
+  • NEVER place an annotation with start_time < {speech_start:.2f}s.
+  • All annotations MUST fall within [{speech_start:.2f}s, {speech_end:.2f}s].
+  • Space annotations at LEAST 4–5 seconds apart across the speech window.
+  • Match each start_time to when that specific word is actually spoken,
+    using the WORD-LEVEL TIMESTAMPS below as ground truth.
+
+=== GAMMA SLIDE PROMPT (original creative intent) ===
+{slide_prompt or "(not available)"}
+
+=== ORIGINAL SCRIPT (native language) ===
+{original_script or chunk_text or "(not available)"}
+
+=== TRANSLITERATED SCRIPT (matches timestamps) ===
+{chunk_text or "(not available)"}
+
+=== WORD-LEVEL TIMESTAMPS (Latin) ===
+{_ts_lines(ts_words)}
+
+=== FULL OCR DUMP (every word on the slide with bbox) ===
+{_ocr_lines(ocr_words)}
+
+=== TASK ===
+1. Analyze the slide image and script.
+2. For every concept mentioned, identify the matching text on the slide.
+3. Determine the EXACT start_time from the Word-Level Timestamps.
+4. Extract the EXACT target_text and calculate the bbox from the OCR Dump.
+5. Generate 12-25 annotations that make the slide feel interactive and alive.
+
+Return ONLY the JSON object. Do not include script_phrase in the output."""
 
     user_content: list[dict[str, Any]] = [{"type": "text", "text": user_text}]
     if slide_image_url:
