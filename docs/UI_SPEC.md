@@ -503,13 +503,13 @@ No custom entry files. The TanStack Start Vite plugin handles SSR.
 
 ---
 
-## 13. Mobile-First Rules (enforced)
+## 13. System v5.1 Refinements Summary
 
-- Every page must be functional at **390 px** width without horizontal scroll.
-- Sidebar collapses into a Sheet behind a hamburger on `< md`.
-- Status tiles: 1-col on mobile → 2-col on sm → 3+ on lg.
-- Hero CTAs stack vertically on mobile.
-- `/tables` becomes horizontally scrollable cards on mobile.
+- **OCR Logic:** Moved from Tesseract (Railway) to **Google Cloud Vision** via `src/lib/ocr.functions.ts`.
+- **Timestamp Logic:** Moved from Whisper transcription to **ElevenLabs Forced Alignment** via `src/lib/timestamps.functions.ts`.
+- **Annotations Logic:** Repaired `ai_annotations.py` to use `script_phrase` matching against ElevenLabs ground truth, preventing timing drift.
+- **Worker Infrastructure:** `railway-worker/workers/render.py` optimized with a "memory diet" (half-res composite, tiny LRU cache, aggressive GC) to survive 512MB RAM limits.
+- **Deployment Automation:** Updates to `railway-worker` code are pushed via `GITHUB_PAT` through the GitHub API directly from the environment.
 
 ---
 
@@ -519,6 +519,13 @@ If you are an AI rebuilding this app from this document:
 
 1. ✅ Scaffold TanStack Start v1 + Vite 7 + Tailwind v4 + React 19.
 2. ✅ Recreate `src/styles.css` with the OKLCH tokens in §1.
+3. ✅ Configure Supabase project `eozteueesaemhcmbqcxt` and verify §11 secrets.
+4. ✅ Wire `/annotations` bulk buttons to both TanStack server fns (OCR/TS) and Railway worker (AI/Render).
+5. ✅ Verify the Railway worker has the v5.1 memory optimizations to prevent OOM.
+
+---
+**[End of Biography v5.1]**
+
 3. ✅ Recreate every route file in §4 with the exact `createFileRoute("/_dashboard/<name>")` ID.
 4. ✅ Recreate the sidebar from §2.2 (PIPELINE + UTILITIES sections, identical labels and order).
 5. ✅ Apply `docs/backup/schema.sql` then `docs/backup/data.sql` to a fresh Supabase project. Copy the project URL into `VITE_SUPABASE_URL`.
