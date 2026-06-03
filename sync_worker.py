@@ -1,7 +1,7 @@
 import os
 import base64
 import json
-import httpx
+import requests
 
 GITHUB_PAT = os.environ.get("GITHUB_PAT")
 REPO = "shaikyusuf789-pixel/sky-annotations-worker"
@@ -14,7 +14,7 @@ headers = {
 
 def update_file(path, local_path, commit_message):
     # Get current SHA
-    resp = httpx.get(f"{BASE_URL}/{path}", headers=headers)
+    resp = requests.get(f"{BASE_URL}/{path}", headers=headers)
     if resp.status_code == 200:
         sha = resp.json()["sha"]
         print(f"Found {path} with SHA {sha}")
@@ -38,7 +38,7 @@ def update_file(path, local_path, commit_message):
     if sha:
         data["sha"] = sha
 
-    resp = httpx.put(f"{BASE_URL}/{path}", headers=headers, json=data)
+    resp = requests.put(f"{BASE_URL}/{path}", headers=headers, json=data)
     if resp.status_code in (200, 201):
         print(f"Successfully updated {path}")
     else:
