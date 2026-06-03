@@ -430,7 +430,7 @@ def render_clip(
                 ff.stdin.write(frame_cache[key])
                 continue
 
-            svg = _build_frame_svg(annotations, prog_map, ocr_src_w, ocr_src_h, pen)
+            svg = _build_frame_svg(annotations, prog_map, sw, sh, pen)
             if not svg:
                 frame_bytes = slide_bytes_half
             else:
