@@ -294,8 +294,9 @@ def render_clip(
                     output_width=W,
                     output_height=H,
                 )
-                overlay = Image.open(io.BytesIO(png_bytes)).convert("RGBA")
-                frame   = Image.alpha_composite(slide_rgba, overlay)
+                with Image.open(io.BytesIO(png_bytes)) as overlay_img:
+                    overlay = overlay_img.convert("RGBA")
+                    frame   = Image.alpha_composite(slide_rgba, overlay)
                 ff.stdin.write(frame.tobytes())
             else:
                 ff.stdin.write(slide_bytes)
