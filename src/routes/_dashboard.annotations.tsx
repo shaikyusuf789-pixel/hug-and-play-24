@@ -143,7 +143,7 @@ function AnnotationsPage() {
     const k = `ai:${chunk.id}`; setRowBusy(k, true);
     try {
       await workerPost("/ai/run", { script_id: scriptId, chunk_id: chunk.id, chunk_number: chunk.chunk_index, slide_source: slideSource });
-      toast.success(`Annotations done — chunk ${chunk.chunk_index}`);
+      toast.success(`Annotations done — chunk ${chunk.chunk_index + 1}`);
       await refreshAll(scriptId, slideSource);
     } catch (e: any) { toast.error(`AI failed: ${e.message}`); }
     finally { setRowBusy(k, false); }
