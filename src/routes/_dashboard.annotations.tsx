@@ -141,13 +141,8 @@ function AnnotationsPage() {
 
 
   const runAi = async (chunk: any) => {
-    const k = `ai:${chunk.id}`; setRowBusy(k, true);
-    try {
-      await workerPost("/ai/run", { script_id: scriptId, chunk_id: chunk.id, chunk_number: chunk.chunk_index, slide_source: slideSource });
-      toast.success(`Annotations done — chunk ${chunk.chunk_index + 1}`);
-      await refreshAll(scriptId, slideSource);
-    } catch (e: any) { toast.error(`AI failed: ${e.message}`); }
-    finally { setRowBusy(k, false); }
+    // Unwired by user request
+    toast.info(`AI logic for chunk ${chunk.chunk_index + 1} has been unwired.`);
   };
 
   const renderClip = async (chunk: any) => {
@@ -175,6 +170,9 @@ function AnnotationsPage() {
         const res: any = await runOcrAllFn({ data: { scriptId, slideSource } });
         const failedMsg = res.failed ? `, ${res.failed} failed` : "";
         toast.success(`${label}: ${res.succeeded}/${res.queued} chunks${failedMsg}`);
+      } else if (path === "/ai/run-all") {
+        toast.info("Bulk AI annotations have been unwired.");
+        return;
       } else {
         const body: any = { script_id: scriptId, slide_source: slideSource };
         const res = await workerPost(path, body);
@@ -218,7 +216,8 @@ function AnnotationsPage() {
           } else if (kind === "ts") {
             await runTimestamps({ data: { scriptId, chunkId: c.id, chunkNumber: c.chunk_index } });
           } else if (kind === "ai") {
-            await workerPost("/ai/run", { script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index, slide_source: slideSource });
+            // Unwired
+            continue;
           } else if (kind === "clip") {
             await workerPost("/clips/render", { script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index, slide_source: slideSource });
           }
