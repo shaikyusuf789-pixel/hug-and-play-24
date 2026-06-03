@@ -14,15 +14,11 @@ Annotation colors:
   arrow            → #8b5cf6
 """
 
-import io
 import math
 import subprocess
-import tempfile
-import os
 from typing import Any
 
-import cairosvg
-from PIL import Image
+from PIL import Image, ImageDraw
 
 W, H, FPS = 1920, 1080, 30
 
