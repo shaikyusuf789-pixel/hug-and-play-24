@@ -423,9 +423,7 @@ def render_clip(
             t = f_idx / FPS
             prog_map: dict[int, float] = {}
             for i, ann in enumerate(annotations):
-                start = float(ann.get("start_time") or 0) - ANNOTATION_LEAD
-                if start < 0:
-                    start = 0.0
+                start = effective_start[i]
                 dur   = draw_durations[i]
                 if t < start:
                     continue
