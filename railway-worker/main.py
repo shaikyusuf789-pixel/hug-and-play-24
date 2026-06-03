@@ -129,18 +129,8 @@ def _upsert_timestamps(script_id: str, chunk_id: str, chunk_number: int,
     ).execute()
 
 
-def _upsert_ai(script_id: str, chunk_id: str, chunk_number: int,
-               slide_source: str, annotations: list[dict]) -> None:
-    get_supabase().table("clip_annotations").upsert(
-        {
-            "script_id":    script_id,
-            "chunk_id":     chunk_id,
-            "chunk_number": chunk_number,
-            "slide_source": slide_source,
-            "annotations":  json.dumps(annotations),
-        },
-        on_conflict="script_id,chunk_id,slide_source",
-    ).execute()
+# (_upsert_ai removed - handled by edge function)
+
 
 
 
