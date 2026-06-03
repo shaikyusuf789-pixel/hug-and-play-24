@@ -452,3 +452,66 @@ def _locate_phrase_bbox(phrase: str, ocr_words: list[dict]) -> list[int] | None:
         return None
     return [min(xs), min(ys), max(x2s) - min(xs), max(y2s) - min(ys)]
 
+
+# ── Phrase → start_time locator (deterministic, no LLM) ──────────────────────
+
+def _locate_phrase_start_time(
+    phrase: str,
+    ts_words: list[dict],
+    min_start: float = -1.0,
+) -> float | None:
+    """
+    Find a consecutive run of ts_words whose joined normalized text contains
+    (or is contained by) the normalized `phrase`, and return the .start of
+    the first matched word. Prefers matches with start >= min_start to keep
+    annotations chronologically advancing when the same phrase repeats.
+
+    Returns None if no acceptable match exists.
+    """
+    if not phrase or not ts_words:
+        return None
+    target = _norm(phrase)
+    if not target:
+        return None
+
+    # Normalize each ts_word.
+    norm = []
+    for w in ts_words:
+        s = w.get("word") or w.get("text") or ""
+        norm.append(_norm(s))
+    n = len(ts_words)
+
+    candidates: list[tuple[float, int, float]] = []  # (score, i, start)
+
+    for i in range(n):
+        joined = ""
+        for j in range(i, min(n, i + 12)):  # max 12-word window
+            joined += norm[j]
+            if not joined:
+                continue
+            score = None
+            if target in joined:
+                overshoot = len(joined) - len(target)
+                score = 1.0 - (overshoot / max(len(target), 1)) * 0.2
+            elif joined in target and len(joined) / len(target) >= 0.6:
+                score = (len(joined) / len(target)) * 0.85
+            if score is not None:
+                try:
+                    start = float(ts_words[i].get("start", 0.0))
+                except (TypeError, ValueError):
+                    start = 0.0
+                candidates.append((score, i, start))
+                if target in joined:
+                    break
+            if len(joined) > len(target) * 2.5:
+                break
+
+    if not candidates:
+        return None
+
+    # Prefer the earliest match whose start >= min_start (chronological).
+    forward = [c for c in candidates if c[2] >= min_start - 0.01]
+    pool = forward if forward else candidates
+    # Among the pool, take the best score; tie-break by smallest start.
+    pool.sort(key=lambda c: (-c[0], c[2]))
+    return pool[0][2]
