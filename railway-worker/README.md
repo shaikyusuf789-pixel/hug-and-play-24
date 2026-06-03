@@ -175,3 +175,4 @@ sky-annotations-worker/
 ├── .gitignore
 └── README.md                # (this file)
 ```
+\n# Redeploy trigger: Wed Jun  3 21:24:29 UTC 2026
