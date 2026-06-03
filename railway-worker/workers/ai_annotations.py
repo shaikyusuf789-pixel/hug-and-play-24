@@ -24,38 +24,33 @@ from lib.config import config
 
 _openai = OpenAI(api_key=config.OPENAI_API_KEY)
 
-_SYSTEM_PROMPT = """You are an expert video annotation director. Your job is to generate visual annotations that perfectly align with spoken words and slide content.
+_SYSTEM_PROMPT = """You are an expert video annotation director. Generate MINIMAL, teacher-style annotations that align with spoken words.
 
-GROUNDING PROCESS:
-For each annotation you create, you MUST follow this internal logic:
-1. SCRIPT MATCH: Find a key concept being spoken in the script.
-2. TIMING: Look up the exact 'start_time' for that concept in the "WORD-LEVEL TIMESTAMPS".
-3. VISUAL MATCH: Find the EXACT matching text on the slide in the "OCR DUMP".
-4. COORDINATES: Use the 'bbox' coordinates [x, y, w, h] provided for those words in the OCR DUMP. Do NOT guess or hallucinate coordinates.
+KEEP IT LIGHT — like a teacher casually marking a slide:
+- Total annotations per chunk: 6–10 (NOT 12–25). Less is more.
+- Use ONLY two types: "circle" and "underline". No box, no arrow, no double_underline.
+- circle: 1–3 word keyword (e.g. "Physics", "F=ma", "last five years").
+- underline: a short phrase OR a full bullet line. At most 1–2 full-line underlines per chunk.
+- Do NOT annotate the slide title unless it is the single most important moment.
+- Leave most lines untouched. Empty space is fine.
+
+GROUNDING (mandatory):
+1. SCRIPT MATCH: pick a key concept spoken in the script.
+2. TIMING: copy the exact 'start' from WORD-LEVEL TIMESTAMPS for the first spoken word of that concept.
+3. VISUAL MATCH: find that concept's EXACT text in the OCR DUMP.
+4. BBOX: use the bbox from OCR. For a multi-word span, use the union (min_x, min_y, max_w, max_h). Never invent coordinates.
 
 STRICT RULES:
-- start_time: Must be the exact 'start' value from the timestamps.
-- target_text: Must be the verbatim text from the OCR dump.
-- bbox: Must be the [x, y, w, h] from the OCR dump. If you highlight multiple words, the bbox should be the union (min_x, min_y, max_width, max_height) of their individual bboxes.
-- CHRONOLOGY: Annotations MUST be sorted by start_time.
-- DISTRIBUTION: Spread annotations naturally across the entire speech window. Do not cluster them at the end.
+- start_time MUST equal a real 'start' from the timestamps list.
+- target_text MUST be verbatim from the OCR dump.
+- Annotations MUST be sorted by start_time and spaced ≥3s apart.
+- Never place annotations before the first spoken word or after the last spoken word.
 
-ANNOTATION TYPES:
-- circle: Use for single keywords or short 1-3 word phrases. (High priority)
-- underline: Use for phrases (2-5 words).
-- box: Use to frame formulas, statistics, or distinct callout boxes.
-- arrow: Use to point AT a specific word, number, or bullet point.
-
-OUTPUT FORMAT:
-Return ONLY a JSON object:
+OUTPUT (JSON only):
 {
   "annotations": [
-    {
-      "type": "circle",
-      "start_time": 1.25,
-      "target_text": "Keyword",
-      "bbox": [100, 200, 50, 30]
-    }
+    { "type": "circle",    "start_time": 1.25, "target_text": "Keyword", "bbox": [100,200,50,30] },
+    { "type": "underline", "start_time": 6.40, "target_text": "Welcome to Sky Academy", "bbox": [136,749,507,60] }
   ]
 }"""
 
@@ -112,10 +107,11 @@ HARD RULES:
 === TASK ===
 1. Analyze the slide image.
 2. Read the script and timestamps.
-3. For each concept mentioned, find the matching text in the "OCR DUMP".
+3. For each KEY concept (only the most important ones), find the matching text in the "OCR DUMP".
 4. Extract the 'start' timestamp for when that concept is spoken.
 5. Extract the 'bbox' coordinates from the OCR dump.
-6. Generate 12-25 annotations.
+6. Generate ONLY 6–10 annotations total. Use ONLY "circle" and "underline".
+   Mostly small circles on keywords; at most 1–2 underlines that span a full bullet line.
 
 PRECISION IS KEY: If you choose "circle" for "Physics", you MUST find "Physics" in the OCR dump and use its bbox. Do not estimate coordinates.
 
@@ -174,7 +170,7 @@ Return ONLY the JSON object. Do not explain your reasoning. Just the data. """
 
     # Replit-style: Trust the LLM's grounding completely.
     # We only perform basic validation to ensure the JSON matches the schema.
-    allowed_types = {"underline", "circle", "box", "arrow"}
+    allowed_types = {"underline", "circle"}
     clean: list[dict[str, Any]] = []
 
     for ann in annotations:
