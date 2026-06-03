@@ -193,27 +193,25 @@ HARD RULES:
 
 === TASK ===
 1. Look at the slide image — note the heading, bullets, layout.
-2. Read the script and identify EVERY meaningful concept the narrator says
-   (key terms, numbers, names, definitions, phrases). Distribute annotations
-   evenly across the SPEECH WINDOW above — roughly one annotation every
-   4–5 seconds. Do NOT place anything before {speech_start:.2f}s.
+2. Read the script and identify EVERY meaningful concept the narrator says.
 3. For each concept, find the matching word/phrase/line on the slide
    (semantic match — slide wording is paraphrased from the script).
 4. STRONGLY PREFER short keyword targets: single words, numbers, names, or
-   2–4 word phrases. CIRCLE them when possible — like a tutor circling a
-   key term ("Focus", "Facts", "20", "Kohli"). Full-line underlines are
-   visually heavy; cap them at MAX 2 per chunk, and only use them when the
-   narrator literally summarises the whole bullet.
-5. start_time = the timestamp of the FIRST word the narrator actually says
-   that maps to this concept (from the WORD-LEVEL TIMESTAMPS — not guessed).
+   2–4 word phrases. CIRCLE them when possible. Cap full-line underlines at
+   MAX 2 per chunk.
+5. For EACH annotation, copy a `script_phrase` of 2–6 consecutive Latin
+   words from the WORD-LEVEL TIMESTAMPS that the narrator says when this
+   concept is mentioned. Python will look it up and assign the real
+   start_time. If a phrase repeats (e.g. "SSC" twice), pick the occurrence
+   matching chronological order with your other annotations.
 6. target_text MUST be the EXACT OCR text (copy character-for-character).
    For multi-word targets, concatenate consecutive OCR words with single
    spaces in the order they appear in the OCR dump.
 7. Vary types. DO NOT use double_underline. Lean on `circle` for keywords,
    short `underline` for phrases, plenty of `arrow` for callouts, and the
-   occasional `box` for grouped callouts so it feels like a real tutor.
-8. Return 12–20 annotations, chronologically ordered, with start_times
-   spaced at least 4 seconds apart and ALL within the speech window.
+   occasional `box` for grouped callouts.
+8. Return 12–20 annotations, ORDERED by appearance of their script_phrase
+   in the timestamps.
 
 Return ONLY the JSON object."""
 
