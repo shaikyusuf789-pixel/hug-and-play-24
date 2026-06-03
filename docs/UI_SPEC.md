@@ -23,7 +23,7 @@
 4. **Auth.** Single-user / permissive RLS for now. All Supabase access uses publishable + service-role keys stored as secrets.
 5. **Secrets.** Stored in Supabase Edge Function secrets (see §11). Never in the client bundle.
 6. **Server logic.** TanStack `createServerFn` (preferred) for OCR / Timestamps / Script / Audio / Slides / Engine. A small set of legacy edge functions remain for back-compat.
-7. **External worker.** A separate Railway Python worker handles **only** ffmpeg clip rendering + mega-merge. Repo: `shaikyusuf789-pixel/sky-annotations-worker`. URL: `https://sky-annotations-worker-production.up.railway.app` (visible in the `/annotations` footer).
+7. **External worker.** A separate Railway Python worker handles AI annotations, ffmpeg clip rendering, and mega-merging. Repo: `shaikyusuf789-pixel/sky-annotations-worker`. URL: `https://sky-annotations-worker-production.up.railway.app`. v5.1 includes memory optimizations and timing repairs.
 8. **Storage buckets.** `slides`, `audio-files`, `user-uploads`, `video-clips` — all public.
 9. **Theme.** Light mode only. Primary blue `oklch(0.55 0.22 257)`. Semantic tokens in `src/styles.css` — never hard-code colors.
 10. **Mobile-first.** Every page must be usable at 390 px wide. Sidebar collapses into a Sheet behind a hamburger (see `screenshots/v5/00-mobile-menu-open.png`).
