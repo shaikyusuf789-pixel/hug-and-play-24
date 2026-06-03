@@ -8,8 +8,6 @@ All annotation pipeline routes:
   POST /ocr/run-all
   POST /timestamps/run
   POST /timestamps/run-all
-  POST /ai/run
-  POST /ai/run-all
   POST /clips/render
   POST /clips/render-all
   GET  /slide-preview
@@ -37,7 +35,7 @@ from lib.storage import (
 )
 from workers.ocr import run_ocr
 from workers.timestamps import get_timestamps
-from workers.ai_annotations import generate_annotations
+
 from workers.render import render_clip, get_audio_duration
 
 import httpx
@@ -81,15 +79,6 @@ class TsRunReq(BaseModel):
 class TsRunAllReq(BaseModel):
     script_id: str
 
-class AiRunReq(BaseModel):
-    script_id:    str
-    chunk_id:     str
-    chunk_number: int
-    slide_source: str = "gamma"
-
-class AiRunAllReq(BaseModel):
-    script_id:    str
-    slide_source: str = "gamma"
 
 class RenderReq(BaseModel):
     script_id:    str
@@ -133,18 +122,6 @@ def _upsert_timestamps(script_id: str, chunk_id: str, chunk_number: int,
         on_conflict="script_id,chunk_id",
     ).execute()
 
-def _upsert_ai(script_id: str, chunk_id: str, chunk_number: int,
-               slide_source: str, annotations: list[dict]) -> None:
-    get_supabase().table("clip_annotations").upsert(
-        {
-            "script_id":    script_id,
-            "chunk_id":     chunk_id,
-            "chunk_number": chunk_number,
-            "slide_source": slide_source,
-            "annotations":  json.dumps(annotations),
-        },
-        on_conflict="script_id,chunk_id,slide_source",
-    ).execute()
 
 def _upsert_clip(script_id: str, chunk_id: str, chunk_number: int,
                  slide_source: str, status: str = "rendering",
@@ -333,88 +310,12 @@ def timestamps_run_all(req: TsRunAllReq, bg: BackgroundTasks):
 # ══════════════════════════════════════════════════════════════════════════════
 
 @app.post("/ai/run")
-def ai_run(req: AiRunReq):
-    try:
-        print(f"[AI/run] chunk {req.chunk_number} ({req.chunk_id})")
-        ocr_row = _get_ocr(req.chunk_id, req.slide_source)
-        ts_row  = _get_ts(req.chunk_id)
-        if not ocr_row or not ts_row:
-            raise HTTPException(status_code=400, detail="OCR and Timestamps are both required before AI annotations")
-
-        ocr_words = json.loads(ocr_row["words"])
-        ts_words  = json.loads(ts_row["words"])
-        if not ts_words:
-            raise HTTPException(status_code=400, detail="No timestamp words found — re-run Timestamps")
-
-        # Fetch chunk text + slide prompt
-        chunk_text = ""
-        slide_prompt = None
-        res = (get_supabase().table("script_chunks")
-               .select("content,slide_prompt")
-               .eq("id", req.chunk_id).limit(1).execute())
-        if res.data:
-            chunk_text   = res.data[0].get("content", "") or ""
-            slide_prompt = res.data[0].get("slide_prompt")
-
-        # Use the actual slide PNG from Supabase Storage (NOT the gamma.app docs URL,
-        # which OpenAI cannot fetch). The slides bucket is public.
-        from lib.storage import slide_path, SLIDES_BUCKET, _public_url
-        slide_image_url = _public_url(SLIDES_BUCKET, slide_path(req.script_id, req.chunk_number))
-
-        annotations = generate_annotations(
-            ocr_words, ts_words, chunk_text, req.chunk_number,
-            slide_image_url=slide_image_url, slide_prompt=slide_prompt,
-        )
-
-        _upsert_ai(req.script_id, req.chunk_id, req.chunk_number, req.slide_source, annotations)
-        return {"ok": True, "annotation_count": len(annotations)}
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"[AI/run] ERROR chunk {req.chunk_number}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-def _ai_all_job(script_id: str, slide_source: str) -> None:
-    chunks = _get_chunks(script_id)
-    print(f"[AI/run-all] processing {len(chunks)} chunks")
-    for chunk in chunks:
-        try:
-            chunk_id     = chunk["id"]
-            chunk_number = chunk["chunk_index"]
-            ocr_row = _get_ocr(chunk_id, slide_source)
-            ts_row  = _get_ts(chunk_id)
-            if not ocr_row or not ts_row:
-                print(f"[AI/run-all] chunk {chunk_number} skipped — missing OCR or TS")
-                continue
-            ocr_words  = json.loads(ocr_row["words"])
-            ts_words   = json.loads(ts_row["words"])
-            if not ts_words:
-                continue
-            chunk_text   = chunk.get("content", "") or ""
-            slide_prompt = chunk.get("slide_prompt")
-            from lib.storage import slide_path, SLIDES_BUCKET, _public_url
-            slide_image_url = _public_url(SLIDES_BUCKET, slide_path(script_id, chunk_number))
-            annotations = generate_annotations(
-                ocr_words, ts_words, chunk_text, chunk_number,
-                slide_image_url=slide_image_url, slide_prompt=slide_prompt,
-            )
-
-            _upsert_ai(script_id, chunk_id, chunk_number, slide_source, annotations)
-            print(f"[AI/run-all] chunk {chunk_number} done — {len(annotations)} annotations")
-
-        except Exception as e:
-            print(f"[AI/run-all] chunk {chunk.get('chunk_index')} FAILED: {e}")
+def ai_run():
+    return {"ok": True, "message": "AI annotations are disabled."}
 
 @app.post("/ai/run-all")
-def ai_run_all(req: AiRunAllReq, bg: BackgroundTasks):
-    try:
-        chunks = _get_chunks(req.script_id)
-        bg.add_task(_ai_all_job, req.script_id, req.slide_source)
-        return {"ok": True, "queued": len(chunks)}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+def ai_run_all():
+    return {"ok": True, "message": "Bulk AI annotations are disabled."}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
