@@ -44,8 +44,6 @@ function Dashboard() {
         console.error("Dashboard Stats Error:", total.error);
         toast.error("Error loading dashboard stats: " + total.error.message);
       }
-        toast.error("Error loading dashboard stats: " + total.error.message);
-      }
       return {
         total: total.count ?? 0,
         pending: pending.count ?? 0,
