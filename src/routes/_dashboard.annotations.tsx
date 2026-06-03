@@ -133,7 +133,7 @@ function AnnotationsPage() {
       const res = await runTimestamps({
         data: { scriptId: scriptId, chunkId: chunk.id, chunkNumber: chunk.chunk_index },
       });
-      toast.success(`Timestamps done — chunk ${chunk.chunk_index} (${res.word_count} words via ElevenLabs)`);
+      toast.success(`Timestamps done — chunk ${chunk.chunk_index} (${res.word_count} words via OpenAI Whisper)`);
       await refreshAll(scriptId, slideSource);
     } catch (e: any) { toast.error(`Timestamps failed: ${e.message}`); }
     finally { setRowBusy(k, false); }
@@ -143,15 +143,18 @@ function AnnotationsPage() {
   const runAi = async (chunk: any) => {
     const k = `ai:${chunk.id}`; setRowBusy(k, true);
     try {
-      const { data, error } = await supabase.functions.invoke("process-annotations", {
-        body: { script_id: scriptId, chunk_id: chunk.id, chunk_number: chunk.chunk_index, slide_source: slideSource }
+      const res = await workerPost("/ai/run", {
+        script_id: scriptId,
+        chunk_id: chunk.id,
+        chunk_number: chunk.chunk_index,
+        slide_source: slideSource
       });
-      if (error) throw error;
-      toast.success(`AI done — chunk ${chunk.chunk_index} (${data.annotation_count} annotations via 2-stage GPT)`);
+      toast.success(`AI done — chunk ${chunk.chunk_index} (${res.annotation_count} annotations via Replit Python pipeline)`);
       await refreshAll(scriptId, slideSource);
     } catch (e: any) { toast.error(`AI failed: ${e.message}`); }
     finally { setRowBusy(k, false); }
   };
+
 
 
   const renderClip = async (chunk: any) => {
@@ -180,18 +183,12 @@ function AnnotationsPage() {
         const failedMsg = res.failed ? `, ${res.failed} failed` : "";
         toast.success(`${label}: ${res.succeeded}/${res.queued} chunks${failedMsg}`);
       } else if (path === "/ai/run-all") {
+        const res = await workerPost("/ai/run-all", {
+          script_id: scriptId,
+          slide_source: slideSource
+        });
+        toast.success(`${label}: queued ${res.queued} chunks via Replit Python pipeline`);
 
-        toast.info("Processing all annotations…");
-        let ok = 0;
-        for (const c of chunks) {
-          try {
-            const { error } = await supabase.functions.invoke("process-annotations", {
-              body: { script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index, slide_source: slideSource }
-            });
-            if (!error) ok++;
-          } catch (e) { console.error(e); }
-        }
-        toast.success(`${label}: ${ok}/${chunks.length} chunks processed`);
 
 
       } else {
@@ -237,10 +234,13 @@ function AnnotationsPage() {
           } else if (kind === "ts") {
             await runTimestamps({ data: { scriptId, chunkId: c.id, chunkNumber: c.chunk_index } });
           } else if (kind === "ai") {
-            const { error } = await supabase.functions.invoke("process-annotations", {
-              body: { script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index, slide_source: slideSource }
+            await workerPost("/ai/run", {
+              script_id: scriptId,
+              chunk_id: c.id,
+              chunk_number: c.chunk_index,
+              slide_source: slideSource
             });
-            if (error) throw error;
+
 
 
           } else if (kind === "clip") {
