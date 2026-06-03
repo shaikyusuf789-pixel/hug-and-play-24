@@ -45,36 +45,32 @@ serve(async (req) => {
 
     // --- STAGE 1: GPT-4o (Decision & BBoxes) ---
     const stage1_prompt = `
-You are an AI director for an educational video. Your goal is to choose which words or phrases on the slide should be annotated (circled or underlined) to emphasize what the narrator is saying.
+Improve the annotation pipeline by choosing only the best annotation targets.
 
 INPUTS:
 1. SCRIPT TEXT: "${script_text}"
 2. OCR DATA (Words found on slide with coordinates): ${JSON.stringify(ocr_words)}
-3. ROUGH TIMESTAMPS (Words spoken by narrator, often romanized): ${JSON.stringify(ts_words.map((w: any) => ({ t: w.text, s: w.start })))}
 
 TASK:
-- Choose exactly 10 to 15 annotations in total for this chunk.
-- Balance: Aim for 5 to 7 'circle' annotations; the remaining should be 'underline'.
-- Identify key concepts, keywords, or short phrases being spoken that are visible on the slide.
-- Choose annotation type: 'circle' (for single words or short terms) or 'underline' (for key phrases).
-- USE OCR DATA: Provide the exact bounding box (x, y, w, h) for the target text.
-- MAPPING: For each annotation, identify which word(s) in the "ROUGH TIMESTAMPS" (romanized) correspond to this visual element. Store this in "match_text".
-  Example: If visual is "Physics" and audio says "phijiks", "match_text" should be "phijiks".
+- Select important, visually meaningful text from the OCR and script.
+- Prefer strong exam-relevant keywords and important phrases.
+- Keep output sparse and clean. Do not over-generate (aim for 5-8 high-quality annotations).
+- Avoid duplicates, filler, and weak targets.
+- Ensure each chosen annotation has a visible OCR bbox.
+- Identify which spoken word/phrase from the script corresponds to this visual element for timing later. Store this in "match_text".
 
 RULES:
 - ONLY 'circle' and 'underline' types are allowed.
-- AVOID LONG UNDERLINES: Never underline a full line or a full slide. Keep underlines clean and focused on specific keywords/phrases (1-4 words).
 - Return a JSON object with a key "annotations" which is a list of:
   { 
     "type": "circle"|"underline", 
     "target_text": "text as it appears in OCR", 
-    "match_text": "corresponding romanized word from timestamps",
-    "bbox": {"x":0, "y":0, "w":0, "h":0}, 
-    "start_time": 0.0 
+    "match_text": "corresponding word/phrase from the script to match timing",
+    "bbox": {"x":0, "y":0, "w":0, "h":0}
   }
 `;
 
-    console.log("[AI] Stage 1: Running GPT-4o...");
+    console.log("[AI] Stage 1: Running GPT-4o (Target Selection)...");
     const res1 = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -84,7 +80,7 @@ RULES:
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are a precise AI director. Return only JSON." },
+          { role: "system", content: "You are an expert educational video director. You choose only the most impactful keywords to highlight. Return only JSON." },
           { role: "user", content: stage1_prompt },
         ],
         response_format: { type: "json_object" },
@@ -104,27 +100,31 @@ RULES:
       });
     }
 
-    // --- STAGE 2: GPT-4o-mini (Timestamp Sync) ---
+    // --- STAGE 2: GPT-4o-mini (Timing Sync) ---
     const stage2_prompt = `
-You are a precise audio-visual sync specialist. You need to correct the start_times of proposed annotations.
+Fix the timing of selected annotations.
 
 INPUTS:
-1. PROPOSED ANNOTATIONS (with mapping): ${JSON.stringify(proposed_annotations)}
-2. EXACT WORD TIMESTAMPS (from narrator): ${JSON.stringify(ts_words.map((w: any) => ({ w: w.text, s: w.start })))}
+1. PROPOSED ANNOTATIONS: ${JSON.stringify(proposed_annotations)}
+2. EXACT WORD TIMESTAMPS: ${JSON.stringify(ts_words.map((w: any) => ({ w: w.text, s: w.start })))}
 
 TASK:
-- For each proposed annotation, find its "match_text" (the romanized word) in the "EXACT WORD TIMESTAMPS" list.
-- Use the exact "s" (start time) from the timestamps for that word.
-- If match_text is not found exactly, find the most phonetically similar word in the timestamps around the expected sequence.
-- Update the "start_time" field.
-- Return the exact same list of annotations but with corrected "start_time" values.
+- Match each "match_text" to the exact spoken word or phrase in the timestamp list.
+- "start_time" must be the exact moment the word begins, not an estimate.
+- If the exact phrase is not found, match the first meaningful word and use that timestamp.
+- Never return a start_time that is earlier than the spoken word.
+- If you cannot confidently match timing, drop that annotation by setting start_time to null.
+- Remove or reject annotations that are too early, duplicated, or poorly matched.
 
 RULES:
 - Return a JSON object with a key "annotations".
-- DO NOT change 'type', 'target_text', 'match_text', or 'bbox'. ONLY correct 'start_time'.
+- Keep annotations clear, useful, and visually balanced.
+- Do not place annotations on empty or black areas.
+- Prefer fewer strong annotations over many weak ones.
+- ONLY include annotations with a valid numeric start_time.
 `;
 
-    console.log("[AI] Stage 2: Running GPT-4o-mini for sync...");
+    console.log("[AI] Stage 2: Running GPT-4o-mini (Timing Sync)...");
     const res2 = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -134,7 +134,7 @@ RULES:
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [
-          { role: "system", content: "You are a sync specialist. Return only JSON." },
+          { role: "system", content: "You are a precise audio-visual sync specialist. Return only JSON." },
           { role: "user", content: stage2_prompt },
         ],
         response_format: { type: "json_object" },
@@ -145,8 +145,14 @@ RULES:
     if (!res2.ok) throw new Error(`GPT-4o-mini failed: ${JSON.stringify(data2)}`);
 
     const stage2_content = JSON.parse(data2.choices[0].message.content || "{}");
-    const final_annotations = stage2_content.annotations || [];
-    console.log(`[AI] Stage 2 finished. Synced ${final_annotations.length} annotations.`);
+    let final_annotations = stage2_content.annotations || [];
+    
+    // Final filtering: Ensure numeric start_time and basic quality
+    final_annotations = final_annotations.filter((ann: any) => 
+      typeof ann.start_time === 'number' && ann.start_time >= 0
+    );
+
+    console.log(`[AI] Stage 2 finished. Final count after filtering: ${final_annotations.length}.`);
 
     // 2. Save to DB
     const { error: upsertError } = await supabase.from("clip_annotations").upsert({
