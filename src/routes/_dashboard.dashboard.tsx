@@ -36,7 +36,7 @@ function Dashboard() {
         // We select only status to minimize payload, but ensure we get exact count
         const { data: rawData, error, count } = await supabase
           .from("raw_content")
-          .select("*", { count: "exact" });
+          .select("id, status", { count: "exact" });
         
         if (error) {
           console.error("Dashboard Stats Fetch Error:", error);
@@ -44,7 +44,7 @@ function Dashboard() {
           // Fallback to a broader select
           const { data: fallbackData, error: fallbackError, count: fallbackCount } = await supabase
             .from("raw_content")
-            .select("*", { count: "exact" });
+            .select("id, status", { count: "exact" });
           
           if (fallbackError) {
             toast.error("Error loading dashboard stats: " + fallbackError.message);
