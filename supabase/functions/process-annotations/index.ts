@@ -53,15 +53,17 @@ INPUTS:
 
 TASK:
 - Pick 8–12 strong annotations per chunk.
-- Include the main heading, key subtopics, and important supporting keywords/phrases.
+- Include key subtopics and important supporting keywords/phrases.
 - EVERY chosen annotation must map to visible OCR text.
-- Spread annotations across the slide content, not only on the title.
+- Spread annotations across the slide content.
 - Identify the exact spoken word/phrase from the script that corresponds to this visual element for timing later. Store this in "match_text".
 
 CRITICAL QUALITY RULES:
-1. NO OVER-COMBINING: Keep annotations separate and specific. Do not merge unrelated concepts (e.g., "Laws of Motion and Gravitation" should be separate from specific laws if they are spoken separately).
-2. VISUAL CLARITY: Prefer fewer strong annotations over many weak ones if the slide is crowded, but ensure the result is not too sparse.
-3. SPECIFICITY: Each annotation should highlight one distinct concept or phrase at a time.
+1. NO OVER-COMBINING: Keep annotations separate and specific. Do not merge unrelated concepts.
+2. NO LONG ANNOTATIONS: Maximum annotation length is 6 words. Never use full long sentences. Focus on keywords or short punchy phrases.
+3. SELECTIVE HIGHLIGHTING: Do NOT underline or circle the main global slide title (the big heading at the top) if it is just a background header that is already visible. Only highlight it if it's a specific "Topic of the Day" being introduced for the first time in this clip.
+4. VISUAL CLARITY: Prefer fewer strong annotations over many weak ones if the slide is crowded.
+5. SPECIFICITY: Each annotation should highlight one distinct concept at a time.
 
 RULES:
 - ONLY 'circle' and 'underline' types are allowed.
@@ -115,24 +117,23 @@ INPUTS:
 
 TASK:
 - Match each "match_text" to the exact spoken word or phrase in the timestamp list.
-- "start_time" must be the exact moment the word begins (from the timestamp list).
+- "start_time" must be the exact moment the FIRST word of the match_text begins.
 
 TIMING RULES (CRITICAL):
-1. NO EARLY TIMING: Do not use the slide title time as the default. The annotation must appear exactly when the word is SPOKEN in the narrative flow.
-2. NARRATIVE FLOW: Use the SCRIPT TEXT to understand which occurrence of a word (like "SSC" or "Science") is being referred to. If it's spoken at 0.1s in the intro but again at 6.4s in the explanation, pick 6.4s if it belongs to the explanation part.
-3. EXACT MATCH: If the phrase is not found exactly, use the first meaningful spoken word of that phrase.
-4. DROP UNCERTAIN: If timing is uncertain or if the word isn't spoken in this chunk, set "start_time" to null (it will be filtered out).
-5. NO GUESSING: If the timing would be "too early" (near 0s) for a concept that appears later in the script, it is likely a mismatch.
+1. NO EARLY TIMING: Do not guess. The annotation must appear exactly when the word is SPOKEN.
+2. CONTEXTUAL MATCHING: Use the SCRIPT TEXT to determine which occurrence of a word is correct. If "Newton" is mentioned as a general intro but later discussed as "Newton's First Law", ensure the annotation for the First Law matches the later timestamp.
+3. EXACT START: The start_time MUST match the 's' value of the first word in the timestamp list that matches the match_text.
+4. NO DEFAULTING TO START: Do not use timestamps before 2.0s for specific content highlights unless that word is literally the first thing said in the clip.
+5. DROP IF UNSURE: If you cannot find a clear match in the timestamps for the specific phrase in its correct context, set "start_time" to null.
 
 BALANCE RULES:
 - If too many items share the same time, keep the strongest one and remove the rest.
-- Ensure the result is well-distributed over the clip duration.
+- Ensure annotations are not too crowded or too sparse (aim for a comfortable rhythm).
 
 SELF-CHECK:
-- Is this annotation useful?
-- Is the bbox on actual visible text?
-- Is the timing EXACT, not early?
-- Does the clip feel well covered?
+- Does this start_time match the EXACT word in the script?
+- Is it too early? (If it's in the first 2 seconds but the concept is discussed later, it's WRONG).
+- Is the text too long? (Should have been caught in Stage 1, but filter here if needed).
 
 RULES:
 - Return a JSON object with a key "annotations".
