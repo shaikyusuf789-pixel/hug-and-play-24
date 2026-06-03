@@ -261,8 +261,24 @@ Return ONLY the JSON object. Do not include script_phrase in the output."""
           f"{ts_words[-1].get('end',0) if ts_words else 0:.2f}s)")
     return clean
 
+def _ts_lines(ts_words: list[dict]) -> str:
+    lines = []
+    for w in ts_words:
+        start = w.get("start", 0)
+        word = w.get("word", w.get("text", ""))
+        lines.append(f"{float(start):.2f}s: {word}")
+    return "\n".join(lines)
+
+def _ocr_lines(ocr_words: list[dict]) -> str:
+    lines = []
+    for w in ocr_words:
+        text = w.get("text", "")
+        x, y, w_val, h = w.get("x", 0), w.get("y", 0), w.get("w", 0), w.get("h", 0)
+        lines.append(f"bbox [{x}, {y}, {w_val}, {h}] → \"{text}\"")
+    return "\n".join(lines)
 
 # ── Phrase → bbox locator ────────────────────────────────────────────────────
+
 
 _NORM_RE = re.compile(r"[^a-z0-9]+")
 
