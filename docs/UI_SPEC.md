@@ -472,23 +472,22 @@ Used by: Idea Cards, Content Preview, Tables, Dashboard counts.
 
 ---
 
-## 11. Secrets Contract
+## 11. Secrets Contract — System v5.1
 
-Stored ONLY as Supabase Edge Function secrets (never in `.env`, never in the client bundle). Case-sensitive names.
+Stored ONLY as Supabase Edge Function secrets (never in `.env`, never in the client bundle).
 
 | Secret | Used by | Where to obtain |
 |---|---|---|
-| `OPENAI_API_KEY` | Script gen, AI annotations, fallback TTS | platform.openai.com |
-| `GOOGLE_API_KEY` | Gemini script generation + Gemini TTS (Zephyr) | aistudio.google.com |
-| `GOOGLE_VISION_API_KEY` | **OCR (Google Cloud Vision API)** | console.cloud.google.com → APIs & Services → Credentials. Must enable **Vision AI API** (`vision.googleapis.com`) on the project; the Cloud Vision API service must NOT be blocked. |
-| `LOVABLE_API_KEY` | Lovable AI Gateway (multi-model proxy) | Lovable project settings |
-| `APIFY_API_TOKEN` | Channel scraping + transcript fetch | apify.com console |
-| `ELEVEN_LABS_API_KEY` | Primary TTS voices **and** forced-alignment timestamps | elevenlabs.io |
-| `GAMMA_API_KEY` | Slide deck rendering | gamma.app API |
-| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Server-side DB access | Supabase project settings |
-| `SUPABASE_JWKS`, `SUPABASE_ANON_KEY`, `SUPABASE_SECRET_KEYS`, `SUPABASE_PUBLISHABLE_KEYS`, `CUSTOM_SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL` | Auth middleware + DB tooling | Supabase project settings |
+| `OPENAI_API_KEY` | Script gen, AI annotations (GPT-4o Vision), fallback TTS. | platform.openai.com |
+| `GOOGLE_API_KEY` | Gemini script generation + Gemini TTS (Zephyr). | aistudio.google.com |
+| `GOOGLE_VISION_API_KEY` | **OCR (Google Cloud Vision API)** via server fn. | console.cloud.google.com |
+| `LOVABLE_API_KEY` | Lovable AI Gateway proxy. | Lovable project settings |
+| `APIFY_API_TOKEN` | Channel scraping + transcript fetch. | apify.com |
+| `ELEVEN_LABS_API_KEY` | Primary TTS voices **and** forced-alignment timestamps. | elevenlabs.io |
+| `GAMMA_API_KEY` | Slide deck rendering. | gamma.app |
+| `GITHUB_PAT` | **Railway Deployment Automation.** | github.com/settings/tokens |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side privileged DB access. | Supabase project settings |
 
-The browser `client.ts` uses ONLY `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` from env.
 
 ---
 
