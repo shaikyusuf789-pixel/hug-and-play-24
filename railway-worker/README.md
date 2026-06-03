@@ -176,3 +176,4 @@ sky-annotations-worker/
 └── README.md                # (this file)
 ```
 \n# Redeploy trigger: Wed Jun  3 21:24:29 UTC 2026
+\n# Triggering Railway Redeploy: Wed Jun  3 21:24:41 UTC 2026
