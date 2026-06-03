@@ -33,14 +33,38 @@ function Dashboard() {
     queryFn: async () => {
       console.log("Fetching dashboard stats...");
       try {
+        // We select only status to minimize payload, but ensure we get exact count
         const { data: rawData, error, count } = await supabase
           .from("raw_content")
           .select("status", { count: "exact" });
         
         if (error) {
           console.error("Dashboard Stats Fetch Error:", error);
-          toast.error("Error loading dashboard stats: " + error.message);
-          throw error;
+          // If we get an error, it might be due to the select "status" optimization failing on some schema versions
+          // Fallback to a broader select
+          const { data: fallbackData, error: fallbackError, count: fallbackCount } = await supabase
+            .from("raw_content")
+            .select("*", { count: "exact" });
+          
+          if (fallbackError) {
+            toast.error("Error loading dashboard stats: " + fallbackError.message);
+            throw fallbackError;
+          }
+          
+          const statsMap = (fallbackData || []).reduce((acc: any, item: any) => {
+            const status = item.status || "Pending";
+            acc[status] = (acc[status] || 0) + 1;
+            return acc;
+          }, {});
+
+          return {
+            total: fallbackCount ?? 0,
+            pending: statsMap["Pending"] || 0,
+            approved: statsMap["Approved"] || 0,
+            priority: statsMap["Priority"] || 0,
+            scriptDone: statsMap["Script Done"] || 0,
+            audioDone: statsMap["Audio Done"] || 0,
+          };
         }
 
         console.log("Raw dashboard data fetched:", rawData?.length, "rows, count:", count);
