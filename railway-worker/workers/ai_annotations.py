@@ -34,7 +34,7 @@ ANNOTATION TYPES:
 
 RULES:
 1. Generate 3–8 annotations. Quality over quantity.
-2. ONLY use "underline" and "circle" types.
+2. ONLY use "underline" and "circle" types. Never output arrow, box, or double_underline.
 3. Distribution: Aim for 60% underlines and 40% circles across the chunk.
 4. start_time MUST match when that word is spoken (use the timestamps).
 5. bbox MUST come from the OCR data — never invent coordinates.
@@ -42,6 +42,52 @@ RULES:
 
 OUTPUT FORMAT — return ONLY valid JSON (no markdown, no extra text):
 {"annotations": [{"type": "...", "start_time": 0.0, "target_text": "...", "bbox": [x, y, w, h]}, ...]}"""
+
+
+def _rebalance_annotation_types(annotations: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Hard guarantee: only underline/circle, roughly 60/40 split."""
+    if not annotations:
+        return annotations
+
+    total = len(annotations)
+    target_circles = round(total * 0.4)
+
+    normalised = []
+    for ann in annotations:
+        ann_type = ann.get("type")
+        if ann_type not in {"underline", "circle"}:
+            ann_type = "underline"
+        normalised.append({**ann, "type": ann_type})
+
+    circle_count = sum(1 for ann in normalised if ann["type"] == "circle")
+    if circle_count < target_circles:
+        underline_indexes = [
+            idx for idx, ann in enumerate(normalised)
+            if ann["type"] == "underline"
+        ]
+        underline_indexes.sort(
+            key=lambda idx: (
+                len(str(normalised[idx].get("target_text", "")).split()),
+                idx,
+            )
+        )
+        for idx in underline_indexes[:target_circles - circle_count]:
+            normalised[idx]["type"] = "circle"
+    elif circle_count > target_circles:
+        circle_indexes = [
+            idx for idx, ann in enumerate(normalised)
+            if ann["type"] == "circle"
+        ]
+        circle_indexes.sort(
+            key=lambda idx: (
+                -len(str(normalised[idx].get("target_text", "")).split()),
+                idx,
+            )
+        )
+        for idx in circle_indexes[:circle_count - target_circles]:
+            normalised[idx]["type"] = "underline"
+
+    return normalised
 
 
 def generate_annotations(
@@ -118,6 +164,8 @@ Generate 3–8 annotations. Return JSON only."""
             "target_text": str(ann.get("target_text") or ""),
             "bbox":        [int(v) for v in bbox],
         })
+
+    clean = _rebalance_annotation_types(clean)
 
     print(f"[AI] {len(clean)} annotations generated")
     return clean
