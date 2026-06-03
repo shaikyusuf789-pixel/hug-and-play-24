@@ -149,7 +149,7 @@ function AnnotationsPage() {
         chunk_number: chunk.chunk_index,
         slide_source: slideSource
       });
-      toast.success(`AI done — chunk ${chunk.chunk_index} (${res.annotation_count} annotations via Replit Python pipeline)`);
+      toast.success(`AI done — chunk ${chunk.chunk_index} (${res.annotation_count} annotations via GPT-4o)`);
       await refreshAll(scriptId, slideSource);
     } catch (e: any) { toast.error(`AI failed: ${e.message}`); }
     finally { setRowBusy(k, false); }
@@ -187,7 +187,7 @@ function AnnotationsPage() {
           script_id: scriptId,
           slide_source: slideSource
         });
-        toast.success(`${label}: queued ${res.queued} chunks via Replit Python pipeline`);
+        toast.success(`${label}: queued ${res.queued} chunks via GPT-4o`);
 
 
 
