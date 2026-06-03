@@ -184,6 +184,59 @@ function AnnotationsPage() {
     finally { setTimeout(() => setBulkBusy(null), 1200); }
   };
 
+  // ── Skip-mode bulk: process only chunks missing the given output.
+  // kind picks which map to check and which per-chunk runner to call.
+  const skipBulk = async (
+    label: string,
+    kind: "ocr" | "ts" | "ai" | "clip",
+  ) => {
+    if (!scriptId) return toast.error("Pick a script first");
+    if (!chunks.length) return toast.error("No chunks loaded");
+    setBulkBusy(label);
+    try {
+      const pending = chunks.filter((c) => {
+        if (kind === "ocr")  return !ocrMap[c.id];
+        if (kind === "ts")   return !tsMap[c.id];
+        if (kind === "ai")   return !aiMap[c.id];
+        if (kind === "clip") {
+          const v = clipMap[c.id];
+          return !v || !v.file_url || (v.status && v.status !== "done");
+        }
+        return false;
+      });
+      if (!pending.length) {
+        toast.info(`${label}: nothing to do — all chunks already have output`);
+        return;
+      }
+      toast.info(`${label}: processing ${pending.length} missing chunk(s)…`);
+      let ok = 0, fail = 0;
+      for (const c of pending) {
+        try {
+          if (kind === "ocr") {
+            await runOcrFn({ data: { scriptId, chunkId: c.id, chunkNumber: c.chunk_index, slideSource } });
+          } else if (kind === "ts") {
+            await runTimestamps({ data: { scriptId, chunkId: c.id, chunkNumber: c.chunk_index } });
+          } else if (kind === "ai") {
+            await workerPost("/ai/run", { script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index, slide_source: slideSource });
+          } else if (kind === "clip") {
+            await workerPost("/clips/render", { script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index, slide_source: slideSource });
+          }
+          ok++;
+        } catch (e: any) {
+          fail++;
+          console.error(`[skipBulk:${kind}] chunk ${c.chunk_index + 1} failed`, e);
+        }
+      }
+      const failMsg = fail ? `, ${fail} failed` : "";
+      toast.success(`${label}: ${ok}/${pending.length} done${failMsg}`);
+      setTimeout(() => refreshAll(scriptId, slideSource), 1200);
+    } catch (e: any) {
+      toast.error(`${label} failed: ${e.message}`);
+    } finally {
+      setTimeout(() => setBulkBusy(null), 1200);
+    }
+  };
+
 
   const mergeMega = async () => {
     if (!scriptId) return;
@@ -248,17 +301,37 @@ function AnnotationsPage() {
           </button>
         ))}
         <div className="w-px h-8 bg-slate-200 mx-2" />
-        <Button disabled={!!bulkBusy || !scriptId} onClick={() => bulk("All OCR", "/ocr/run-all")} className="bg-sky-500 hover:bg-sky-600 rounded-xl gap-2 h-10">
+
+        {/* OCR */}
+        <Button disabled={!!bulkBusy || !scriptId} onClick={() => bulk("All OCR", "/ocr/run-all")} className="bg-sky-500 hover:bg-sky-600 rounded-xl gap-2 h-10" title="Re-runs OCR on every chunk (overwrites existing).">
           {bulkBusy === "All OCR" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} All OCR
         </Button>
-        <Button disabled={!!bulkBusy || !scriptId} onClick={() => bulk("All Timestamps", "/timestamps/run-all")} className="bg-emerald-500 hover:bg-emerald-600 rounded-xl gap-2 h-10">
+        <Button disabled={!!bulkBusy || !scriptId} onClick={() => skipBulk("Skip & Run OCR", "ocr")} variant="outline" className="border-sky-300 text-sky-700 hover:bg-sky-50 rounded-xl gap-2 h-10" title="Runs OCR only for chunks that don't have OCR yet.">
+          {bulkBusy === "Skip & Run OCR" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Skip & Run OCR
+        </Button>
+
+        {/* Timestamps */}
+        <Button disabled={!!bulkBusy || !scriptId} onClick={() => bulk("All Timestamps", "/timestamps/run-all")} className="bg-emerald-500 hover:bg-emerald-600 rounded-xl gap-2 h-10" title="Re-runs ElevenLabs alignment on every chunk (overwrites existing).">
           {bulkBusy === "All Timestamps" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} All Timestamps
         </Button>
-        <Button disabled={!!bulkBusy || !scriptId} onClick={() => bulk("All Annotations", "/ai/run-all")} className="bg-violet-500 hover:bg-violet-600 rounded-xl gap-2 h-10">
+        <Button disabled={!!bulkBusy || !scriptId} onClick={() => skipBulk("Skip & Run Timestamps", "ts")} variant="outline" className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 rounded-xl gap-2 h-10" title="Runs timestamps only for chunks that don't have them yet.">
+          {bulkBusy === "Skip & Run Timestamps" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Skip & Run TS
+        </Button>
+
+        {/* Annotations */}
+        <Button disabled={!!bulkBusy || !scriptId} onClick={() => bulk("All Annotations", "/ai/run-all")} className="bg-violet-500 hover:bg-violet-600 rounded-xl gap-2 h-10" title="Re-runs AI annotations on every chunk (overwrites existing).">
           {bulkBusy === "All Annotations" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} All Annotations
         </Button>
-        <Button disabled={!!bulkBusy || !scriptId} onClick={() => bulk("Render All", "/clips/render-all")} className="bg-rose-500 hover:bg-rose-600 rounded-xl gap-2 h-10">
+        <Button disabled={!!bulkBusy || !scriptId} onClick={() => skipBulk("Skip & Run Annotations", "ai")} variant="outline" className="border-violet-300 text-violet-700 hover:bg-violet-50 rounded-xl gap-2 h-10" title="Runs annotations only for chunks that don't have them yet.">
+          {bulkBusy === "Skip & Run Annotations" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Skip & Run AI
+        </Button>
+
+        {/* Render */}
+        <Button disabled={!!bulkBusy || !scriptId} onClick={() => bulk("Render All", "/clips/render-all")} className="bg-rose-500 hover:bg-rose-600 rounded-xl gap-2 h-10" title="Re-renders every clip (overwrites existing).">
           {bulkBusy === "Render All" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Render All
+        </Button>
+        <Button disabled={!!bulkBusy || !scriptId} onClick={() => skipBulk("Skip & Render", "clip")} variant="outline" className="border-rose-300 text-rose-700 hover:bg-rose-50 rounded-xl gap-2 h-10" title="Renders only clips that aren't done yet.">
+          {bulkBusy === "Skip & Render" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Skip & Render
         </Button>
       </div>
 
