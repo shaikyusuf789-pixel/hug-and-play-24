@@ -157,7 +157,7 @@ Hamburger → slides in from left → identical nav contents.
   - AI Annotations (Strict JSON).
   - Final Clip preview.
 - **Mega Video:** Merged 4K MP4 assembly.
-- **Wiring:** Calls `runOcr`, `runTimestamps`, Railway `/ai/run`, Railway `/clips/render`, Railway `/merge/run`.
+- **Wiring:** Calls `runOcr`, `runTimestamps`, Supabase `process-annotations` (2-stage GPT), Railway `/clips/render`, Railway `/merge/run`.
 
 ### 3.9 Master Video — `/master-video`
 ![Master Video](screenshots/v6/10-master-video.png)
