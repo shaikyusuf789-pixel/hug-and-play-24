@@ -122,7 +122,7 @@ Generate 3–8 annotations. Return JSON only."""
             {"role": "system", "content": _SYSTEM_PROMPT},
             {"role": "user",   "content": user_prompt},
         ],
-        response_format={"type": "json_object"},
+        response_format=_ANNOTATION_RESPONSE_FORMAT,
         max_tokens=1500,
         temperature=0.2,
     )
@@ -138,13 +138,9 @@ Generate 3–8 annotations. Return JSON only."""
     if not isinstance(annotations, list):
         annotations = []
 
-    # Sanitise
-    allowed_types = {"underline", "circle"}
     clean = []
     for ann in annotations:
         t = ann.get("type")
-        if t not in allowed_types:
-            t = "circle" if len(clean) % 5 in (2, 4) else "underline"
         bbox = ann.get("bbox")
         if not isinstance(bbox, list) or len(bbox) != 4:
             continue
@@ -154,8 +150,6 @@ Generate 3–8 annotations. Return JSON only."""
             "target_text": str(ann.get("target_text") or ""),
             "bbox":        [int(v) for v in bbox],
         })
-
-    clean = _rebalance_annotation_types(clean)
 
     print(f"[AI] {len(clean)} annotations generated")
     return clean
