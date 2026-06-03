@@ -39,6 +39,11 @@ function Dashboard() {
         supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Script Done"),
         supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Audio Done"),
       ]);
+      
+      if (total.error) {
+        console.error("Dashboard Stats Error:", total.error);
+        toast.error("Error loading dashboard stats: " + total.error.message);
+      }
       return {
         total: total.count ?? 0,
         pending: pending.count ?? 0,
