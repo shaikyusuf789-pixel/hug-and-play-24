@@ -16,6 +16,7 @@ find the closest matching word / phrase / line on the slide and annotate it.
 
 import json
 import re
+from difflib import SequenceMatcher
 from typing import Any
 
 from openai import OpenAI
@@ -311,6 +312,15 @@ Return ONLY the JSON object."""
         real_start = _locate_phrase_start_time(
             script_phrase, ts_words, min_start=last_assigned_start
         )
+        target_start = _locate_target_start_time(
+            target, ts_words, min_start=last_assigned_start
+        )
+        if target_start is not None and (
+            real_start is None or abs(float(target_start) - float(real_start)) > 1.25
+        ):
+            if real_start is not None:
+                print(f"[AI] REPAIR: target '{target}' timing {real_start:.2f}s → {target_start:.2f}s")
+            real_start = target_start
         if real_start is None and gpt_start is not None:
             # Fallback: use GPT's number but warn loudly in logs.
             print(f"[AI] WARN: script_phrase '{script_phrase}' not found in "
