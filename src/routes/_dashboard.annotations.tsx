@@ -143,15 +143,18 @@ function AnnotationsPage() {
   const runAi = async (chunk: any) => {
     const k = `ai:${chunk.id}`; setRowBusy(k, true);
     try {
-      const { data, error } = await supabase.functions.invoke("process-annotations", {
-        body: { script_id: scriptId, chunk_id: chunk.id, chunk_number: chunk.chunk_index, slide_source: slideSource }
+      const res = await workerPost("/ai/run", {
+        script_id: scriptId,
+        chunk_id: chunk.id,
+        chunk_number: chunk.chunk_index,
+        slide_source: slideSource
       });
-      if (error) throw error;
-      toast.success(`AI done — chunk ${chunk.chunk_index} (${data.annotation_count} annotations via 2-stage GPT)`);
+      toast.success(`AI done — chunk ${chunk.chunk_index} (${res.annotation_count} annotations via Replit Python pipeline)`);
       await refreshAll(scriptId, slideSource);
     } catch (e: any) { toast.error(`AI failed: ${e.message}`); }
     finally { setRowBusy(k, false); }
   };
+
 
 
   const renderClip = async (chunk: any) => {
