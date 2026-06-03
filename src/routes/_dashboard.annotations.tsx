@@ -180,6 +180,7 @@ function AnnotationsPage() {
         const failedMsg = res.failed ? `, ${res.failed} failed` : "";
         toast.success(`${label}: ${res.succeeded}/${res.queued} chunks${failedMsg}`);
       } else if (path === "/ai/run-all") {
+
         toast.info("Processing all annotations…");
         let ok = 0;
         for (const c of chunks) {
