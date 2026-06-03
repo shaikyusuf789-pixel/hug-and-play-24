@@ -133,7 +133,7 @@ function AnnotationsPage() {
       const res = await runTimestamps({
         data: { scriptId: scriptId, chunkId: chunk.id, chunkNumber: chunk.chunk_index },
       });
-      toast.success(`Timestamps done — chunk ${chunk.chunk_index} (${res.word_count} words via ElevenLabs)`);
+      toast.success(`Timestamps done — chunk ${chunk.chunk_index} (${res.word_count} words via OpenAI Whisper)`);
       await refreshAll(scriptId, slideSource);
     } catch (e: any) { toast.error(`Timestamps failed: ${e.message}`); }
     finally { setRowBusy(k, false); }
