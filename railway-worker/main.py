@@ -1,6 +1,6 @@
 """
 main.py — FastAPI application for sky-annotations-worker.
-DEPLOY_MARKER: 2026-06-03-v3 (target-text timing repair + formula/phonetic matching)
+DEPLOY_MARKER: 2026-06-03-v4 (Support for dictionary-based bboxes and robust scaling)
 
 All annotation pipeline routes:
   GET  /health
