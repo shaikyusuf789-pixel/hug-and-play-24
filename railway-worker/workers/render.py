@@ -29,7 +29,11 @@ W, H, FPS = 1920, 1080, 30
 # Annotations start drawing this many seconds BEFORE the spoken word so the
 # visual lands in sync with the voice (compensates for ElevenLabs alignment
 # bias + human perception lag). Override via env if needed.
-ANNOTATION_LEAD = float(os.environ.get("ANNOTATION_LEAD_SECONDS", "1.1"))
+ANNOTATION_LEAD = float(os.environ.get("ANNOTATION_LEAD_SECONDS", "0.8"))
+# Minimum gap between the END of one annotation's draw animation and the
+# START of the next, so the tutor visually "lifts the pen" before the next
+# stroke. Prevents two circles/underlines being drawn simultaneously.
+ANNOTATION_PEN_LIFT = float(os.environ.get("ANNOTATION_PEN_LIFT", "0.08"))
 
 
 # Single-pen mode: ONE color per clip, chosen from slide background brightness.
