@@ -43,50 +43,41 @@ OUTPUT FORMAT — return ONLY valid JSON:
 {"annotations": [{"type": "underline", "start_time": 0.0, "target_text": "sample", "bbox": [0,0,10,10]}, {"type": "circle", "start_time": 1.0, "target_text": "test", "bbox": [20,20,5,5]}]}"""
 
 
-def _rebalance_annotation_types(annotations: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Hard guarantee: only underline/circle, roughly 60/40 split."""
-    if not annotations:
-        return annotations
-
-    total = len(annotations)
-    target_circles = round(total * 0.4)
-
-    normalised = []
-    for ann in annotations:
-        ann_type = ann.get("type")
-        if ann_type not in {"underline", "circle"}:
-            ann_type = "underline"
-        normalised.append({**ann, "type": ann_type})
-
-    circle_count = sum(1 for ann in normalised if ann["type"] == "circle")
-    if circle_count < target_circles:
-        underline_indexes = [
-            idx for idx, ann in enumerate(normalised)
-            if ann["type"] == "underline"
-        ]
-        underline_indexes.sort(
-            key=lambda idx: (
-                len(str(normalised[idx].get("target_text", "")).split()),
-                idx,
-            )
-        )
-        for idx in underline_indexes[:target_circles - circle_count]:
-            normalised[idx]["type"] = "circle"
-    elif circle_count > target_circles:
-        circle_indexes = [
-            idx for idx, ann in enumerate(normalised)
-            if ann["type"] == "circle"
-        ]
-        circle_indexes.sort(
-            key=lambda idx: (
-                -len(str(normalised[idx].get("target_text", "")).split()),
-                idx,
-            )
-        )
-        for idx in circle_indexes[:circle_count - target_circles]:
-            normalised[idx]["type"] = "underline"
-
-    return normalised
+_ANNOTATION_RESPONSE_FORMAT = {
+    "type": "json_schema",
+    "json_schema": {
+        "name": "slide_annotations",
+        "strict": True,
+        "schema": {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                "annotations": {
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 8,
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "properties": {
+                            "type": {"type": "string", "enum": ["underline", "circle"]},
+                            "start_time": {"type": "number"},
+                            "target_text": {"type": "string"},
+                            "bbox": {
+                                "type": "array",
+                                "minItems": 4,
+                                "maxItems": 4,
+                                "items": {"type": "integer"},
+                            },
+                        },
+                        "required": ["type", "start_time", "target_text", "bbox"],
+                    },
+                }
+            },
+            "required": ["annotations"],
+        },
+    },
+}
 
 
 def generate_annotations(
