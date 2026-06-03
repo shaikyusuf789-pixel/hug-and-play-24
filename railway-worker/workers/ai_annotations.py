@@ -7,33 +7,35 @@ from lib.config import config
 client = OpenAI(api_key=config.OPENAI_API_KEY)
 
 def run_ai_annotations(script_text: str, ocr_words: list[dict], ts_words: list[dict]) -> list[dict]:
-    \"\"\"
+    """
     Two-stage AI Annotation process.
     Stage 1: GPT-4o decides what to annotate and where (using OCR boxes).
     Stage 2: GPT-4o-mini syncs the start_times with exact word timestamps.
-    \"\"\"
+    """
 
     # --- STAGE 1: GPT-4o (Decision & BBoxes) ---
-    stage1_prompt = f\"\"\"
+    stage1_prompt = f"""
 You are an AI director for an educational video. Your goal is to choose which words or phrases on the slide should be annotated (circled or underlined) to emphasize what the narrator is saying.
 
 INPUTS:
-1. SCRIPT TEXT: \"{script_text}\"
-2. OCR DATA (Words found on slide with coordinates): {json.dumps(ocr_words[:100])} ... (showing first 100 words)
+1. SCRIPT TEXT: "{script_text}"
+2. OCR DATA (Words found on slide with coordinates): {json.dumps(ocr_words[:100])} ...
 3. ROUGH TIMESTAMPS: {json.dumps([{"t": w["text"], "s": w["start"]} for w in ts_words[:50]])} ...
 
 TASK:
-- Identify key concepts being spoken that are also visible on the slide.
-- Choose an annotation type: 'circle' or 'underline'.
-- Use the OCR data to provide the exact bounding box (x, y, w, h) for the target text.
-- Provide a rough 'start_time' based on when the word is mentioned in the script.
+- Choose exactly 10 to 15 annotations in total for this chunk.
+- Balance: Aim for 5 to 7 'circle' annotations; the remaining should be 'underline'.
+- Identify key concepts, keywords, or short phrases being spoken that are visible on the slide.
+- Choose annotation type: 'circle' (for single words or short terms) or 'underline' (for key phrases).
+- USE OCR DATA: Provide the exact bounding box (x, y, w, h) for the target text.
 
 RULES:
-- Only annotate text that exists in BOTH the OCR data and the Script.
+- ONLY 'circle' and 'underline' types are allowed.
+- AVOID LONG UNDERLINES: Never underline a full line or a full slide. Keep underlines clean and focused on specific keywords/phrases (1-4 words).
+- Make it feel like a human tutor: Annotate things as they are mentioned.
 - Return a JSON object with a key "annotations" which is a list of:
   {{ "type": "circle"|"underline", "target_text": "text", "bbox": {{"x":0, "y":0, "w":0, "h":0}}, "start_time": 0.0 }}
-- Keep it concise. Max 5-8 annotations per slide.
-\"\"\"
+"""
 
     print("[AI] Stage 1: Running GPT-4o...")
     response1 = client.chat.completions.create(
@@ -51,7 +53,7 @@ RULES:
         return []
 
     # --- STAGE 2: GPT-4o-mini (Timestamp Sync) ---
-    stage2_prompt = f\"\"\"
+    stage2_prompt = f"""
 You are a precise audio-visual sync specialist. You need to correct the start_times of proposed annotations to match the exact moment the narrator speaks those words.
 
 INPUTS:
@@ -67,7 +69,7 @@ TASK:
 RULES:
 - Return a JSON object with a key "annotations".
 - DO NOT change the 'type', 'target_text', or 'bbox'. ONLY correct 'start_time'.
-\"\"\"
+"""
 
     print("[AI] Stage 2: Running GPT-4o-mini for sync...")
     response2 = client.chat.completions.create(
