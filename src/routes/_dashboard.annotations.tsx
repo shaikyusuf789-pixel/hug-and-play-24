@@ -234,10 +234,13 @@ function AnnotationsPage() {
           } else if (kind === "ts") {
             await runTimestamps({ data: { scriptId, chunkId: c.id, chunkNumber: c.chunk_index } });
           } else if (kind === "ai") {
-            const { error } = await supabase.functions.invoke("process-annotations", {
-              body: { script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index, slide_source: slideSource }
+            await workerPost("/ai/run", {
+              script_id: scriptId,
+              chunk_id: c.id,
+              chunk_number: c.chunk_index,
+              slide_source: slideSource
             });
-            if (error) throw error;
+
 
 
           } else if (kind === "clip") {
