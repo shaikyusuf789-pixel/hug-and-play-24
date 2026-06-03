@@ -74,7 +74,7 @@ ANNOTATION TYPES (mix them so the slide feels alive, not just underlined):
   DO NOT use "double_underline" — it is deprecated. Use "underline" instead.
 
   TARGET MIX per chunk (rough guideline, 15 annotations):
-    ~6 circles · ~4 underlines · ~3 arrows · ~2 boxes
+    ~4 circles · ~4 underlines · ~3 arrows · ~2 boxes
 
 TIMING RULES
   • start_time = the audio time (in seconds) when the corresponding spoken
