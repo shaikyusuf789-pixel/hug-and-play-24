@@ -260,17 +260,33 @@ def render_clip(
     ff = subprocess.Popen(
         [
             "ffmpeg",
+            "-hide_banner", "-loglevel", "error",
             "-f", "rawvideo", "-pix_fmt", "rgba",
             "-s", f"{W}x{H}", "-r", str(FPS), "-i", "pipe:0",
             "-i", audio_path,
-            "-c:v", "libx264", "-preset", "fast", "-pix_fmt", "yuv420p",
+            "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-b:a", "192k",
-            "-shortest", "-y", output_path,
+            "-movflags", "+faststart", "-shortest", "-y", output_path,
         ],
         stdin=subprocess.PIPE,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
     )
+
+    def _write_frame(frame_bytes: bytes) -> None:
+        if ff.stdin is None:
+            raise RuntimeError("ffmpeg stdin unavailable")
+        try:
+            ff.stdin.write(frame_bytes)
+        except BrokenPipeError as exc:
+            stderr_tail = b""
+            if ff.stderr is not None:
+                stderr_tail = ff.stderr.read()[-2000:]
+            ff.wait()
+            raise RuntimeError(
+                "ffmpeg stopped while receiving frames: "
+                + stderr_tail.decode(errors="replace")
+            ) from exc
 
     for f_idx in range(total_frames):
         t = f_idx / FPS
@@ -284,7 +300,7 @@ def render_clip(
             prog_map[i] = 1.0 if elapsed >= dur else _eased(elapsed / dur)
 
         if not prog_map:
-            ff.stdin.write(slide_bytes)
+            _write_frame(slide_bytes)
         else:
             svg = _build_frame_svg(annotations, prog_map, ocr_src_w, ocr_src_h)
             if svg:
@@ -295,12 +311,16 @@ def render_clip(
                 )
                 overlay = Image.open(io.BytesIO(png_bytes)).convert("RGBA")
                 frame   = Image.alpha_composite(slide_rgba, overlay)
-                ff.stdin.write(frame.tobytes())
+                _write_frame(frame.tobytes())
             else:
-                ff.stdin.write(slide_bytes)
+                _write_frame(slide_bytes)
 
-    ff.stdin.close()
-    _, stderr_data = ff.communicate()
+    # Do not call communicate() after manually closing stdin. In Python 3.11+
+    # communicate() tries to flush stdin again and raises: ValueError("flush of closed file").
+    if ff.stdin is not None:
+        ff.stdin.close()
+    stderr_data = ff.stderr.read() if ff.stderr is not None else b""
+    ff.wait()
     if ff.returncode != 0:
         raise RuntimeError(
             f"ffmpeg exited {ff.returncode}: "
