@@ -256,6 +256,10 @@ function AnnotationsPage() {
         query = supabase.from("video_clips").delete().eq("script_id", scriptId).eq("slide_source", slideSource);
       }
 
+      if (kind === "clip") {
+        await supabase.from("app_metadata").delete().eq("key", `merge:${scriptId}`);
+      }
+
       if (query) {
         const { error } = await query;
         if (error) throw error;
