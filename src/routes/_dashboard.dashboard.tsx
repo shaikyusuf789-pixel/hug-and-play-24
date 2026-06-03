@@ -44,7 +44,7 @@ function Dashboard() {
           // Fallback to a broader select
           const { data: fallbackData, error: fallbackError, count: fallbackCount } = await supabase
             .from("raw_content")
-            .select("*", { count: "exact" });
+            .select("id, status", { count: "exact" });
           
           if (fallbackError) {
             toast.error("Error loading dashboard stats: " + fallbackError.message);
