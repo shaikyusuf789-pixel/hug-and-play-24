@@ -31,16 +31,20 @@ function Dashboard() {
   const stats = useQuery({
     queryKey: ["stats"],
     queryFn: async () => {
+      console.log("Starting Dashboard Stats fetch...");
       const [total, pending, approved, priority, scriptDone, audioDone] = await Promise.all([
-        supabase.from("raw_content").select("*", { count: "exact", head: true }),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Pending"),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Approved"),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Priority"),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Script Done"),
-        supabase.from("raw_content").select("*", { count: "exact", head: true }).eq("status", "Audio Done"),
+        supabase.from("raw_content").select("*", { count: "exact" }).limit(0),
+        supabase.from("raw_content").select("*", { count: "exact" }).eq("status", "Pending").limit(0),
+        supabase.from("raw_content").select("*", { count: "exact" }).eq("status", "Approved").limit(0),
+        supabase.from("raw_content").select("*", { count: "exact" }).eq("status", "Priority").limit(0),
+        supabase.from("raw_content").select("*", { count: "exact" }).eq("status", "Script Done").limit(0),
+        supabase.from("raw_content").select("*", { count: "exact" }).eq("status", "Audio Done").limit(0),
       ]);
       
-      console.log("Dashboard Stats Response:", { total, pending, approved, priority, scriptDone, audioDone });
+      console.log("Dashboard Stats Response:", { 
+        total: { count: total.count, error: total.error },
+        pending: { count: pending.count, error: pending.error },
+      });
       
       if (total.error) {
         console.error("Dashboard Stats Error:", total.error);
