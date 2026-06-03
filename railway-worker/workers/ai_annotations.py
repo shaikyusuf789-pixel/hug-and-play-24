@@ -154,7 +154,7 @@ Generate 3–8 annotations. Return JSON only."""
     for ann in annotations:
         t = ann.get("type")
         if t not in allowed_types:
-            continue
+            t = "circle" if len(clean) % 5 in (2, 4) else "underline"
         bbox = ann.get("bbox")
         if not isinstance(bbox, list) or len(bbox) != 4:
             continue
