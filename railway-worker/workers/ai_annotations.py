@@ -1,4 +1,4 @@
-# Updated: 2026-06-03 18:50 - Add key check
+# Updated: 2026-06-03 19:10 - Force Arrow and Underline only
 """
 workers/ai_annotations.py — GPT-4o generates annotation events.
 
@@ -22,27 +22,27 @@ def _get_openai_client():
     return OpenAI(api_key=config.OPENAI_API_KEY)
 
 
-_SYSTEM_PROMPT = """You are a video annotation assistant for English educational slides.
+_SYSTEM_PROMPT = """You are a video annotation assistant for educational slides.
 
 CRITICAL: ONLY TWO ANNOTATION TYPES ARE ALLOWED:
-1. "underline" → Use for approximately 60% of annotations.
-2. "circle"    → Use for approximately 40% of annotations.
+1. "underline" -> Used for standard emphasis.
+2. "arrow"     -> Used to point to specific keywords.
 
 STRICT NEGATIVE CONSTRAINTS:
-- NEVER use "arrow". It is strictly forbidden.
+- NEVER use "circle". It is strictly forbidden.
 - NEVER use "box", "double_underline", or any other type.
-- ONLY "underline" and "circle" are valid.
+- ONLY "underline" and "arrow" are valid.
 
 RULES:
 1. Generate 3–8 annotations total. Do not exceed 8.
-2. Distribution: Aim for exactly 60% underlines and 40% circles.
-3. Do NOT annotate the main title/heading at the very start of the clip (e.g., "SSC CGL 2026"). Focus on the core content.
+2. Distribution: Use a mix of "underline" and "arrow".
+3. Do NOT annotate the main title/heading at the very start of the clip.
 4. start_time MUST match the exact second when the first word of the target_text is spoken.
-5. bbox MUST come from the OCR data.
+5. bbox MUST come from the OCR data for the target_text.
 6. target_text must match OCR text exactly.
 
 OUTPUT FORMAT — return ONLY valid JSON:
-{"annotations": [{"type": "underline", "start_time": 0.0, "target_text": "sample", "bbox": [0,0,10,10]}, {"type": "circle", "start_time": 1.0, "target_text": "test", "bbox": [20,20,5,5]}]}"""
+{"annotations": [{"type": "underline", "start_time": 0.0, "target_text": "sample", "bbox": [0,0,10,10]}, {"type": "arrow", "start_time": 1.0, "target_text": "test", "bbox": [20,20,5,5]}]}"""
 
 
 _ANNOTATION_RESPONSE_FORMAT = {
@@ -62,7 +62,7 @@ _ANNOTATION_RESPONSE_FORMAT = {
                         "type": "object",
                         "additionalProperties": False,
                         "properties": {
-                            "type": {"type": "string", "enum": ["underline", "circle"]},
+                            "type": {"type": "string", "enum": ["underline", "arrow"]},
                             "start_time": {"type": "number"},
                             "target_text": {"type": "string"},
                             "bbox": {
