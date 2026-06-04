@@ -292,6 +292,26 @@ def render_clip(
     start_times = [adjusted_starts[i] for i in range(len(annotations))]
     draw_durations = [max(0.5, float(ann.get("draw_duration") or DRAW_SECONDS.get(ann["type"], 1.5))) for ann in annotations]
 
+    # Pre-generate all points for all annotations (FIXES GLITTER/SHINING)
+    all_ann_pts = []
+    for ann in annotations:
+        ann_type = ann["type"]
+        x, y, w, h = _scale_bbox(ann["bbox"], ocr_src_w, ocr_src_h)
+        
+        if ann_type == "underline":
+            all_ann_pts.append(_underline_pts(x, y + h, w))
+        elif ann_type == "double_underline":
+            all_ann_pts.append(_double_underline_pts(x, y + h, w))
+        elif ann_type == "circle":
+            all_ann_pts.append(_circle_pts(x + w / 2, y + h / 2, w / 2 + 14, h / 2 + 12))
+        elif ann_type == "box":
+            all_ann_pts.append(_box_pts(x - 6, y - 4, w + 12, h + 8))
+        elif ann_type == "pen":
+            all_ann_pts.append(_pen_pts(x, y + h // 2, w))
+        elif ann_type == "arrow":
+            all_ann_pts.append(_arrow_pts(x, y + h // 2))
+        else:
+            all_ann_pts.append(None)
 
     # Start ffmpeg
     ff = subprocess.Popen(
@@ -309,7 +329,7 @@ def render_clip(
 
     # Frame cache: quantized progress tuple → rendered bytes
     frame_cache: dict[tuple, bytes] = {}
-    MAX_CACHE = 256
+    MAX_CACHE = 512 # Increased cache size slightly
 
     try:
         for f_idx in range(total_frames):
