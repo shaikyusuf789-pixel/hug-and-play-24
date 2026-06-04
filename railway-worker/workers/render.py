@@ -309,5 +309,5 @@ def render_clip(
             + stderr_data[-2000:].decode(errors="replace")
         )
 
-    print(f"[RENDER] done → {output_path}")
+    print(f"[RENDER] done → {output_path}", flush=True)
     return audio_dur
