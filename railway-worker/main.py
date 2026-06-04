@@ -287,7 +287,8 @@ def _render_job(script_id: str, chunk_id: str, chunk_number: int, slide_source: 
         tmp_audio = download_to_tmp(AUDIO_BUCKET, audio_path(script_id, chunk_number), ".mp3")
 
         tmp_out = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4", dir="/tmp/render").name
-        annotations = json.loads(ai_row["annotations"])
+        raw = ai_row["annotations"]
+        annotations = raw if isinstance(raw, list) else json.loads(raw)
 
         duration = render_clip(tmp_slide, tmp_audio, annotations, tmp_out)
 
