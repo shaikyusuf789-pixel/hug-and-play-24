@@ -30,9 +30,15 @@ def push_to_github():
     
     # 2. Create blobs and build tree
     files_to_push = []
+    excluded_dirs = {"__pycache__", ".git", "venv", "node_modules"}
+    excluded_files = {".env"}
+    
     for root, dirs, files in os.walk("railway-worker"):
+        # Remove excluded dirs from walk
+        dirs[:] = [d for d in dirs if d not in excluded_dirs]
+        
         for file in files:
-            if file.endswith(".py") and "__pycache__" not in root:
+            if file not in excluded_files:
                 files_to_push.append(os.path.join(root, file))
     
     tree_items = []
