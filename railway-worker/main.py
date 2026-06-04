@@ -302,7 +302,7 @@ def _render_job(script_id: str, chunk_id: str, chunk_number: int, slide_source: 
             duration=duration,
             error_msg=None,
         )
-        print(f"[RENDER] chunk {chunk_number} done — {duration:.2f}s → {file_url}")
+        print(f"[RENDER] chunk {chunk_number} done — {duration:.2f}s → {file_url}", flush=True)
 
     except Exception as e:
         print(f"[RENDER] chunk {chunk_number} ERROR: {e}")
