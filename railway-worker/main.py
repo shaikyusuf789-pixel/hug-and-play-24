@@ -305,7 +305,7 @@ def _render_job(script_id: str, chunk_id: str, chunk_number: int, slide_source: 
         print(f"[RENDER] chunk {chunk_number} done — {duration:.2f}s → {file_url}", flush=True)
 
     except Exception as e:
-        print(f"[RENDER] chunk {chunk_number} ERROR: {e}")
+        print(f"[RENDER] chunk {chunk_number} ERROR: {e}", flush=True)
         _update_clip_status(script_id, chunk_id, slide_source,
                             status="error", error_msg=str(e)[:500])
     finally:
