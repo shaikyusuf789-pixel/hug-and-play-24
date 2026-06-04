@@ -441,16 +441,25 @@ function AnnotationsPage() {
         </div>
         <div className="flex gap-2">
           {mergeState.status === "done" && mergeState.url && (
-            <a href={mergeState.url} target="_blank" rel="noreferrer">
-              <Button className="bg-white text-indigo-700 hover:bg-white/90 rounded-xl gap-2 h-10"><Download className="h-4 w-4" /> Download MP4</Button>
-            </a>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => window.location.href = `/_dashboard/master-video?script_id=${scriptId}`}
+                className="bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl gap-2 h-10 shadow-lg shadow-indigo-500/20"
+              >
+                <Film className="h-4 w-4" /> Open in Editor
+              </Button>
+              <a href={mergeState.url} target="_blank" rel="noreferrer">
+                <Button className="bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 rounded-xl gap-2 h-10 shadow-sm"><Download className="h-4 w-4" /> Download</Button>
+              </a>
+            </div>
           )}
-          <Button onClick={mergeMega} disabled={!!bulkBusy || !scriptId} className="bg-white/15 hover:bg-white/25 backdrop-blur rounded-xl gap-2 h-10 border border-white/30">
+          <Button onClick={mergeMega} disabled={!!bulkBusy || !scriptId} className={cn("rounded-xl gap-2 h-10 border transition-all", mergeState.status === "done" ? "bg-white/10 text-slate-600 border-slate-200" : "bg-indigo-600 text-white hover:bg-indigo-700 border-transparent shadow-lg shadow-indigo-500/20")}>
             {bulkBusy === "Merge" || mergeState.status === "running" || mergeState.status === "queued"
               ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            Merge Mega Video
+            {mergeState.status === "done" ? "Re-Merge Video" : "Merge Mega Video"}
           </Button>
         </div>
+
       </div>
 
       {/* Chunks */}

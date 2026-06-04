@@ -1,13 +1,20 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Download, FileVideo, RefreshCw, Film, Calendar } from "lucide-react";
+
+import { Download, FileVideo, RefreshCw, Film, Calendar, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { MasterVideoEditor } from "@/components/MasterVideoEditor";
+
 
 export const Route = createFileRoute("/_dashboard/master-video")({
   component: MasterVideoPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    script_id: search.script_id as string | undefined,
+  }),
 });
+
 
 type MegaRow = {
   script_id: string;
@@ -21,9 +28,13 @@ type MegaRow = {
 };
 
 function MasterVideoPage() {
+  const { script_id } = useSearch({ from: "/_dashboard/master-video" });
   const [rows, setRows] = useState<MegaRow[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [editingRow, setEditingRow] = useState<MegaRow | null>(null);
+
 
   const load = async () => {
     setLoading(true);
@@ -68,8 +79,6 @@ function MasterVideoPage() {
       setRows(built);
     } catch (e: any) {
       toast.error(`Failed to load mega videos: ${e.message}`);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -78,6 +87,14 @@ function MasterVideoPage() {
     const i = setInterval(load, 8000);
     return () => clearInterval(i);
   }, []);
+
+  useEffect(() => {
+    if (script_id && rows.length > 0 && !editingRow) {
+      const target = rows.find(r => r.script_id === script_id && r.status === "done");
+      if (target) setEditingRow(target);
+    }
+  }, [script_id, rows, editingRow]);
+
 
   const downloadOriginal = async (row: MegaRow) => {
     if (!row.url) return;
@@ -109,7 +126,22 @@ function MasterVideoPage() {
   const done = rows.filter((r) => r.status === "done" && r.url);
   const pending = rows.filter((r) => r.status !== "done" || !r.url);
 
+  if (editingRow) {
+    return (
+      <MasterVideoEditor
+        videoUrl={editingRow.url!}
+        title={editingRow.title}
+        onBack={() => setEditingRow(null)}
+        onSave={(data) => {
+          console.log("Saving edit state:", data);
+          setEditingRow(null);
+        }}
+      />
+    );
+  }
+
   return (
+
     <div className="p-8 max-w-6xl mx-auto space-y-8">
       <div className="flex justify-between items-end">
         <div>
@@ -199,6 +231,14 @@ function MasterVideoPage() {
                       <Download className="h-4 w-4" />
                       {downloading === row.script_id ? "Preparing…" : "Download MP4"}
                     </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setEditingRow(row)}
+                      className="border-slate-700 text-slate-200 gap-2 w-full h-11 rounded-2xl"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                      Edit
+                    </Button>
                     <a href={row.url!} target="_blank" rel="noreferrer" className="flex-1">
                       <Button
                         variant="outline"
@@ -207,6 +247,7 @@ function MasterVideoPage() {
                         Open
                       </Button>
                     </a>
+
                   </div>
                   <p className="text-[10px] text-slate-500 leading-relaxed">
                     Original render: 1920×1080 · H.264 · AAC — downloaded as-is, no
