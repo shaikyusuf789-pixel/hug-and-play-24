@@ -188,7 +188,7 @@ def render_clip(
 ) -> float:
     audio_dur = get_audio_duration(audio_path)
     total_frames = math.ceil(audio_dur * FPS)
-    print(f"[RENDER] {total_frames} frames @ {FPS}fps, dur={audio_dur:.2f}s, anns={len(annotations)}")
+    print(f"[RENDER] {total_frames} frames @ {FPS}fps, dur={audio_dur:.2f}s, anns={len(annotations)}", flush=True)
 
     # Load + letterbox slide once
     with Image.open(slide_path) as img:
