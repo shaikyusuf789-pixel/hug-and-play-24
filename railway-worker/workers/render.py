@@ -44,14 +44,25 @@ DRAW_SECONDS = {
 
 import random
 
-def _add_human_jitter(pts: list[tuple[int, int]], intensity: float = 1.5) -> list[tuple[int, int]]:
-    """Adds small random offsets to mimic shaky human hand."""
-    if not pts: return pts
-    return [
-        (round(x + random.uniform(-intensity, intensity)), 
-         round(y + random.uniform(-intensity, intensity)))
-        for x, y in pts
-    ]
+def _add_human_jitter(pts: list[tuple[int, int]], intensity: float = 1.0) -> list[tuple[int, int]]:
+    """Adds a coherent 'zigzag' wobble to mimic a human hand instead of random jitter."""
+    if not pts or len(pts) < 2: return pts
+    
+    # We use a simple coherent noise approach: a few sine waves with different frequencies
+    # but we'll use a local random for the 'seed' of this specific stroke
+    seed = random.uniform(0, 1000)
+    
+    new_pts = []
+    for i, (x, y) in enumerate(pts):
+        # Create a more organic "shaky hand" effect using overlapping sines
+        # This creates a "zigzag" that moves with the line rather than jumping randomly per point
+        off_x = (math.sin(i * 0.3 + seed) * 1.2 + 
+                 math.sin(i * 0.15 + seed * 1.2) * 0.8) * intensity
+        off_y = (math.cos(i * 0.25 + seed * 0.8) * 1.1 + 
+                 math.cos(i * 0.1 + seed * 1.5) * 0.7) * intensity
+        
+        new_pts.append((round(x + off_x), round(y + off_y)))
+    return new_pts
 
 def _get_image_brightness(img: Image.Image) -> str:
     """Returns 'light' or 'dark' based on perceived brightness."""
