@@ -1,5 +1,5 @@
-# Updated: 2026-06-03 21:48 - Fix "Too many open files" in render
-# Railway redeploy trigger: 2026-06-03 21:48 UTC
+# Updated: 2026-06-04 - render.py rewritten with frame cache + leak fixes
+# Railway redeploy trigger: 2026-06-04
 """
 main.py — FastAPI application for sky-annotations-worker.
 
