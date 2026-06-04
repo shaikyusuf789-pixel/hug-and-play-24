@@ -171,7 +171,7 @@ def _arrow_pts(x, y_mid):
 
 # ── SVG frame builder ────────────────────────────────────────────────────────
 
-def _build_frame_svg(annotations, progress_map, src_w, src_h, default_color="#ffffff") -> str:
+def _build_frame_svg(annotations, all_ann_pts, progress_map) -> str:
     paths_svg = []
     for idx, ann in enumerate(annotations):
         prog = progress_map.get(idx)
@@ -183,7 +183,10 @@ def _build_frame_svg(annotations, progress_map, src_w, src_h, default_color="#ff
 
         # Reduced stroke width to 70% of previous (8->5.6, 6->4.2)
         sw = "5.6" if ann_type in ("circle", "box") else "4.2"
-        x, y, w, h = _scale_bbox(ann["bbox"], src_w, src_h)
+        
+        pts_data = all_ann_pts[idx]
+        if not pts_data:
+            continue
 
         def add(pts, stroke_w=sw):
             n = max(2, round(len(pts) * prog))
@@ -193,19 +196,14 @@ def _build_frame_svg(annotations, progress_map, src_w, src_h, default_color="#ff
                 f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
             )
 
-        if ann_type == "underline":
-            add(_underline_pts(x, y + h, w))
-        elif ann_type == "double_underline":
-            for line in _double_underline_pts(x, y + h, w):
-                add(line, "6")
-        elif ann_type == "circle":
-            add(_circle_pts(x + w / 2, y + h / 2, w / 2 + 14, h / 2 + 12))
-        elif ann_type == "box":
-            add(_box_pts(x - 6, y - 4, w + 12, h + 8))
+        if ann_type == "double_underline":
+            # pts_data is a list of two lines
+            for line in pts_data:
+                add(line, "4.2")
         elif ann_type == "pen":
-            add(_pen_pts(x, y + h // 2, w), "5")
-        elif ann_type == "arrow":
-            add(_arrow_pts(x, y + h // 2))
+            add(pts_data, "3.5") # 5 * 0.7 = 3.5
+        else:
+            add(pts_data)
 
     if not paths_svg:
         return ""
