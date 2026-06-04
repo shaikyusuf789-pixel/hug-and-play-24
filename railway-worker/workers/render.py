@@ -142,13 +142,10 @@ def _circle_pts(cx, cy, rx, ry):
 
 
 def _pen_pts(x, y_mid, w):
-    """White pen stroke through the vertical centre of the bbox — slight wobble."""
+    """White pen stroke through the vertical centre of the bbox — slight zigzag."""
     steps = max(20, w // 3)
-    wobble = [0, 1, 2, 1, 0, -1, -2, -1]
-    return [
-        (x + w * i // steps, y_mid + wobble[i % len(wobble)])
-        for i in range(steps + 1)
-    ]
+    pts = [(x + w * i // steps, y_mid) for i in range(steps + 1)]
+    return _add_human_jitter(pts, intensity=1.5)
 
 def _box_pts(x, y, w, h):
     n = 20
