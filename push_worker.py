@@ -70,7 +70,7 @@ def push_to_github():
     
     # 4. Create commit
     res = requests.post(f"{base_url}/git/commits", headers=headers, json={
-        "message": "Fix: Human-like annotations, dynamic pen color, and one-hand sequential enforcer",
+        "message": "Fix: Merge Mega Video endpoint and code cleanup",
         "tree": new_tree_sha,
         "parents": [latest_commit_sha]
     })
