@@ -29,10 +29,11 @@ def push_to_github():
     base_tree_sha = res.json()["commit"]["tree"]["sha"]
     
     # 2. Create blobs and build tree
-    files_to_push = [
-        "railway-worker/main.py",
-        "railway-worker/workers/render.py"
-    ]
+    files_to_push = []
+    for root, dirs, files in os.walk("railway-worker"):
+        for file in files:
+            if file.endswith(".py") and "__pycache__" not in root:
+                files_to_push.append(os.path.join(root, file))
     
     tree_items = []
     for f in files_to_push:
