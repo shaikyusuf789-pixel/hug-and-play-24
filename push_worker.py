@@ -63,7 +63,7 @@ def push_to_github():
     
     # 4. Create commit
     res = requests.post(f"{base_url}/git/commits", headers=headers, json={
-        "message": "Fix 'Too many open files' and update render logic",
+        "message": "Fix: Human-like annotations, dynamic pen color, and one-hand sequential enforcer",
         "tree": new_tree_sha,
         "parents": [latest_commit_sha]
     })
