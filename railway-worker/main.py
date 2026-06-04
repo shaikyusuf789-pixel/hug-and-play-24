@@ -36,6 +36,8 @@ from lib.storage import (
 from workers.ocr import run_ocr
 from workers.timestamps import get_timestamps
 from workers.render import render_clip, get_audio_duration
+from workers.merger import merge_script_clips
+
 
 import httpx
 
@@ -88,6 +90,11 @@ class RenderReq(BaseModel):
 class RenderAllReq(BaseModel):
     script_id:    str
     slide_source: str = "gamma"
+
+class MergeReq(BaseModel):
+    script_id:    str
+    slide_source: str = "gamma"
+
 
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
@@ -416,3 +423,34 @@ async def stream_clip(filename: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MERGE ROUTES
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _merge_job(script_id: str, slide_source: str) -> None:
+    try:
+        merge_script_clips(script_id, slide_source)
+    except Exception as e:
+        print(f"[MERGE/job] Background task failed: {e}")
+
+@app.post("/merge/run")
+def merge_run(req: MergeReq, bg: BackgroundTasks):
+    try:
+        # Check if we have any clips first
+        res = (get_supabase().table("video_clips").select("id")
+               .eq("script_id", req.script_id)
+               .eq("slide_source", req.slide_source)
+               .eq("status", "done")
+               .limit(1).execute())
+        if not res.data:
+            raise HTTPException(status_code=400, detail="No rendered clips found. Render chunks first.")
+
+        bg.add_task(_merge_job, req.script_id, req.slide_source)
+        return {"ok": True, "status": "queued"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
