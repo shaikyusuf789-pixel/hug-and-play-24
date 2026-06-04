@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+
 import { Download, FileVideo, RefreshCw, Film, Calendar, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +10,11 @@ import { MasterVideoEditor } from "@/components/MasterVideoEditor";
 
 export const Route = createFileRoute("/_dashboard/master-video")({
   component: MasterVideoPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    script_id: search.script_id as string | undefined,
+  }),
 });
+
 
 type MegaRow = {
   script_id: string;
@@ -23,8 +28,10 @@ type MegaRow = {
 };
 
 function MasterVideoPage() {
+  const { script_id } = useSearch({ from: "/_dashboard/master-video" });
   const [rows, setRows] = useState<MegaRow[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [downloading, setDownloading] = useState<string | null>(null);
   const [editingRow, setEditingRow] = useState<MegaRow | null>(null);
 
@@ -72,8 +79,6 @@ function MasterVideoPage() {
       setRows(built);
     } catch (e: any) {
       toast.error(`Failed to load mega videos: ${e.message}`);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -82,6 +87,14 @@ function MasterVideoPage() {
     const i = setInterval(load, 8000);
     return () => clearInterval(i);
   }, []);
+
+  useEffect(() => {
+    if (script_id && rows.length > 0 && !editingRow) {
+      const target = rows.find(r => r.script_id === script_id && r.status === "done");
+      if (target) setEditingRow(target);
+    }
+  }, [script_id, rows, editingRow]);
+
 
   const downloadOriginal = async (row: MegaRow) => {
     if (!row.url) return;
