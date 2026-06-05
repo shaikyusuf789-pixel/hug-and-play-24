@@ -370,7 +370,7 @@ serve(async (req) => {
           system: systemPrompt,
           user: userPrompt,
           temperature: 0.2,
-          maxTokens: Math.min(16000, Math.max(2048, targetWords * 6)),
+          maxTokens: Math.min(32000, Math.max(4096, targetWords * 8)),
         })
       : await geminiStreamResponse(googleApiKey, {
           model,
