@@ -5,12 +5,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Check,
+  CheckCircle2,
   Star,
   Loader2,
   Inbox,
   RefreshCw,
   Sparkles,
   LayoutGrid,
+
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -32,9 +34,11 @@ const TABS: {
   actions: ActionKey[];
 }[] = [
   { key: "Pending", label: "Pending", icon: Inbox, actions: ["approve", "reject"] },
-  { key: "Approved", label: "Approved", icon: Check, actions: ["priority", "reject", "generate"] },
-  { key: "Priority", label: "Priority", icon: Star, actions: ["reject", "generate"] },
+  { key: "Approved", label: "Approved", icon: Check, actions: ["priority", "reject", "generate", "done"] },
+  { key: "Priority", label: "Priority", icon: Star, actions: ["reject", "generate", "done"] },
+  { key: "Done", label: "Done", icon: CheckCircle2, actions: ["priority", "reject"] },
 ];
+
 
 const PAGE_SIZE = 12;
 

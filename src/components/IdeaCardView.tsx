@@ -253,9 +253,11 @@ function IdeaCardViewBase({ idea, actions, onAction, pending }: Props) {
               "grid gap-2 md:gap-3 pt-1 md:pt-2",
               actions.length === 1 && "grid-cols-1",
               actions.length === 2 && "grid-cols-2",
-              actions.length === 3 && "grid-cols-3"
+              actions.length === 3 && "grid-cols-3",
+              actions.length >= 4 && "grid-cols-2 sm:grid-cols-4"
             )}
           >
+
             {actions.map((a) => (
               <ActionButton
                 key={a}
