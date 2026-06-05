@@ -13,7 +13,10 @@ import {
   ChevronUp,
   History,
   CheckCircle2,
-  StickyNote
+  StickyNote,
+  Pencil,
+  X,
+  Save
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -27,6 +30,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useServerFn } from "@tanstack/react-start";
+import { updateChunk } from "@/lib/engine.functions";
 
 export const Route = createFileRoute("/_dashboard/slides")({
   component: SlideMaker,
@@ -41,6 +46,7 @@ const GAMMA_THEMES = [
 ];
 
 function SlideMaker() {
+  const updateChunkFn = useServerFn(updateChunk);
   const [scripts, setScripts] = useState<any[]>([]);
   const [selectedScriptId, setSelectedScriptId] = useState<string>("");
   const [chunks, setChunks] = useState<any[]>([]);
@@ -167,6 +173,16 @@ function SlideMaker() {
       toast.success("Prompt saved");
       // Update local state to ensure it's synced
       setChunks(prev => prev.map(c => c.id === chunkId ? { ...c, slide_prompt: prompt } : c));
+    }
+  };
+
+  const updateChunkContent = async (chunkId: string, content: string) => {
+    try {
+      await updateChunkFn({ data: { id: chunkId, content } });
+      setChunks(prev => prev.map(c => c.id === chunkId ? { ...c, content, word_count: content.trim().split(/\s+/).length } : c));
+      toast.success("Chunk content updated");
+    } catch (e: any) {
+      toast.error("Failed to update chunk: " + e.message);
     }
   };
 
@@ -343,6 +359,7 @@ function SlideMaker() {
               generateSlidePrompt={generateSlidePrompt}
               generateGammaSlide={generateGammaSlide}
               updatePrompt={updatePrompt}
+              updateChunkContent={updateChunkContent}
             />
           ))
         )}
@@ -357,22 +374,42 @@ function SlideChunkCard({
   processingId, 
   generateSlidePrompt, 
   generateGammaSlide, 
-  updatePrompt 
+  updatePrompt,
+  updateChunkContent
 }: { 
   chunk: any, 
   idx: number, 
   processingId: string | null,
   generateSlidePrompt: (id: string) => Promise<void>,
   generateGammaSlide: (id: string) => Promise<void>,
-  updatePrompt: (id: string, prompt: string) => Promise<void>
+  updatePrompt: (id: string, prompt: string) => Promise<void>,
+  updateChunkContent: (id: string, content: string) => Promise<void>
 }) {
   const [showFullContent, setShowFullContent] = useState(false);
   const [showFullPrompt, setShowFullPrompt] = useState(false);
   const [localPrompt, setLocalPrompt] = useState(chunk.slide_prompt || "");
+  const [isEditingChunk, setIsEditingChunk] = useState(false);
+  const [chunkDraft, setChunkDraft] = useState(chunk.content || "");
+  const [isSavingChunk, setIsSavingChunk] = useState(false);
 
   useEffect(() => {
     setLocalPrompt(chunk.slide_prompt || "");
   }, [chunk.slide_prompt]);
+
+  useEffect(() => {
+    setChunkDraft(chunk.content || "");
+  }, [chunk.content]);
+
+  const handleSaveChunk = async () => {
+    if (!chunkDraft.trim()) {
+      toast.error("Chunk content cannot be empty");
+      return;
+    }
+    setIsSavingChunk(true);
+    await updateChunkContent(chunk.id, chunkDraft);
+    setIsSavingChunk(false);
+    setIsEditingChunk(false);
+  };
 
   const isContentLong = chunk.content.length > 120;
   const isPromptLong = (localPrompt || "").length > 80;
@@ -383,19 +420,55 @@ function SlideChunkCard({
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
       {/* Column 1: Chunk Preview */}
       <div className="flex flex-col space-y-2">
-        <div className="flex items-center gap-2">
-          <div className="h-4 w-4 bg-purple-600 text-white flex items-center justify-center rounded text-[9px] font-bold">
-            {idx + 1}
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-4 bg-purple-600 text-white flex items-center justify-center rounded text-[9px] font-bold">
+              {idx + 1}
+            </div>
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Chunk Text</span>
           </div>
-          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Chunk Text</span>
+          <div className="flex gap-1">
+            {isEditingChunk ? (
+              <>
+                <button 
+                  onClick={() => setIsEditingChunk(false)}
+                  className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+                <button 
+                  onClick={handleSaveChunk}
+                  disabled={isSavingChunk}
+                  className="p-1 text-slate-400 hover:text-green-500 transition-colors"
+                >
+                  {isSavingChunk ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                </button>
+              </>
+            ) : (
+              <button 
+                onClick={() => setIsEditingChunk(true)}
+                className="p-1 text-slate-400 hover:text-purple-600 transition-colors"
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+            )}
+          </div>
         </div>
         
         <div className={cn(
           "relative p-2.5 bg-white rounded-lg border border-slate-200 text-[10px] text-slate-600 leading-relaxed overflow-hidden shadow-sm",
           showFullContent ? "max-h-none" : "max-h-[120px]"
         )}>
-          {chunk.content}
-          {!showFullContent && isContentLong && (
+          {isEditingChunk ? (
+            <Textarea
+              value={chunkDraft}
+              onChange={(e) => setChunkDraft(e.target.value)}
+              className="text-[10px] min-h-[80px] p-0 border-none focus-visible:ring-0"
+            />
+          ) : (
+            chunk.content
+          )}
+          {!showFullContent && isContentLong && !isEditingChunk && (
             <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent" />
           )}
         </div>
