@@ -557,7 +557,7 @@ function MegaPage() {
                 <Sparkles className="h-4 w-4" /> All Annotations
               </div>
               <p className="text-[10px] text-slate-500">GPT-4o aligns OCR ↔ timestamps.</p>
-              <Button size="sm" className="w-full bg-violet-600 hover:bg-violet-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={runAllAnnotations}>
+              <Button size="sm" className="w-full bg-violet-600 hover:bg-violet-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={() => guardRun("Annotations", allAiDone, runAllAnnotations)}>
                 {bulkBusy === "All Annotations" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
                 Run
               </Button>
