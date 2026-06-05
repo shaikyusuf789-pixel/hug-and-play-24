@@ -71,7 +71,7 @@ async function alignChunk(chunkId: string): Promise<{ word_count: number; durati
     .from("audio_timestamps")
     .upsert(
       {
-        script_id: chunk.script_id,
+        script_id: chunk.script_id as string,
         chunk_id: chunk.id,
         chunk_number: chunk.chunk_index,
         words: JSON.stringify(words),
