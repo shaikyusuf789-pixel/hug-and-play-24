@@ -551,7 +551,7 @@ function AnnotationsPage() {
                         </>
                       ) : (
                         <ActionBtn 
-                          color="slate" 
+                          color="sky" 
                           busy={false} 
                           onClick={() => {
                             setEditingId(chunk.id);
