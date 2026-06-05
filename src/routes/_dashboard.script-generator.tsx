@@ -75,7 +75,9 @@ function ScriptGenerator() {
   // Fact-checking AI
   type FactFinding = { claim: string; issue: string; correction: string; source: string; severity?: "high" | "medium" | "low" };
   const [isFactChecking, setIsFactChecking] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
   const [factFindings, setFactFindings] = useState<FactFinding[]>([]);
+
   const [factCheckRan, setFactCheckRan] = useState(false);
   const [isApplyingFacts, setIsApplyingFacts] = useState(false);
   const [factCheckedAgainst, setFactCheckedAgainst] = useState<string>("");
@@ -171,7 +173,19 @@ function ScriptGenerator() {
   const approvedIdeas = (priorityIdeasData?.ideas || []) as any[];
   const scriptMap = (priorityIdeasData?.scriptMap || {}) as Record<string, { id: string; updated_at: string }>;
 
+  // Autosave logic
   useEffect(() => {
+    if (!scriptText.trim() || isGenerating || isEnhancing || isSaving) return;
+
+    const timer = setTimeout(() => {
+      handleSaveScript();
+    }, 2000); // 2 seconds debounce
+
+    return () => clearTimeout(timer);
+  }, [scriptText]);
+
+  useEffect(() => {
+
     if (search.ideaId && approvedIdeas.length > 0) {
       handleIdeaSelect(search.ideaId);
     }
