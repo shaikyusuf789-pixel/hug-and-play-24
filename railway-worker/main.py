@@ -244,7 +244,7 @@ def _ts_all_job(script_id: str) -> None:
         try:
             chunk_id     = chunk["id"]
             chunk_number = chunk["chunk_index"]
-            tmp = download_to_tmp(AUDIO_BUCKET, audio_path(script_id, chunk_number), ".mp3")
+            tmp = download_audio_to_tmp(script_id, chunk_number)
             words, _ = get_timestamps(tmp)
             _upsert_timestamps(script_id, chunk_id, chunk_number, words)
             print(f"[TS/run-all] chunk {chunk_number} done — {len(words)} words")
