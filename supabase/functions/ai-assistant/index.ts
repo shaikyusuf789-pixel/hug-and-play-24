@@ -678,6 +678,7 @@ RESPONSE FORMAT (CRITICAL):
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
           model: requestBody.model,
