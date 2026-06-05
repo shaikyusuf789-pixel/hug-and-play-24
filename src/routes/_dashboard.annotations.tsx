@@ -301,6 +301,69 @@ function AnnotationsPage() {
     finally { setTimeout(() => setBulkBusy(null), 1200); }
   };
 
+  // ── MEGA RUN: sequentially runs OCR → Timestamps → Annotations → Render All.
+  // Stops on first failure. Does NOT trigger the Mega Video merge — user does that manually.
+  const megaRun = async () => {
+    if (!scriptId) return toast.error("Pick a script first");
+    setBulkBusy("MEGA RUN");
+    const steps: Array<{ label: string; path: string }> = [
+      { label: "All OCR", path: "/ocr/run-all" },
+      { label: "All Timestamps", path: "/timestamps/run-all" },
+      { label: "All Annotations", path: "/ai/run-all" },
+      { label: "Render All", path: "/clips/render-all" },
+    ];
+    try {
+      for (let i = 0; i < steps.length; i++) {
+        const s = steps[i];
+        toast.info(`MEGA RUN [${i + 1}/${steps.length}]: ${s.label}…`);
+        if (s.path === "/timestamps/run-all") {
+          const res = await runTimestampsAll({ data: { scriptId } });
+          toast.info(`${s.label}: queued ${res.queued} chunks — waiting…`);
+          await pollUntilComplete("audio_timestamps", scriptId, slideSource, s.label);
+        } else if (s.path === "/ocr/run-all") {
+          const res: any = await runOcrAllFn({ data: { scriptId, slideSource } });
+          toast.info(`${s.label}: queued ${res.queued} chunks — waiting…`);
+          await pollUntilComplete("ocr_results", scriptId, slideSource, s.label);
+        } else if (s.path === "/ai/run-all") {
+          await refreshAll(scriptId, slideSource);
+          const pending = chunks.map((c) =>
+            supabase.functions.invoke("process-annotations", {
+              body: { script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index, slide_source: slideSource },
+            }),
+          );
+          await Promise.all(pending);
+          toast.success(`${s.label}: done`);
+        } else if (s.path === "/clips/render-all") {
+          await refreshAll(scriptId, slideSource);
+          const seedRows = chunks
+            .filter((c) => !!aiMap[c.id])
+            .map((c) => ({
+              script_id: scriptId,
+              chunk_id: c.id,
+              chunk_number: c.chunk_index,
+              slide_source: slideSource,
+              status: "rendering",
+              error_msg: null,
+            }));
+          if (seedRows.length) {
+            await supabase.from("video_clips").upsert(seedRows, {
+              onConflict: "script_id,chunk_id,slide_source",
+            });
+          }
+          const res = await workerPost(s.path, { script_id: scriptId, slide_source: slideSource });
+          toast.info(`${s.label}: queued ${res.queued ?? seedRows.length} chunks — rendering…`);
+          await pollUntilComplete("video_clips", scriptId, slideSource, s.label);
+        }
+        await refreshAll(scriptId, slideSource);
+      }
+      toast.success("✨ MEGA RUN complete — review outputs, then click Merge Mega Video.");
+    } catch (e: any) {
+      toast.error(`MEGA RUN failed: ${e.message}`);
+    } finally {
+      setTimeout(() => setBulkBusy(null), 1200);
+    }
+  };
+
   // ── Skip-mode bulk: process only chunks missing the given output.
   // kind picks which map to check and which per-chunk runner to call.
   const skipBulk = async (
