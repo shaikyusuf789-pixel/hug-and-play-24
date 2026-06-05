@@ -43,7 +43,8 @@ async function alignChunk(chunkId: string): Promise<{ word_count: number; durati
   // Call ElevenLabs Forced Alignment
   const form = new FormData();
   form.append("file", audioBlob, `audio_${chunk.chunk_index + 1}.mp3`);
-  form.append("text", chunk.content);
+  form.append("text", chunk.content as string);
+
 
   const elRes = await fetch("https://api.elevenlabs.io/v1/forced-alignment", {
     method: "POST",
