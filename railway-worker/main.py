@@ -89,6 +89,10 @@ class RenderAllReq(BaseModel):
     script_id:    str
     slide_source: str = "gamma"
 
+class MergeRunReq(BaseModel):
+    script_id:    str
+    slide_source: str = "gamma"
+
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
 
