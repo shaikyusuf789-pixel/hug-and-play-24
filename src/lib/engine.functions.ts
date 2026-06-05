@@ -544,6 +544,7 @@ export const saveScript = createServerFn({ method: "POST" })
         .select("id")
         .single();
       if (error) throw error;
+      if (!updated) throw new Error("Script update did not return a row");
       return { ok: true, id: updated.id };
     };
 
@@ -569,9 +570,11 @@ export const saveScript = createServerFn({ method: "POST" })
         .eq("idea_id", data.idea_id)
         .single();
       if (lookupError) throw lookupError;
+      if (!existing) throw new Error("Existing script not found after duplicate save");
       return updateExistingScript(existing.id);
     }
     if (error) throw error;
+    if (!inserted) throw new Error("Script save did not return a row");
     return { ok: true, id: inserted.id };
   });
 
