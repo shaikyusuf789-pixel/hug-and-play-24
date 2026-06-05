@@ -13,7 +13,10 @@ import {
   ChevronUp,
   History,
   CheckCircle2,
-  StickyNote
+  StickyNote,
+  Pencil,
+  X,
+  Save
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -27,6 +30,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useServerFn } from "@tanstack/react-start";
+import { updateChunk } from "@/lib/engine.functions";
 
 export const Route = createFileRoute("/_dashboard/slides")({
   component: SlideMaker,
@@ -41,6 +46,7 @@ const GAMMA_THEMES = [
 ];
 
 function SlideMaker() {
+  const updateChunkFn = useServerFn(updateChunk);
   const [scripts, setScripts] = useState<any[]>([]);
   const [selectedScriptId, setSelectedScriptId] = useState<string>("");
   const [chunks, setChunks] = useState<any[]>([]);
@@ -167,6 +173,16 @@ function SlideMaker() {
       toast.success("Prompt saved");
       // Update local state to ensure it's synced
       setChunks(prev => prev.map(c => c.id === chunkId ? { ...c, slide_prompt: prompt } : c));
+    }
+  };
+
+  const updateChunkContent = async (chunkId: string, content: string) => {
+    try {
+      await updateChunkFn({ data: { id: chunkId, content } });
+      setChunks(prev => prev.map(c => c.id === chunkId ? { ...c, content, word_count: content.trim().split(/\s+/).length } : c));
+      toast.success("Chunk content updated");
+    } catch (e: any) {
+      toast.error("Failed to update chunk: " + e.message);
     }
   };
 
@@ -343,6 +359,7 @@ function SlideMaker() {
               generateSlidePrompt={generateSlidePrompt}
               generateGammaSlide={generateGammaSlide}
               updatePrompt={updatePrompt}
+              updateChunkContent={updateChunkContent}
             />
           ))
         )}
