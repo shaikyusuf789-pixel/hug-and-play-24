@@ -533,7 +533,7 @@ function MegaPage() {
                 <ScanText className="h-4 w-4" /> All OCR
               </div>
               <p className="text-[10px] text-slate-500">Google Vision on {slideSource} slides.</p>
-              <Button size="sm" className="w-full bg-amber-600 hover:bg-amber-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={runAllOcr}>
+              <Button size="sm" className="w-full bg-amber-600 hover:bg-amber-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={() => guardRun("OCR", allOcrDone, runAllOcr)}>
                 {bulkBusy === "All OCR" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
                 Run
               </Button>
