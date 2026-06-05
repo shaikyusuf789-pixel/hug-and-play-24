@@ -270,6 +270,26 @@ function AnnotationsPage() {
         });
         await Promise.all(pending);
         toast.success(`${label}: Processed all chunks via GPT-4o pipeline`);
+      } else if (path === "/clips/render-all") {
+        // Seed every chunk with annotations to status='rendering' so previews flip immediately.
+        const seedRows = chunks
+          .filter((c) => !!aiMap[c.id])
+          .map((c) => ({
+            script_id: scriptId,
+            chunk_id: c.id,
+            chunk_number: c.chunk_index,
+            slide_source: slideSource,
+            status: "rendering",
+            error_msg: null,
+          }));
+        if (seedRows.length) {
+          await supabase.from("video_clips").upsert(seedRows, {
+            onConflict: "script_id,chunk_id,slide_source",
+          });
+        }
+        const res = await workerPost(path, { script_id: scriptId, slide_source: slideSource });
+        toast.info(`${label}: queued ${res.queued ?? seedRows.length} chunks — rendering…`);
+        await pollUntilComplete("video_clips", scriptId, slideSource, label);
       } else {
         const body: any = { script_id: scriptId, slide_source: slideSource };
         const res = await workerPost(path, body);
