@@ -14,7 +14,8 @@ import {
   Search,
   Menu,
   Sparkles,
-  Wand2
+  Wand2,
+  Rocket
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";

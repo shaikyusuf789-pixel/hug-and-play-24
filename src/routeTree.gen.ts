@@ -19,6 +19,7 @@ import { Route as DashboardSlidesRouteImport } from './routes/_dashboard.slides'
 import { Route as DashboardSettingsRouteImport } from './routes/_dashboard.settings'
 import { Route as DashboardScriptGeneratorRouteImport } from './routes/_dashboard.script-generator'
 import { Route as DashboardPipelineRouteImport } from './routes/_dashboard.pipeline'
+import { Route as DashboardMegaRouteImport } from './routes/_dashboard.mega'
 import { Route as DashboardMasterVideoRouteImport } from './routes/_dashboard.master-video'
 import { Route as DashboardIdeasEngineRouteImport } from './routes/_dashboard.ideas-engine'
 import { Route as DashboardIdeaCardsRouteImport } from './routes/_dashboard.idea-cards'
@@ -79,6 +80,11 @@ const DashboardScriptGeneratorRoute =
 const DashboardPipelineRoute = DashboardPipelineRouteImport.update({
   id: '/pipeline',
   path: '/pipeline',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardMegaRoute = DashboardMegaRouteImport.update({
+  id: '/mega',
+  path: '/mega',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardMasterVideoRoute = DashboardMasterVideoRouteImport.update({
@@ -150,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/idea-cards': typeof DashboardIdeaCardsRoute
   '/ideas-engine': typeof DashboardIdeasEngineRoute
   '/master-video': typeof DashboardMasterVideoRoute
+  '/mega': typeof DashboardMegaRoute
   '/pipeline': typeof DashboardPipelineRoute
   '/script-generator': typeof DashboardScriptGeneratorRoute
   '/settings': typeof DashboardSettingsRoute
@@ -172,6 +179,7 @@ export interface FileRoutesByTo {
   '/idea-cards': typeof DashboardIdeaCardsRoute
   '/ideas-engine': typeof DashboardIdeasEngineRoute
   '/master-video': typeof DashboardMasterVideoRoute
+  '/mega': typeof DashboardMegaRoute
   '/pipeline': typeof DashboardPipelineRoute
   '/script-generator': typeof DashboardScriptGeneratorRoute
   '/settings': typeof DashboardSettingsRoute
@@ -196,6 +204,7 @@ export interface FileRoutesById {
   '/_dashboard/idea-cards': typeof DashboardIdeaCardsRoute
   '/_dashboard/ideas-engine': typeof DashboardIdeasEngineRoute
   '/_dashboard/master-video': typeof DashboardMasterVideoRoute
+  '/_dashboard/mega': typeof DashboardMegaRoute
   '/_dashboard/pipeline': typeof DashboardPipelineRoute
   '/_dashboard/script-generator': typeof DashboardScriptGeneratorRoute
   '/_dashboard/settings': typeof DashboardSettingsRoute
@@ -220,6 +229,7 @@ export interface FileRouteTypes {
     | '/idea-cards'
     | '/ideas-engine'
     | '/master-video'
+    | '/mega'
     | '/pipeline'
     | '/script-generator'
     | '/settings'
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/idea-cards'
     | '/ideas-engine'
     | '/master-video'
+    | '/mega'
     | '/pipeline'
     | '/script-generator'
     | '/settings'
@@ -265,6 +276,7 @@ export interface FileRouteTypes {
     | '/_dashboard/idea-cards'
     | '/_dashboard/ideas-engine'
     | '/_dashboard/master-video'
+    | '/_dashboard/mega'
     | '/_dashboard/pipeline'
     | '/_dashboard/script-generator'
     | '/_dashboard/settings'
@@ -352,6 +364,13 @@ declare module '@tanstack/react-router' {
       path: '/pipeline'
       fullPath: '/pipeline'
       preLoaderRoute: typeof DashboardPipelineRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/mega': {
+      id: '/_dashboard/mega'
+      path: '/mega'
+      fullPath: '/mega'
+      preLoaderRoute: typeof DashboardMegaRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/_dashboard/master-video': {
@@ -445,6 +464,7 @@ interface DashboardRouteChildren {
   DashboardIdeaCardsRoute: typeof DashboardIdeaCardsRoute
   DashboardIdeasEngineRoute: typeof DashboardIdeasEngineRoute
   DashboardMasterVideoRoute: typeof DashboardMasterVideoRoute
+  DashboardMegaRoute: typeof DashboardMegaRoute
   DashboardPipelineRoute: typeof DashboardPipelineRoute
   DashboardScriptGeneratorRoute: typeof DashboardScriptGeneratorRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
@@ -466,6 +486,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardIdeaCardsRoute: DashboardIdeaCardsRoute,
   DashboardIdeasEngineRoute: DashboardIdeasEngineRoute,
   DashboardMasterVideoRoute: DashboardMasterVideoRoute,
+  DashboardMegaRoute: DashboardMegaRoute,
   DashboardPipelineRoute: DashboardPipelineRoute,
   DashboardScriptGeneratorRoute: DashboardScriptGeneratorRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
