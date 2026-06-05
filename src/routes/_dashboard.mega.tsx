@@ -545,7 +545,7 @@ function MegaPage() {
                 <Clock className="h-4 w-4" /> All Timestamps
               </div>
               <p className="text-[10px] text-slate-500">Whisper word-level on audio.</p>
-              <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={runAllTimestamps}>
+              <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={() => guardRun("Timestamps", allTsDone, runAllTimestamps)}>
                 {bulkBusy === "All Timestamps" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
                 Run
               </Button>
