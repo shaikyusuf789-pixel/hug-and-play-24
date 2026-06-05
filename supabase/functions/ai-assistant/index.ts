@@ -692,7 +692,16 @@ RESPONSE FORMAT (CRITICAL):
       });
 
       const nextData = await nextResponse.json();
-      if (nextData.error) throw new Error(nextData.error.message);
+      console.log("Next response from Google:", JSON.stringify(nextData));
+      
+      if (nextData.error) {
+        throw new Error(`Google API Error (tool): ${nextData.error.message || JSON.stringify(nextData.error)}`);
+      }
+      
+      if (!nextData.choices || nextData.choices.length === 0) {
+        throw new Error(`Google API (tool) returned no choices. Full response: ${JSON.stringify(nextData)}`);
+      }
+      
       message = nextData.choices[0].message;
     }
 
