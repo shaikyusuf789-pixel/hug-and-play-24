@@ -216,11 +216,10 @@ function MegaPage() {
     finally { setBulkBusy(null); }
   };
 
-  const generateAllSlides = async () => {
+  const generateAllSlides = async (force = false) => {
     if (!scriptId || chunks.length === 0) return;
     setBulkBusy("All Slides");
     try {
-      // 1) ensure outlines exist (prompt) sequentially via edge fn
       for (const c of chunks) {
         if (!c.slide_prompt) {
           await supabase.functions.invoke("generate-slides", {
@@ -229,12 +228,14 @@ function MegaPage() {
         }
       }
       await refreshAll(scriptId, slideSource);
-      // 2) queue all slides
       const fresh = (await supabase.from("script_chunks").select("*").eq("script_id", scriptId).order("chunk_index")).data || [];
-      const eligibleIds = fresh.filter((c: any) => c.slide_prompt && c.slide_job_status !== "processing").map((c: any) => c.id);
+      const eligibleIds = fresh
+        .filter((c: any) => c.slide_prompt && c.slide_job_status !== "processing" && (force || !c.slide_url))
+        .map((c: any) => c.id);
       if (eligibleIds.length === 0) { toast.info("Nothing to queue for slides"); return; }
       const { error } = await supabase.from("script_chunks").update({
         slide_job_status: "queued", slide_job_theme: gammaTheme, slide_job_error: null,
+        ...(force ? { slide_url: null } : {}),
       }).in("id", eligibleIds);
       if (error) throw error;
       supabase.functions.invoke("process-queue", { body: { scriptId } }).catch(() => {});
@@ -244,6 +245,24 @@ function MegaPage() {
     } catch (e: any) { toast.error("Slides queue failed: " + e.message); }
     finally { setBulkBusy(null); }
   };
+
+  // Show confirm dialog if step already complete; otherwise run directly.
+  const guardRun = (label: string, isDone: boolean, action: () => void) => {
+    if (isDone) {
+      setConfirmState({
+        title: `${label} already done`,
+        message: `All chunks already have ${label.toLowerCase()} generated for this script. Re-run anyway? This will overwrite existing data.`,
+        onConfirm: () => { setConfirmState(null); action(); },
+      });
+    } else action();
+  };
+
+  const allAudioDone = chunks.length > 0 && chunks.every(c => !!c.audio_url);
+  const allSlidesDone = chunks.length > 0 && chunks.every(c => !!c.slide_url);
+  const allOcrDone = chunks.length > 0 && chunks.every(c => !!ocrMap[c.id]);
+  const allTsDone = chunks.length > 0 && chunks.every(c => !!tsMap[c.id]);
+  const allAiDone = chunks.length > 0 && chunks.every(c => !!aiMap[c.id]);
+  const allRenderDone = chunks.length > 0 && chunks.every(c => clipMap[c.id]?.status === "done");
 
   // poll until every chunk has audio_url / slide_url
   const pollUntilField = async (kind: "audio" | "slide", label: string) => {
