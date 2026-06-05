@@ -536,9 +536,46 @@ export const saveScript = createServerFn({ method: "POST" })
     model: z.string().optional(),
   }))
   .handler(async ({ data }) => {
-    const { error } = await supabaseAdmin.from("scripts").insert(data);
+    const updateExistingScript = async (id: string) => {
+      const { data: updated, error } = await supabaseAdmin
+        .from("scripts")
+        .update({ ...data, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .select("id")
+        .single();
+      if (error) throw error;
+      if (!updated) throw new Error("Script update did not return a row");
+      return { ok: true, id: updated.id };
+    };
+
+    if (data.idea_id) {
+      const { data: existing, error: lookupError } = await supabaseAdmin
+        .from("scripts")
+        .select("id")
+        .eq("idea_id", data.idea_id)
+        .maybeSingle();
+
+      if (lookupError) throw lookupError;
+
+      if (existing?.id) {
+        return updateExistingScript(existing.id);
+      }
+    }
+
+    const { data: inserted, error } = await supabaseAdmin.from("scripts").insert(data).select("id").single();
+    if (error && data.idea_id && (error as any).code === "23505") {
+      const { data: existing, error: lookupError } = await supabaseAdmin
+        .from("scripts")
+        .select("id")
+        .eq("idea_id", data.idea_id)
+        .single();
+      if (lookupError) throw lookupError;
+      if (!existing) throw new Error("Existing script not found after duplicate save");
+      return updateExistingScript(existing.id);
+    }
     if (error) throw error;
-    return { ok: true };
+    if (!inserted) throw new Error("Script save did not return a row");
+    return { ok: true, id: inserted.id };
   });
 
 export const getRecentScripts = createServerFn({ method: "GET" })
