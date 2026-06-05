@@ -528,6 +528,18 @@ function AnnotationsPage() {
         ))}
         <div className="w-px h-8 bg-slate-200 mx-2" />
 
+        {/* MEGA RUN — OCR → Timestamps → Annotations → Render (sequential) */}
+        <Button
+          disabled={!!bulkBusy || !scriptId}
+          onClick={megaRun}
+          className="bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 hover:opacity-90 text-white rounded-xl gap-2 h-10 px-4 shadow-lg shadow-purple-500/30 font-bold"
+          title="Run OCR → Timestamps → Annotations → Render All in sequence. Does NOT merge mega video."
+        >
+          {bulkBusy === "MEGA RUN" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />} MEGA RUN
+        </Button>
+        <div className="w-px h-8 bg-slate-200 mx-2" />
+
+
         {/* OCR */}
         <div className="flex items-center gap-1">
           <Button disabled={!!bulkBusy || !scriptId} onClick={() => bulk("All OCR", "/ocr/run-all")} className="bg-sky-500 hover:bg-sky-600 rounded-xl gap-2 h-10" title="Re-runs OCR on every chunk (overwrites existing).">
