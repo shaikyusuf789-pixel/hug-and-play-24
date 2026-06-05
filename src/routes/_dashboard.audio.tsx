@@ -196,6 +196,7 @@ function AudioEngine() {
     } finally {
       setSavingId(null);
     }
+  };
 
   const generateAllAudio = async () => {
     if (!selectedScriptId || chunks.length === 0) return;
