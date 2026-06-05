@@ -206,7 +206,7 @@ function AnnotationsPage() {
   // Poll DB until all chunks for `scriptId` have a row in `table`
   // (or until timeout / scriptId/source changes).
   const pollUntilComplete = async (
-    table: "audio_timestamps" | "ocr_results",
+    table: "audio_timestamps" | "ocr_results" | "video_clips",
     sid: string,
     src: SlideSource,
     label: string,
@@ -216,24 +216,36 @@ function AnnotationsPage() {
       .eq("script_id", sid)).count || 0;
     if (!totalChunks) return;
     const started = Date.now();
-    const MAX_MS = 15 * 60_000; // 15 min hard cap
+    const MAX_MS = 30 * 60_000; // 30 min hard cap (rendering can be slow)
+    // Immediate refresh so any pre-existing "rendering" rows appear without waiting 4s.
+    await refreshAll(sid, src);
     while (Date.now() - started < MAX_MS) {
       await new Promise((r) => setTimeout(r, 4000));
-      // bail out if user navigated away from this script/source
       if (scriptIdRef.current !== sid || slideSourceRef.current !== src) return;
-      const baseQ = table === "ocr_results"
-        ? supabase.from("ocr_results").select("chunk_id", { count: "exact", head: true })
-            .eq("script_id", sid).eq("slide_source", src)
-        : supabase.from("audio_timestamps").select("chunk_id", { count: "exact", head: true })
-            .eq("script_id", sid);
-      const { count } = await baseQ;
+      let count = 0;
+      if (table === "ocr_results") {
+        const { count: c } = await supabase.from("ocr_results")
+          .select("chunk_id", { count: "exact", head: true })
+          .eq("script_id", sid).eq("slide_source", src);
+        count = c || 0;
+      } else if (table === "audio_timestamps") {
+        const { count: c } = await supabase.from("audio_timestamps")
+          .select("chunk_id", { count: "exact", head: true })
+          .eq("script_id", sid);
+        count = c || 0;
+      } else {
+        const { count: c } = await supabase.from("video_clips")
+          .select("chunk_id", { count: "exact", head: true })
+          .eq("script_id", sid).eq("slide_source", src).eq("status", "done");
+        count = c || 0;
+      }
       await refreshAll(sid, src);
-      if ((count || 0) >= totalChunks) {
+      if (count >= totalChunks) {
         toast.success(`${label}: ${count}/${totalChunks} chunks ready`);
         return;
       }
     }
-    toast.warning(`${label}: still running after 15 min — refresh to check status`);
+    toast.warning(`${label}: still running after 30 min — refresh to check status`);
   };
 
   const bulk = async (label: string, path: string) => {
