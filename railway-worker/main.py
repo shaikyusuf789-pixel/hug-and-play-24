@@ -362,6 +362,30 @@ def clips_render_all(req: RenderAllReq, bg: BackgroundTasks):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# MERGE ROUTE
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _merge_job(script_id: str, slide_source: str) -> None:
+    try:
+        merge_script_clips(script_id, slide_source)
+    except Exception as e:
+        print(f"[MERGE] background job ERROR: {e}")
+
+@app.post("/merge/run")
+def merge_run(req: MergeRunReq, bg: BackgroundTasks):
+    try:
+        # mark queued immediately so UI poll picks it up
+        get_supabase().table("app_metadata").upsert({
+            "key": f"merge:{req.script_id}",
+            "value": {"status": "queued", "slide_source": req.slide_source},
+        }, on_conflict="key").execute()
+        bg.add_task(_merge_job, req.script_id, req.slide_source)
+        return {"ok": True, "status": "queued"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # STREAMING ROUTES
 # ══════════════════════════════════════════════════════════════════════════════
 
