@@ -1167,11 +1167,16 @@ function ScriptGenerator() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setIsEditing(!isEditing)}
-                    className={isEditing ? "bg-blue-50" : ""}
+                    onClick={handleEnhanceScript}
+                    disabled={isEnhancing || isGenerating}
+                    className="border-blue-300 text-blue-700 hover:bg-blue-50"
                   >
-                    <Edit3 className="w-4 h-4 mr-1" />
-                    {isEditing ? "Stop Editing" : "Edit"}
+                    {isEnhancing ? (
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 mr-1" />
+                    )}
+                    Script Enhancer
                   </Button>
                   <Button
                     variant="outline"
@@ -1196,21 +1201,15 @@ function ScriptGenerator() {
                     )}
                     Fact Check
                   </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="bg-green-600 hover:bg-green-700"
-                    onClick={handleSaveScript}
-                    disabled={isSaving}
-                  >
+                  <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 border border-slate-200 rounded text-[10px] font-bold text-slate-500 uppercase tracking-tight italic">
                     {isSaving ? (
-                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Saving...</>
                     ) : (
-                      <Save className="w-4 h-4 mr-1" />
+                      <>✓ Autosaved</>
                     )}
-                    {isFromHistory ? "Update Script" : "Save Script"}
-                  </Button>
+                  </div>
                 </div>
+
               )}
             </CardHeader>
             <CardContent className="flex-1 p-0">
@@ -1219,17 +1218,13 @@ function ScriptGenerator() {
                   <div className="flex justify-between items-center">
                     <h3 className="font-black text-xl text-slate-900">Entire Production Script</h3>
                   </div>
-                  {isEditing ? (
-                    <Textarea
-                      className="p-6 bg-white rounded-2xl border border-slate-200 leading-relaxed text-lg font-telugu min-h-[400px] whitespace-pre-wrap text-slate-800"
-                      value={scriptText}
-                      onChange={(e) => setScriptText(e.target.value)}
-                    />
-                  ) : (
-                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 leading-relaxed text-lg font-telugu min-h-[400px] whitespace-pre-wrap text-slate-800">
-                      {scriptText}
-                    </div>
-                  )}
+                  <Textarea
+                    className="p-6 bg-white rounded-2xl border border-slate-200 leading-relaxed text-lg font-telugu min-h-[500px] whitespace-pre-wrap text-slate-800 focus:ring-2 focus:ring-blue-500"
+                    value={scriptText}
+                    onChange={(e) => setScriptText(e.target.value)}
+                    placeholder="Enter or edit your script here..."
+                  />
+
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-12 text-center space-y-4">
