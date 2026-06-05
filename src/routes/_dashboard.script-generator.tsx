@@ -134,6 +134,27 @@ function ScriptGenerator() {
     }
   };
 
+  const handleEnhanceScript = async () => {
+    if (!scriptText.trim()) return;
+    setIsEnhancing(true);
+    try {
+      const res = await supabase.functions.invoke("enhance-script", {
+        body: { script: scriptText },
+      });
+      if (res.error) throw res.error;
+      const enhanced = res.data?.enhancedScript;
+      if (!enhanced) throw new Error("No enhanced script returned");
+      setScriptText(enhanced);
+      toast.success("Script enhanced with punctuations and emotions! ✓");
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Enhancement failed");
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
+
+
   const liveWordCount = scriptText.trim() ? scriptText.trim().split(/\s+/).filter(Boolean).length : 0;
   const liveCharCount = scriptText.length;
 
