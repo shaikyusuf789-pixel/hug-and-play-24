@@ -85,7 +85,15 @@ Return ONLY a valid JSON array. No preamble, no markdown fences, no explanation.
 - Generate exactly {NUM_SEGS} segments
 - Each segment MUST be 150-180 words
 - ALL Telugu words in Telugu Unicode script
-- ALL numbers written as English words
+- TTS-READY NUMBERS RULE (HARD): Output is fed DIRECTLY into a TTS engine.
+  NEVER use any digits (0-9), fractions (1/2), decimals (13.5), percentages
+  (50%), currency symbols, or ordinal suffixes in telugu_text. EVERY number
+  MUST be spelled out as English words inside the Telugu sentence.
+  Examples: 13000 → "thirteen thousand"; 1/2 → "one by two";
+  13.5 → "thirteen point five"; 50% → "fifty percent";
+  2024 → "twenty twenty four"; 1st → "first".
+  Self-check: scan telugu_text for any digit 0-9 or %, /, ., $, ₹ between
+  digits — if found, rewrite as English words.
 `;
 
 const PROMOTIONS_BLOCK = `
