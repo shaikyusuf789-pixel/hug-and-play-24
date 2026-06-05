@@ -536,9 +536,30 @@ export const saveScript = createServerFn({ method: "POST" })
     model: z.string().optional(),
   }))
   .handler(async ({ data }) => {
-    const { error } = await supabaseAdmin.from("scripts").insert(data);
+    if (data.idea_id) {
+      const { data: existing, error: lookupError } = await supabaseAdmin
+        .from("scripts")
+        .select("id")
+        .eq("idea_id", data.idea_id)
+        .maybeSingle();
+
+      if (lookupError) throw lookupError;
+
+      if (existing?.id) {
+        const { data: updated, error } = await supabaseAdmin
+          .from("scripts")
+          .update({ ...data, updated_at: new Date().toISOString() })
+          .eq("id", existing.id)
+          .select("id")
+          .single();
+        if (error) throw error;
+        return { ok: true, id: updated.id };
+      }
+    }
+
+    const { data: inserted, error } = await supabaseAdmin.from("scripts").insert(data).select("id").single();
     if (error) throw error;
-    return { ok: true };
+    return { ok: true, id: inserted.id };
   });
 
 export const getRecentScripts = createServerFn({ method: "GET" })
