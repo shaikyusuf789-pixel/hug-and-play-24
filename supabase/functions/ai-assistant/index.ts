@@ -403,7 +403,7 @@ RESPONSE FORMAT (CRITICAL):
     if (!apiKey) throw new Error("Missing GOOGLE_API_KEY");
 
     const requestBody: any = {
-      model: "gemini-1.5-pro",
+      model: "gemini-2.5-pro",
       max_tokens: 4096,
       messages: [
         { role: "system", content: systemPrompt },
