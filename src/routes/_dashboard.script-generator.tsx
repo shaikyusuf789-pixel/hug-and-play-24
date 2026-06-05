@@ -409,7 +409,7 @@ function ScriptGenerator() {
         toast.success("Script updated successfully!");
         queryClient.invalidateQueries({ queryKey: ["recent-scripts"] }); queryClient.invalidateQueries({ queryKey: ["priority-ideas-recent-15"] });
       } else {
-        await saveScriptFn({ 
+        const saved = await saveScriptFn({ 
           data: {
             idea_id: selectedIdeaId || undefined,
             title: topic || "Untitled Script",
@@ -419,6 +419,13 @@ function ScriptGenerator() {
             model: model,
           } 
         });
+
+        if (saved?.id) {
+          setExistingScriptId(saved.id);
+          setIsExistingScript(true);
+          setIsFromHistory(false);
+          setSelectedHistoryScriptId("");
+        }
 
         // Update idea status to Script Done when script is saved
         if (selectedIdeaId) {
