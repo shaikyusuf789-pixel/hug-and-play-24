@@ -221,10 +221,12 @@ function AnnotationsPage() {
       await new Promise((r) => setTimeout(r, 4000));
       // bail out if user navigated away from this script/source
       if (scriptIdRef.current !== sid || slideSourceRef.current !== src) return;
-      let q = supabase.from(table).select("chunk_id", { count: "exact", head: true })
-        .eq("script_id", sid);
-      if (table === "ocr_results") q = q.eq("slide_source", src);
-      const { count } = await q;
+      const baseQ = table === "ocr_results"
+        ? supabase.from("ocr_results").select("chunk_id", { count: "exact", head: true })
+            .eq("script_id", sid).eq("slide_source", src)
+        : supabase.from("audio_timestamps").select("chunk_id", { count: "exact", head: true })
+            .eq("script_id", sid);
+      const { count } = await baseQ;
       await refreshAll(sid, src);
       if ((count || 0) >= totalChunks) {
         toast.success(`${label}: ${count}/${totalChunks} chunks ready`);
