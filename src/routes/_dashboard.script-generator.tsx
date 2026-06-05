@@ -1074,7 +1074,7 @@ function ScriptGenerator() {
                   step={165}
                 />
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest pt-1">
-                  ~{Math.ceil(wordCount / 165)} segments · 150-180w each
+                  ~{(wordCount * 90 / 6000).toFixed(1).replace(/\.0$/, "")} minutes
                 </p>
               </div>
 
