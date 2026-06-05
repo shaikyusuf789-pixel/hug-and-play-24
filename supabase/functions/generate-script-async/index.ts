@@ -280,6 +280,12 @@ serve(async (req) => {
 
     const title = body.title || body.topic || "sky academy Script";
 
+    // Delete any prior scripts for this idea so regeneration truly replaces.
+    if (body.idea_id) {
+      const { error: delErr } = await supa.from("scripts").delete().eq("idea_id", body.idea_id);
+      if (delErr) console.error("prior script delete error", delErr);
+    }
+
     // Create placeholder row IMMEDIATELY
     const { data: row, error: insErr } = await supa.from("scripts").insert({
       idea_id: body.idea_id ?? null,
