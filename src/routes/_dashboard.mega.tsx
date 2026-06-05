@@ -497,7 +497,7 @@ function MegaPage() {
                   <SelectContent>{GAMMA_THEMES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               )}
-              <Button size="sm" className="w-full bg-rose-600 hover:bg-rose-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={() => guardRun("Slides", allSlidesDone, () => generateAllSlides(true))}>
+              <Button size="sm" className="w-full bg-rose-600 hover:bg-rose-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={() => allSlidesDone ? guardRun("Slides", true, () => generateAllSlides(true)) : generateAllSlides(false)}>
                 {allSlidesDone && <span className="text-[9px] bg-white/20 px-1 rounded">✓</span>}
                 {bulkBusy === "All Slides" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
                 Run
