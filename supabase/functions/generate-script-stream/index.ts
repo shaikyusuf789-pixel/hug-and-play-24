@@ -123,7 +123,32 @@ TIME / RECENCY RULE:
   that is already over. If unsure, speak generally without a
   year.
 
-ABSOLUTE WORD-COUNT TARGET: approximately ${targetWords} Telugu words. Acceptable range: ${min}-${max}.
+================================================================
+ABSOLUTE WORD-COUNT TARGET (HARDEST CONSTRAINT -- DO NOT VIOLATE)
+================================================================
+- The FINAL Telugu script MUST contain approximately ${targetWords} words.
+- Hard acceptable range: ${min} to ${max} Telugu words (whitespace-separated tokens). NEVER less than ${min}. NEVER more than ${max}.
+- Before you stop writing, INTERNALLY COUNT the words. If you are below ${min}, you MUST continue writing -- do NOT end the script.
+- If the USER INPUT (topic / source / context) is too short to naturally reach ${min} words, you MUST EXPAND using your own general knowledge of that same subject:
+    * Add real-world examples relevant to the topic.
+    * Add sub-topics and break each sub-topic into smaller teaching points.
+    * Add exam-relevance context (SSC / Banking / Group 1 / Group 2 / RRB) where it genuinely fits the topic.
+    * Add historical background, key personalities, important dates, definitions, classifications, and cause-effect chains around the topic.
+    * Add 2-3 small analogies or classroom-style mini-stories tied to the topic.
+    * Add a short recap of the key points near the end.
+- NEVER pad with empty filler, repetition, or off-topic content just to hit the count. Every added sentence MUST teach something useful about the SAME topic.
+- If the source is far too long, condense without losing the core teaching, but the final length MUST still fall inside ${min}-${max} words.
+- Stopping early (a 600-700 word script when ${targetWords} was asked) is a CRITICAL FAILURE. Keep writing until you are inside the target band.
+
+CONTENT EXPANSION CHECKLIST (use it to reach the target length naturally):
+  [ ] Hook tied to the exact topic
+  [ ] Definition / core concept
+  [ ] 2-4 sub-topics, each explained with a small example
+  [ ] Real-world / exam-relevant examples
+  [ ] Common student doubts answered
+  [ ] PYQ / MCQ framing where relevant
+  [ ] Short memory trick / mnemonic
+  [ ] Final recap of the key points
 
 OUTPUT: Return ONLY the Telugu voiceover script as PLAIN TEXT (no JSON, no markdown, no fences, no preamble, no closing remarks).
 - ONE continuous text, natural paragraph breaks with blank lines.
@@ -233,7 +258,7 @@ serve(async (req) => {
       });
     }
     parts.push(
-      `\nGenerate ONE continuous Telugu script of approximately ${targetWords} words. PLAIN TEXT ONLY.`,
+      `\nGenerate ONE continuous Telugu script of approximately ${targetWords} words (hard range ${Math.max(50, targetWords - 50)}-${targetWords + 50}). Do NOT stop before reaching ${Math.max(50, targetWords - 50)} words. If the source is short, EXPAND with sub-topics, examples, exam relevance, definitions and a recap around the SAME topic. PLAIN TEXT ONLY.`,
     );
     const userPrompt = parts.join("\n\n");
 
@@ -345,7 +370,7 @@ serve(async (req) => {
           system: systemPrompt,
           user: userPrompt,
           temperature: 0.2,
-          maxTokens: Math.min(16000, Math.max(2048, targetWords * 6)),
+          maxTokens: Math.min(32000, Math.max(4096, targetWords * 8)),
         })
       : await geminiStreamResponse(googleApiKey, {
           model,
