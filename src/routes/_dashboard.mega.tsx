@@ -569,7 +569,7 @@ function MegaPage() {
                 <Film className="h-4 w-4" /> Render All
               </div>
               <p className="text-[10px] text-slate-500">Build per-chunk video clips.</p>
-              <Button size="sm" className="w-full bg-fuchsia-600 hover:bg-fuchsia-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={renderAll}>
+              <Button size="sm" className="w-full bg-fuchsia-600 hover:bg-fuchsia-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={() => guardRun("Renders", allRenderDone, renderAll)}>
                 {bulkBusy === "Render All" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
                 Run
               </Button>
