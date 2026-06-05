@@ -101,6 +101,9 @@ function MegaPage() {
 
   // ── busy state
   const [bulkBusy, setBulkBusy] = useState<string | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    title: string; message: string; onConfirm: () => void;
+  } | null>(null);
   const scriptIdRef = useRef(scriptId);
   const slideSourceRef = useRef(slideSource);
   useEffect(() => { scriptIdRef.current = scriptId; }, [scriptId]);
