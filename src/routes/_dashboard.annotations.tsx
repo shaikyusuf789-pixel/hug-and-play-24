@@ -9,10 +9,13 @@ import {
   Sparkles,
   Film,
   Download,
-  RefreshCcw,
-  CheckCircle2,
-  AlertCircle,
+  RefreshCcw, 
+  CheckCircle2, 
+  AlertCircle, 
   Trash2,
+  Pencil,
+  X,
+  Save
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +31,9 @@ import { ANNOTATIONS_WORKER_URL } from "@/lib/worker";
 import { runTimestamps, runTimestampsAll } from "@/lib/timestamps.functions";
 import { runOcr as runOcrFn, runOcrAll as runOcrAllFn } from "@/lib/ocr.functions";
 import { cn } from "@/lib/utils";
+import { useServerFn } from "@tanstack/react-start";
+import { updateChunk } from "@/lib/engine.functions";
+import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_dashboard/annotations")({
   component: AnnotationsPage,
@@ -61,6 +67,7 @@ async function workerGet(path: string) {
 }
 
 function AnnotationsPage() {
+  const updateChunkFn = useServerFn(updateChunk);
   const [scripts, setScripts] = useState<any[]>([]);
   const [scriptId, setScriptId] = useState<string>("");
   const [slideSource, setSlideSource] = useState<SlideSource>("gamma");
@@ -69,6 +76,9 @@ function AnnotationsPage() {
   const [tsMap, setTsMap] = useState<Record<string, any>>({});
   const [aiMap, setAiMap] = useState<Record<string, any>>({});
   const [clipMap, setClipMap] = useState<Record<string, any>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<string>("");
+  const [isSaving, setIsSaving] = useState(false);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const toggleExp = (k: string) => setExpanded((e) => ({ ...e, [k]: !e[k] }));
@@ -168,6 +178,24 @@ function AnnotationsPage() {
       await refreshAll(scriptId, slideSource);
     } catch (e: any) { toast.error(`Render failed: ${e.message}`); }
     finally { setRowBusy(k, false); }
+  };
+  
+  const handleSaveChunk = async (chunk: any) => {
+    if (!editDraft.trim()) {
+      toast.error("Chunk content cannot be empty");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await updateChunkFn({ data: { id: chunk.id, content: editDraft } });
+      setChunks(prev => prev.map(c => c.id === chunk.id ? { ...c, content: editDraft } : c));
+      setEditingId(null);
+      toast.success("Chunk updated");
+    } catch (e: any) {
+      toast.error("Update failed: " + e.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // ── bulk actions
@@ -501,8 +529,49 @@ function AnnotationsPage() {
 
               {/* Row 1: Original Script · Slide · OCR */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 px-5 pt-4">
-                <Tile label="Original Script" color="slate">
-                  <p className="text-xs text-slate-600 line-clamp-6 leading-relaxed whitespace-pre-wrap">{chunk.content}</p>
+                <Tile 
+                  label="Original Script" 
+                  color="slate"
+                  action={
+                    <div className="flex gap-1">
+                      {editingId === chunk.id ? (
+                        <>
+                          <ActionBtn 
+                            color="rose" 
+                            busy={false} 
+                            onClick={() => setEditingId(null)} 
+                            label="Cancel" 
+                          />
+                          <ActionBtn 
+                            color="emerald" 
+                            busy={isSaving} 
+                            onClick={() => handleSaveChunk(chunk)} 
+                            label="Save" 
+                          />
+                        </>
+                      ) : (
+                        <ActionBtn 
+                          color="slate" 
+                          busy={false} 
+                          onClick={() => {
+                            setEditingId(chunk.id);
+                            setEditDraft(chunk.content || "");
+                          }} 
+                          label="Edit" 
+                        />
+                      )}
+                    </div>
+                  }
+                >
+                  {editingId === chunk.id ? (
+                    <Textarea
+                      value={editDraft}
+                      onChange={(e) => setEditDraft(e.target.value)}
+                      className="text-xs min-h-[120px] p-2"
+                    />
+                  ) : (
+                    <p className="text-xs text-slate-600 line-clamp-6 leading-relaxed whitespace-pre-wrap">{chunk.content}</p>
+                  )}
                 </Tile>
 
                 <Tile label={`Slide · ${slideSource.toUpperCase()}`} color="amber">
