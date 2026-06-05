@@ -20,6 +20,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { saveChunks, updateChunk, updateScript } from "@/lib/engine.functions";
@@ -97,6 +101,9 @@ function MegaPage() {
 
   // ── busy state
   const [bulkBusy, setBulkBusy] = useState<string | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    title: string; message: string; onConfirm: () => void;
+  } | null>(null);
   const scriptIdRef = useRef(scriptId);
   const slideSourceRef = useRef(slideSource);
   useEffect(() => { scriptIdRef.current = scriptId; }, [scriptId]);
@@ -184,20 +191,21 @@ function MegaPage() {
   };
 
   // ── bulk actions (audio + slides queue via process-queue; OCR/TS/AI/render via worker+fns)
-  const generateAllAudio = async () => {
+  const generateAllAudio = async (force = false) => {
     if (!scriptId || chunks.length === 0) return;
     setBulkBusy("All Audios");
     try {
       const eligibleIds = chunks
-        .filter(c => !c.audio_url && c.audio_job_status !== "processing")
+        .filter(c => (force || !c.audio_url) && c.audio_job_status !== "processing")
         .map(c => c.id);
-      if (eligibleIds.length === 0) { toast.info("All chunks already have audio"); return; }
+      if (eligibleIds.length === 0) { toast.info("Nothing to queue"); return; }
       const { error } = await supabase.from("script_chunks").update({
         audio_job_status: "queued",
         audio_job_provider: audioProvider,
         audio_job_voice_id: voiceId,
         audio_job_model: audioModel,
         audio_job_error: null,
+        ...(force ? { audio_url: null } : {}),
       }).in("id", eligibleIds);
       if (error) throw error;
       supabase.functions.invoke("process-queue", { body: { scriptId } }).catch(() => {});
@@ -208,11 +216,10 @@ function MegaPage() {
     finally { setBulkBusy(null); }
   };
 
-  const generateAllSlides = async () => {
+  const generateAllSlides = async (force = false) => {
     if (!scriptId || chunks.length === 0) return;
     setBulkBusy("All Slides");
     try {
-      // 1) ensure outlines exist (prompt) sequentially via edge fn
       for (const c of chunks) {
         if (!c.slide_prompt) {
           await supabase.functions.invoke("generate-slides", {
@@ -221,12 +228,14 @@ function MegaPage() {
         }
       }
       await refreshAll(scriptId, slideSource);
-      // 2) queue all slides
       const fresh = (await supabase.from("script_chunks").select("*").eq("script_id", scriptId).order("chunk_index")).data || [];
-      const eligibleIds = fresh.filter((c: any) => c.slide_prompt && c.slide_job_status !== "processing").map((c: any) => c.id);
+      const eligibleIds = fresh
+        .filter((c: any) => c.slide_prompt && c.slide_job_status !== "processing" && (force || !c.slide_url))
+        .map((c: any) => c.id);
       if (eligibleIds.length === 0) { toast.info("Nothing to queue for slides"); return; }
       const { error } = await supabase.from("script_chunks").update({
         slide_job_status: "queued", slide_job_theme: gammaTheme, slide_job_error: null,
+        ...(force ? { slide_url: null } : {}),
       }).in("id", eligibleIds);
       if (error) throw error;
       supabase.functions.invoke("process-queue", { body: { scriptId } }).catch(() => {});
@@ -236,6 +245,24 @@ function MegaPage() {
     } catch (e: any) { toast.error("Slides queue failed: " + e.message); }
     finally { setBulkBusy(null); }
   };
+
+  // Show confirm dialog if step already complete; otherwise run directly.
+  const guardRun = (label: string, isDone: boolean, action: () => void) => {
+    if (isDone) {
+      setConfirmState({
+        title: `${label} already done`,
+        message: `All chunks already have ${label.toLowerCase()} generated for this script. Re-run anyway? This will overwrite existing data.`,
+        onConfirm: () => { setConfirmState(null); action(); },
+      });
+    } else action();
+  };
+
+  const allAudioDone = chunks.length > 0 && chunks.every(c => !!c.audio_url);
+  const allSlidesDone = chunks.length > 0 && chunks.every(c => !!c.slide_url);
+  const allOcrDone = chunks.length > 0 && chunks.every(c => !!ocrMap[c.id]);
+  const allTsDone = chunks.length > 0 && chunks.every(c => !!tsMap[c.id]);
+  const allAiDone = chunks.length > 0 && chunks.every(c => !!aiMap[c.id]);
+  const allRenderDone = chunks.length > 0 && chunks.every(c => clipMap[c.id]?.status === "done");
 
   // poll until every chunk has audio_url / slide_url
   const pollUntilField = async (kind: "audio" | "slide", label: string) => {
@@ -470,7 +497,8 @@ function MegaPage() {
                   <SelectContent>{GAMMA_THEMES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               )}
-              <Button size="sm" className="w-full bg-rose-600 hover:bg-rose-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={generateAllSlides}>
+              <Button size="sm" className="w-full bg-rose-600 hover:bg-rose-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={() => allSlidesDone ? guardRun("Slides", true, () => generateAllSlides(true)) : generateAllSlides(false)}>
+                {allSlidesDone && <span className="text-[9px] bg-white/20 px-1 rounded">✓</span>}
                 {bulkBusy === "All Slides" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
                 Run
               </Button>
@@ -493,7 +521,7 @@ function MegaPage() {
                 </SelectContent>
               </Select>
               <Input className="h-8 text-xs" placeholder="Voice ID" value={voiceId} onChange={e => setVoiceId(e.target.value)} />
-              <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={generateAllAudio}>
+              <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={() => allAudioDone ? guardRun("Audios", true, () => generateAllAudio(true)) : generateAllAudio(false)}>
                 {bulkBusy === "All Audios" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
                 Run
               </Button>
@@ -505,7 +533,7 @@ function MegaPage() {
                 <ScanText className="h-4 w-4" /> All OCR
               </div>
               <p className="text-[10px] text-slate-500">Google Vision on {slideSource} slides.</p>
-              <Button size="sm" className="w-full bg-amber-600 hover:bg-amber-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={runAllOcr}>
+              <Button size="sm" className="w-full bg-amber-600 hover:bg-amber-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={() => guardRun("OCR", allOcrDone, runAllOcr)}>
                 {bulkBusy === "All OCR" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
                 Run
               </Button>
@@ -517,7 +545,7 @@ function MegaPage() {
                 <Clock className="h-4 w-4" /> All Timestamps
               </div>
               <p className="text-[10px] text-slate-500">Whisper word-level on audio.</p>
-              <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={runAllTimestamps}>
+              <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={() => guardRun("Timestamps", allTsDone, runAllTimestamps)}>
                 {bulkBusy === "All Timestamps" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
                 Run
               </Button>
@@ -529,7 +557,7 @@ function MegaPage() {
                 <Sparkles className="h-4 w-4" /> All Annotations
               </div>
               <p className="text-[10px] text-slate-500">GPT-4o aligns OCR ↔ timestamps.</p>
-              <Button size="sm" className="w-full bg-violet-600 hover:bg-violet-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={runAllAnnotations}>
+              <Button size="sm" className="w-full bg-violet-600 hover:bg-violet-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={() => guardRun("Annotations", allAiDone, runAllAnnotations)}>
                 {bulkBusy === "All Annotations" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
                 Run
               </Button>
@@ -541,7 +569,7 @@ function MegaPage() {
                 <Film className="h-4 w-4" /> Render All
               </div>
               <p className="text-[10px] text-slate-500">Build per-chunk video clips.</p>
-              <Button size="sm" className="w-full bg-fuchsia-600 hover:bg-fuchsia-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={renderAll}>
+              <Button size="sm" className="w-full bg-fuchsia-600 hover:bg-fuchsia-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={() => guardRun("Renders", allRenderDone, renderAll)}>
                 {bulkBusy === "Render All" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
                 Run
               </Button>
@@ -587,6 +615,21 @@ function MegaPage() {
           ))
         )}
       </div>
+
+      <AlertDialog open={!!confirmState} onOpenChange={(o) => !o && setConfirmState(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmState?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmState?.message}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep existing</AlertDialogCancel>
+            <AlertDialogAction onClick={() => confirmState?.onConfirm()} className="bg-purple-600 hover:bg-purple-700">
+              Re-run anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
