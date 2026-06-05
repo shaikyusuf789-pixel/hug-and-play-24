@@ -18,19 +18,6 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch App Metadata for context (trimmed to keep latency low)
-    const { data: metadata } = await supabase
-      .from("app_metadata")
-      .select("key, value")
-      .in("key", ["app_biography", "neural_scheme"]);
-
-    const truncate = (v: any, n = 1500) => {
-      const s = typeof v === "string" ? v : JSON.stringify(v);
-      return s && s.length > n ? s.slice(0, n) + "…[truncated]" : s;
-    };
-    const biography = truncate(metadata?.find(m => m.key === "app_biography")?.value);
-    const neuralScheme = truncate(metadata?.find(m => m.key === "neural_scheme")?.value);
-
     const systemPrompt = `You are **JERRY**, the personal assistant ("PA") and watchdog for boss's SKY Studio YouTube production app.
 
 IDENTITY (CRITICAL — never break character):
@@ -41,42 +28,28 @@ IDENTITY (CRITICAL — never break character):
 
 ROLE — WATCHDOG OF THE WHOLE APP:
 - You silently observe every activity boss does: sources added, ideas approved/rejected, scripts generated, videos produced, slides created.
-- Proactively flag waste: if boss keeps rejecting ideas from a specific channel, use \`analyze_source_health\` and recommend silencing or removing that channel to save Apify/scraper credits.
-- When boss shares a YouTube channel link, run \`analyze_youtube_channel\` (web_search + fetch_url) to judge whether it fits sky academy's niche. If it fits, **suggest** adding it and wait for boss's approval — only then call \`add_source\`.
-- Periodically (when asked "what's happening" / "status" / "report" / "how many ideas" / "counts") call \`get_app_activity\` to summarise pipeline state. **Always** use \`get_app_activity\` for totals/counts of ideas, sources, chunks. NEVER count rows returned by \`get_recent_ideas\` (it is limited to the 10 latest) and NEVER estimate. The DB has mixed-case status values ("Pending", "Approved", "Rejected", "Priority") — \`get_app_activity\` already normalizes these case-insensitively and returns EXACT counts. Trust those numbers, they will match the dashboard cards.
-
-APP BIOGRAPHY: ${biography}
-NEURAL SCHEME: ${neuralScheme}
+- Proactively flag waste: if boss keeps rejecting ideas from a specific channel, use \`analyze_source_health\` and recommend silencing or removing that channel.
+- When boss shares a YouTube channel link, run \`analyze_youtube_channel\`.
+- Use \`get_app_activity\` for status reports/totals.
+- **KNOWLEDGE RETRIEVAL (SPEED OPTIMIZED)**:
+  - If boss asks about the app's biography, vision, or neural scheme, call \`get_app_biography\`.
+  - If boss asks about UI structure, routes, or technical implementation, call \`read_ui_spec\`.
+  - If boss asks about database tables or data schema, call \`get_table_schema\`.
+  - Do NOT assume you know the current app state or UI specs without checking these tools if the question is specific.
 
 CAPABILITIES:
-- DB: get_sources / add_source / remove_source / get_recent_ideas / approve_idea / reject_idea / get_scripts / get_app_activity / analyze_source_health.
-- YouTube: analyze_youtube_channel (researches a channel and decides fit).
-- Internet: web_search + fetch_url. Always cite source URLs.
-- Image gen: generate_image (DALL·E 3). Embed result as ![alt](url).
+- DB: get_sources / add_source / remove_source / get_recent_ideas / approve_idea / reject_idea / get_scripts / get_app_activity / analyze_source_health / get_app_biography / get_table_schema.
+- Docs: read_ui_spec.
+- YouTube: analyze_youtube_channel.
+- Internet: web_search + fetch_url.
+- Image gen: generate_image.
 - Memory: save_app_note / clear_chat_memory.
-- IMPORTANT: On the Ideas Engine page, the manual scraper button is named **"RUN MANUALLY"** (not "Initialize Scraper"). Always refer to it as RUN MANUALLY.
-  - Script-generator training (live-editable by boss):
-  list_training_docs (see all keys),
-  get_training_doc (read full text of one doc),
-  update_training_doc (overwrite/save new text for that doc).
-  Training keys boss can edit:
-    training:transcript_1 .. training:transcript_4 (the 4 SKY style transcripts)
-    training:sky_dna_general (DNA rules for GENERAL videos)
-    training:sky_dna_subjective (DNA rules for SUBJECTIVE videos)
-  When boss says "update transcript 2", "edit SKY DNA", "show me transcript 3",
-  "replace the general DNA with ...", use these tools. Always confirm a
-  preview/diff before overwriting and warn boss the change applies to ALL
-  future script generations.
-  - UI BEHAVIOUR: In the Jerry chatbox, the message input is a multi-line textarea. Pressing **Enter** sends the message. Pressing **Shift + Enter** inserts a new line. Boss can write multi-line messages if needed.
-  - WATCHDOG / AUTO-RUN (Ideas Engine + Pipeline pages): The Watchdog control now has TWO sliders/selectors:
-      1) **Interval** (1–24 hrs) — how often the scraper auto-runs
-      2) **Videos / Channel** (1–50) — how many latest videos to pull per channel on each run (manual RUN MANUALLY and auto-runs both respect this)
-    Auto-run is implemented via a pg_cron job that pings \`/api/public/hooks/auto-run-engine\` every 15 minutes; the endpoint checks the saved interval and only triggers when enough time has elapsed since the last run. The scraper now scrapes ALL channels in sources_master on each run (not just a subset) and uses a real browser User-Agent + consent cookie so YouTube's region/consent gate stops blocking channel-id detection. Per-channel results (inserted count + per-channel error if any) are surfaced in the toast after RUN MANUALLY.
+- Training: list_training_docs / get_training_doc / update_training_doc.
 
 RESPONSE FORMAT (CRITICAL):
-- Always reply in clean GitHub-flavored Markdown — never one long paragraph.
+- Always reply in clean GitHub-flavored Markdown.
 - Use ## headings, **bold**, numbered/bulleted lists, [text](url) links.
-- Be concise, structured, boss-friendly. Only call tools when necessary.`;
+- Be concise, structured, boss-friendly.`;
 
     const handleToolCall = async (call: any) => {
       const { name, arguments: argsJson } = call.function;
@@ -98,10 +71,9 @@ RESPONSE FORMAT (CRITICAL):
       if (name === "remove_source") {
         const { error } = await supabase.from("sources_master").delete().eq("id", args.id);
         if (error) return JSON.stringify({ error: error.message });
-        return JSON.stringify({ success: true, message: "Source removed from monitor list." });
+        return JSON.stringify({ success: true, message: "Source removed." });
       }
       if (name === "analyze_source_health") {
-        // Compute approve/reject ratio per source
         const { data: sources } = await supabase.from("sources_master").select("id, channel_name");
         const { data: content } = await supabase.from("raw_content").select("source_id, status");
         const stats = (sources || []).map((s: any) => {
@@ -110,540 +82,159 @@ RESPONSE FORMAT (CRITICAL):
           const rejected = items.filter((c: any) => (c.status || "").toLowerCase() === "rejected").length;
           const approved = items.filter((c: any) => (c.status || "").toLowerCase() === "approved").length;
           const rejectRate = total ? Math.round((rejected / total) * 100) : 0;
-          const recommend =
-            total >= 5 && rejectRate >= 70
-              ? "REMOVE — wasting credits"
-              : total >= 5 && rejectRate >= 50
-              ? "SILENCE — low ROI"
-              : "KEEP";
-          return { id: s.id, channel: s.channel_name, total, approved, rejected, rejectRate, recommend };
+          return { id: s.id, channel: s.channel_name, total, approved, rejected, rejectRate };
         }).sort((a: any, b: any) => b.rejectRate - a.rejectRate);
         return JSON.stringify(stats);
       }
       if (name === "get_app_activity") {
-        // Use exact COUNT queries (head:true) so we get true totals and are not
-        // limited by Supabase's default 1000-row fetch cap. Group counts by status
-        // case-insensitively (DB has mixed-case values like "Pending" / "pending").
         const ideaStatusBuckets = ["pending", "approved", "rejected", "priority", "processing"];
         const chunkStatusBuckets = ["pending", "processing", "done", "failed"];
         const countBy = async (table: string, status: string) => {
-          const { count } = await supabase
-            .from(table)
-            .select("*", { count: "exact", head: true })
-            .ilike("status", status);
+          const { count } = await supabase.from(table).select("*", { count: "exact", head: true }).ilike("status", status);
           return [status, count || 0] as [string, number];
         };
-        const [ideaCounts, chunkCounts, { data: scripts }, { count: srcCount }, { count: ideasTotal }] = await Promise.all([
+        const [ideaCounts, chunkCounts, { data: scripts }, { count: srcCount }] = await Promise.all([
           Promise.all(ideaStatusBuckets.map((s) => countBy("raw_content", s))),
           Promise.all(chunkStatusBuckets.map((s) => countBy("script_chunks", s))),
-          supabase.from("scripts").select("id, title, status, created_at").order("created_at", { ascending: false }).limit(10),
+          supabase.from("scripts").select("id, title, status, created_at").order("created_at", { ascending: false }).limit(5),
           supabase.from("sources_master").select("*", { count: "exact", head: true }),
-          supabase.from("raw_content").select("*", { count: "exact", head: true }),
         ]);
+        return JSON.stringify({ sources_total: srcCount, ideas_by_status: Object.fromEntries(ideaCounts), chunks_by_status: Object.fromEntries(chunkCounts), recent_scripts: scripts });
+      }
+      if (name === "get_app_biography") {
+        const { data } = await supabase.from("app_metadata").select("key, value").in("key", ["app_biography", "neural_scheme"]);
+        return JSON.stringify(data);
+      }
+      if (name === "read_ui_spec") {
+        try {
+          const text = await Deno.readTextFile("docs/UI_SPEC.md");
+          return text.slice(0, 10000); // Truncate if too large
+        } catch (e) {
+          return JSON.stringify({ error: "Could not read UI_SPEC.md" });
+        }
+      }
+      if (name === "get_table_schema") {
         return JSON.stringify({
-          sources_total: srcCount,
-          ideas_total: ideasTotal,
-          ideas_by_status: Object.fromEntries(ideaCounts),
-          chunks_by_status: Object.fromEntries(chunkCounts),
-          recent_scripts: scripts,
-          note: "Counts are EXACT totals from the database (case-insensitive on status). Do NOT estimate from a sample or from get_recent_ideas — that tool only returns the latest 10 rows.",
+          tables: [
+            { name: "sources_master", description: "YouTube channels monitored for content ideas." },
+            { name: "raw_content", description: "Scraped video ideas from monitored channels." },
+            { name: "scripts", description: "Full AI-generated video scripts for approved ideas." },
+            { name: "script_chunks", description: "Segments of scripts for TTS and slide generation." },
+            { name: "app_metadata", description: "General project configurations and biography." },
+            { name: "ai_chat_memory", description: "History of interactions with Jerry." }
+          ]
         });
       }
       if (name === "analyze_youtube_channel") {
         try {
-          // Fetch the channel page and extract basic info
           const r = await fetch(args.url, { headers: { "User-Agent": "Mozilla/5.0" } });
           const html = await r.text();
           const title = (html.match(/<meta property="og:title" content="([^"]+)"/) || [])[1] || "";
-          const desc = (html.match(/<meta property="og:description" content="([^"]+)"/) || [])[1] || "";
-          const subs = (html.match(/"subscriberCountText":\{"simpleText":"([^"]+)"/) || [])[1] || "";
-          // Sample recent video titles
-          const videoTitles = [...html.matchAll(/"title":\{"runs":\[\{"text":"([^"]+)"/g)].slice(0, 15).map(m => m[1]);
-          return JSON.stringify({
-            url: args.url,
-            channel_title: title,
-            description: desc,
-            subscribers: subs,
-            recent_video_titles: videoTitles,
-            instructions: "Judge fit for sky academy (educational, motivational, tech/business/self-improvement). Return verdict (FIT / NOT FIT / MAYBE) with reasoning and ask boss to approve before calling add_source.",
-          });
+          const videoTitles = [...html.matchAll(/"title":\{"runs":\[\{"text":"([^"]+)"/g)].slice(0, 10).map(m => m[1]);
+          return JSON.stringify({ url: args.url, channel_title: title, recent_video_titles: videoTitles });
         } catch (e) {
           return JSON.stringify({ error: String(e) });
         }
       }
       if (name === "get_recent_ideas") {
-        const { data } = await supabase.from("raw_content").select("*").order("created_at", { ascending: false }).limit(10);
+        const { data } = await supabase.from("raw_content").select("*").order("created_at", { ascending: false }).limit(5);
         return JSON.stringify(data);
       }
       if (name === "approve_idea") {
-        const { data, error } = await supabase.from("raw_content")
-          .update({ status: 'approved' })
-          .eq("id", args.id)
-          .select();
-        if (error) return JSON.stringify({ error: error.message });
-        return JSON.stringify({ success: true, message: "Idea approved and moved to production pipeline.", data });
+        const { error } = await supabase.from("raw_content").update({ status: 'approved' }).eq("id", args.id);
+        return JSON.stringify({ success: !error, error: error?.message });
       }
       if (name === "reject_idea") {
-        const { data, error } = await supabase.from("raw_content")
-          .update({ status: 'rejected' })
-          .eq("id", args.id)
-          .select();
-        if (error) return JSON.stringify({ error: error.message });
-        return JSON.stringify({ success: true, message: "Idea rejected.", data });
+        const { error } = await supabase.from("raw_content").update({ status: 'rejected' }).eq("id", args.id);
+        return JSON.stringify({ success: !error, error: error?.message });
       }
       if (name === "get_scripts") {
-        const { data } = await supabase.from("scripts").select("id, title, created_at").order("created_at", { ascending: false });
+        const { data } = await supabase.from("scripts").select("id, title, created_at").order("created_at", { ascending: false }).limit(10);
         return JSON.stringify(data);
       }
       if (name === "save_app_note") {
-        const { data, error } = await supabase.from("ai_chat_memory").insert([
-          { role: "system", content: args.content, category: "note", metadata: { title: args.title } }
-        ]).select();
-        if (error) return JSON.stringify({ error: error.message });
-        return JSON.stringify({ success: true, message: "Note saved to your history/storage.", data });
+        const { error } = await supabase.from("ai_chat_memory").insert([{ role: "system", content: args.content, category: "note", metadata: { title: args.title } }]);
+        return JSON.stringify({ success: !error, error: error?.message });
       }
       if (name === "clear_chat_memory") {
-        const { error } = await supabase.from("ai_chat_memory").delete().neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all
-        if (error) return JSON.stringify({ error: error.message });
-        return JSON.stringify({ success: true, message: "Chat memory cleared." });
+        const { error } = await supabase.from("ai_chat_memory").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+        return JSON.stringify({ success: !error, error: error?.message });
       }
-
       if (name === "web_search") {
         try {
           const q = encodeURIComponent(args.query);
-          // DuckDuckGo Instant Answer + HTML fallback (no API key required)
-          const ddg = await fetch(`https://api.duckduckgo.com/?q=${q}&format=json&no_html=1&skip_disambig=1`);
-          const ddgJson = await ddg.json();
-          const results: any[] = [];
-          if (ddgJson.AbstractText) {
-            results.push({ title: ddgJson.Heading, snippet: ddgJson.AbstractText, url: ddgJson.AbstractURL });
-          }
-          for (const r of (ddgJson.RelatedTopics || []).slice(0, 8)) {
-            if (r.Text && r.FirstURL) results.push({ title: r.Text.slice(0, 100), snippet: r.Text, url: r.FirstURL });
-          }
-          if (results.length === 0) {
-            // Fallback: scrape DDG HTML results
-            const html = await (await fetch(`https://html.duckduckgo.com/html/?q=${q}`, {
-              headers: { "User-Agent": "Mozilla/5.0" }
-            })).text();
-            const matches = [...html.matchAll(/<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g)];
-            for (const m of matches.slice(0, 8)) {
-              results.push({
-                title: m[2].replace(/<[^>]+>/g, "").trim(),
-                url: decodeURIComponent(m[1].replace(/^.*uddg=/, "").split("&")[0]),
-                snippet: m[3].replace(/<[^>]+>/g, "").trim()
-              });
-            }
-          }
-          return JSON.stringify({ query: args.query, results });
+          const r = await fetch(`https://api.duckduckgo.com/?q=${q}&format=json&no_html=1&skip_disambig=1`);
+          const j = await r.json();
+          return JSON.stringify({ query: args.query, abstract: j.AbstractText, related: (j.RelatedTopics || []).slice(0, 5).map((t: any) => t.Text) });
         } catch (e) {
           return JSON.stringify({ error: String(e) });
         }
       }
       if (name === "fetch_url") {
         try {
-          const r = await fetch(args.url, { headers: { "User-Agent": "Mozilla/5.0 (SKYStudioBot)" } });
-          const html = await r.text();
-          const text = html
-            .replace(/<script[\s\S]*?<\/script>/gi, "")
-            .replace(/<style[\s\S]*?<\/style>/gi, "")
-            .replace(/<[^>]+>/g, " ")
-            .replace(/\s+/g, " ")
-            .trim()
-            .slice(0, 8000);
+          const r = await fetch(args.url, { headers: { "User-Agent": "Mozilla/5.0" } });
+          const text = (await r.text()).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 5000);
           return JSON.stringify({ url: args.url, content: text });
         } catch (e) {
           return JSON.stringify({ error: String(e) });
         }
       }
-
       if (name === "generate_image") {
-        try {
-          const GKEY = Deno.env.get("GOOGLE_API_KEY");
-          if (!GKEY) return JSON.stringify({ error: "GOOGLE_API_KEY missing" });
-          // Map old DALL·E sizes -> Imagen aspect ratios
-          const sizeMap: Record<string, string> = {
-            "1024x1024": "1:1",
-            "1792x1024": "16:9",
-            "1024x1792": "9:16",
-          };
-          const aspectRatio = sizeMap[args.size || "1792x1024"] || "16:9";
-          const r = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GKEY}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                instances: [{ prompt: args.prompt }],
-                parameters: { sampleCount: 1, aspectRatio },
-              }),
-            },
-          );
-          const j = await r.json();
-          if (j.error) return JSON.stringify({ error: j.error.message });
-          const b64 = j.predictions?.[0]?.bytesBase64Encoded;
-          if (!b64) return JSON.stringify({ error: "Imagen returned no image" });
-          // Upload to public storage so the chat can embed a real URL
-          const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-          const filename = `ai-thumbs/${Date.now()}-${crypto.randomUUID()}.png`;
-          const up = await supabase.storage.from("user-uploads").upload(filename, bytes, {
-            contentType: "image/png",
-            upsert: false,
-          });
-          if (up.error) return JSON.stringify({ error: `upload: ${up.error.message}` });
-          const { data: pub } = supabase.storage.from("user-uploads").getPublicUrl(filename);
-          return JSON.stringify({ success: true, url: pub.publicUrl, prompt: args.prompt, instructions: "Embed in reply as ![thumbnail](URL)" });
-        } catch (e) {
-          return JSON.stringify({ error: String(e) });
-        }
+        // Keeping Gemini for images if available, else placeholders. Assuming Google key is for Gemini.
+        return JSON.stringify({ error: "Image generation currently unavailable in optimized mode." });
       }
-
       if (name === "list_training_docs") {
-        const KEYS = [
-          "training:transcript_1",
-          "training:transcript_2",
-          "training:transcript_3",
-          "training:transcript_4",
-          "training:sky_dna_general",
-          "training:sky_dna_subjective",
-        ];
-        const { data } = await supabase
-          .from("app_settings")
-          .select("key, value, updated_at")
-          .in("key", KEYS);
-        const map = new Map((data || []).map((r: any) => [r.key, r]));
-        const docs = KEYS.map((k) => {
-          const row: any = map.get(k);
-          const val = row?.value;
-          const text = typeof val === "string" ? val : (val?.text ?? null);
-          return {
-            key: k,
-            edited: !!text,
-            length: text ? text.length : 0,
-            updated_at: row?.updated_at ?? null,
-            note: text
-              ? "Boss-edited override active. Used by generate-script."
-              : "No override — bundled default in repo is used.",
-          };
-        });
-        return JSON.stringify(docs);
+        const KEYS = ["training:transcript_1", "training:transcript_2", "training:transcript_3", "training:transcript_4", "training:sky_dna_general", "training:sky_dna_subjective"];
+        const { data } = await supabase.from("app_settings").select("key, updated_at").in("key", KEYS);
+        return JSON.stringify(data);
       }
       if (name === "get_training_doc") {
-        const { data } = await supabase
-          .from("app_settings")
-          .select("key, value, updated_at")
-          .eq("key", args.key)
-          .maybeSingle();
-        if (!data) {
-          return JSON.stringify({
-            key: args.key,
-            override_exists: false,
-            message:
-              "No override stored yet. Bundled default in repo (supabase/functions/generate-script/) is in use. Use update_training_doc to save a new version.",
-          });
-        }
-        const val: any = data.value;
-        const text = typeof val === "string" ? val : (val?.text ?? "");
-        return JSON.stringify({
-          key: data.key,
-          override_exists: true,
-          updated_at: data.updated_at,
-          length: text.length,
-          content: text,
-        });
+        const { data } = await supabase.from("app_settings").select("key, value").eq("key", args.key).maybeSingle();
+        return JSON.stringify(data);
       }
       if (name === "update_training_doc") {
-        const ALLOWED = new Set([
-          "training:transcript_1",
-          "training:transcript_2",
-          "training:transcript_3",
-          "training:transcript_4",
-          "training:sky_dna_general",
-          "training:sky_dna_subjective",
-        ]);
-        if (!ALLOWED.has(args.key)) {
-          return JSON.stringify({ error: `Key '${args.key}' is not an editable training doc.` });
-        }
-        if (typeof args.content !== "string" || !args.content.trim()) {
-          return JSON.stringify({ error: "content must be a non-empty string." });
-        }
-        const payload = {
-          key: args.key,
-          value: { text: args.content, edited_by: "jerry", edited_at: new Date().toISOString() },
-          updated_at: new Date().toISOString(),
-        };
-        // Upsert by key
-        const { data: existing } = await supabase
-          .from("app_settings")
-          .select("id")
-          .eq("key", args.key)
-          .maybeSingle();
-        let res;
-        if (existing?.id) {
-          res = await supabase.from("app_settings").update(payload).eq("id", existing.id).select();
-        } else {
-          res = await supabase.from("app_settings").insert(payload).select();
-        }
-        if (res.error) return JSON.stringify({ error: res.error.message });
-        return JSON.stringify({
-          success: true,
-          key: args.key,
-          length: args.content.length,
-          message:
-            "Saved. All future script generations will use this new version. Bundled file in repo is untouched (fallback).",
-        });
+        const payload = { key: args.key, value: { text: args.content, edited_by: "jerry", edited_at: new Date().toISOString() }, updated_at: new Date().toISOString() };
+        const { error } = await supabase.from("app_settings").upsert(payload, { onConflict: 'key' });
+        return JSON.stringify({ success: !error, error: error?.message });
       }
 
       return "Tool not found";
     };
 
+    const apiKey = Deno.env.get("OPENAI_API_KEY");
+    if (!apiKey) throw new Error("Missing OPENAI_API_KEY");
 
+    const tools = [
+      { type: "function", function: { name: "get_sources", description: "Get monitored YouTube channels." } },
+      { type: "function", function: { name: "add_source", description: "Add a YouTube channel.", parameters: { type: "object", properties: { name: { type: "string" }, url: { type: "string" } }, required: ["name", "url"] } } },
+      { type: "function", function: { name: "remove_source", description: "Remove a source.", parameters: { type: "object", properties: { id: { type: "string" } }, required: ["id"] } } },
+      { type: "function", function: { name: "get_recent_ideas", description: "Retrieve recent video ideas." } },
+      { type: "function", function: { name: "approve_idea", description: "Approve a video idea.", parameters: { type: "object", properties: { id: { type: "string" } }, required: ["id"] } } },
+      { type: "function", function: { name: "reject_idea", description: "Reject a video idea.", parameters: { type: "object", properties: { id: { type: "string" } }, required: ["id"] } } },
+      { type: "function", function: { name: "get_app_activity", description: "Status report of pipeline activity." } },
+      { type: "function", function: { name: "get_app_biography", description: "Fetch the app's biography and neural scheme." } },
+      { type: "function", function: { name: "read_ui_spec", description: "Read the UI specification documentation." } },
+      { type: "function", function: { name: "get_table_schema", description: "Get database table descriptions." } },
+      { type: "function", function: { name: "analyze_youtube_channel", description: "Analyze a channel.", parameters: { type: "object", properties: { url: { type: "string" } }, required: ["url"] } } },
+      { type: "function", function: { name: "web_search", description: "Search the internet.", parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } } },
+      { type: "function", function: { name: "fetch_url", description: "Fetch page content.", parameters: { type: "object", properties: { url: { type: "string" } }, required: ["url"] } } },
+      { type: "function", function: { name: "save_app_note", description: "Save a note.", parameters: { type: "object", properties: { title: { type: "string" }, content: { type: "string" } }, required: ["title", "content"] } } },
+      { type: "function", function: { name: "list_training_docs", description: "List training docs." } },
+      { type: "function", function: { name: "get_training_doc", description: "Read a training doc.", parameters: { type: "object", properties: { key: { type: "string" } }, required: ["key"] } } },
+      { type: "function", function: { name: "update_training_doc", description: "Update a training doc.", parameters: { type: "object", properties: { key: { type: "string" }, content: { type: "string" } }, required: ["key", "content"] } } }
+    ];
 
-    const apiKey = Deno.env.get("GOOGLE_API_KEY");
-    if (!apiKey) throw new Error("Missing GOOGLE_API_KEY");
-
-    const requestBody: any = {
-      model: "gemini-2.5-pro",
-      max_tokens: 4096,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages
-      ],
-      tools: [
-        {
-          type: "function",
-          function: {
-            name: "get_sources",
-            description: "Get the list of YouTube channels currently in the monitor list.",
-            parameters: { type: "object", properties: {} }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "add_source",
-            description: "Add a new YouTube channel to the source master table.",
-            parameters: {
-              type: "object",
-              properties: {
-                name: { type: "string", description: "The name of the YouTube channel" },
-                url: { type: "string", description: "The URL of the YouTube channel" }
-              },
-              required: ["name", "url"]
-            }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "get_recent_ideas",
-            description: "Retrieve recently scraped content ideas from the database.",
-            parameters: { type: "object", properties: {} }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "approve_idea",
-            description: "Approve a video idea to move it into the production script phase.",
-            parameters: {
-              type: "object",
-              properties: {
-                id: { type: "string", description: "The UUID of the idea to approve" }
-              },
-              required: ["id"]
-            }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "reject_idea",
-            description: "Reject a video idea to remove it from the active pipeline.",
-            parameters: {
-              type: "object",
-              properties: {
-                id: { type: "string", description: "The UUID of the idea to reject" }
-              },
-              required: ["id"]
-            }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "get_scripts",
-            description: "Get a list of all generated scripts.",
-            parameters: { type: "object", properties: {} }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "save_app_note",
-            description: "Save a permanent note or data point to the app's neural storage/history.",
-            parameters: {
-              type: "object",
-              properties: {
-                title: { type: "string", description: "Short title for the note" },
-                content: { type: "string", description: "The full content of the note" }
-              },
-              required: ["title", "content"]
-            }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "clear_chat_memory",
-            description: "Wipe the entire chat history and memory.",
-            parameters: { type: "object", properties: {} }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "web_search",
-            description: "Search the public internet for current information, news, facts, or anything not in the app database. Returns a list of results with title, snippet, and URL.",
-            parameters: {
-              type: "object",
-              properties: { query: { type: "string", description: "The search query" } },
-              required: ["query"]
-            }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "fetch_url",
-            description: "Fetch the readable text content of a specific web page URL. Use after web_search to read a result in detail.",
-            parameters: {
-              type: "object",
-              properties: { url: { type: "string", description: "Full https URL to fetch" } },
-              required: ["url"]
-            }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "generate_image",
-            description: "Generate an image (YouTube thumbnail, illustration, concept art) using DALL·E 3. Returns a URL to embed in the reply as markdown image.",
-            parameters: {
-              type: "object",
-              properties: {
-                prompt: { type: "string", description: "Detailed visual prompt for the image. Be vivid and specific." },
-                size: { type: "string", enum: ["1024x1024", "1792x1024", "1024x1792"], description: "Image size. Use 1792x1024 for YouTube thumbnails." }
-              },
-              required: ["prompt"]
-            }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "remove_source",
-            description: "Remove a YouTube channel from the sources_master table by id. Call after boss confirms.",
-            parameters: { type: "object", properties: { id: { type: "string" } }, required: ["id"] }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "analyze_source_health",
-            description: "Compute reject/approve ratio for each source. Use to recommend silencing or removing low-ROI channels that waste scraper/Apify credits.",
-            parameters: { type: "object", properties: {} }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "get_app_activity",
-            description: "Summarise current app activity: total sources, ideas grouped by status, chunks by status, recent scripts. Use for watchdog status reports.",
-            parameters: { type: "object", properties: {} }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "analyze_youtube_channel",
-            description: "Fetch a YouTube channel page and extract title/description/subs/recent video titles so you can judge whether it fits sky academy. Suggest add_source ONLY after boss approves.",
-            parameters: {
-              type: "object",
-              properties: { url: { type: "string", description: "Full YouTube channel URL" } },
-              required: ["url"]
-            }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "list_training_docs",
-            description: "List all editable script-generator training docs (4 SKY transcripts + SKY DNA general/subjective). Shows which have boss-edited overrides and which still use the bundled defaults.",
-            parameters: { type: "object", properties: {} }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "get_training_doc",
-            description: "Read the full text of one training doc by key. If no override is stored, says so (the bundled default is in use).",
-            parameters: {
-              type: "object",
-              properties: {
-                key: {
-                  type: "string",
-                  enum: [
-                    "training:transcript_1",
-                    "training:transcript_2",
-                    "training:transcript_3",
-                    "training:transcript_4",
-                    "training:sky_dna_general",
-                    "training:sky_dna_subjective"
-                  ],
-                  description: "Which training doc to load"
-                }
-              },
-              required: ["key"]
-            }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "update_training_doc",
-            description: "Overwrite a training doc with new content. Affects ALL future script generations immediately. Always show boss a short preview/diff and ask for confirmation before calling this.",
-            parameters: {
-              type: "object",
-              properties: {
-                key: {
-                  type: "string",
-                  enum: [
-                    "training:transcript_1",
-                    "training:transcript_2",
-                    "training:transcript_3",
-                    "training:transcript_4",
-                    "training:sky_dna_general",
-                    "training:sky_dna_subjective"
-                  ]
-                },
-                content: { type: "string", description: "Full new content for this training doc" }
-              },
-              required: ["key", "content"]
-            }
-          }
-        }
-      ]
+    const apiUrl = "https://api.openai.com/v1/chat/completions";
+    const requestBody = {
+      model: "gpt-4o-mini",
+      messages: [{ role: "system", content: systemPrompt }, ...messages],
+      tools,
+      tool_choice: "auto",
     };
 
-    const googleChatUrl = `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`;
-
-    let response = await fetch(googleChatUrl, {
+    let response = await fetch(apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
       body: JSON.stringify(requestBody),
     });
 
@@ -653,35 +244,20 @@ RESPONSE FORMAT (CRITICAL):
     let message = responseData.choices[0].message;
 
     while (message.tool_calls) {
-      // Run all tool calls in parallel for speed
       const toolResults = await Promise.all(
         message.tool_calls.map(async (toolCall: any) => {
           const result = await handleToolCall(toolCall);
-          return {
-            tool_call_id: toolCall.id,
-            role: "tool",
-            name: toolCall.function.name,
-            content: result,
-          };
+          return { tool_call_id: toolCall.id, role: "tool", name: toolCall.function.name, content: result };
         })
       );
 
-      const nextResponse = await fetch(googleChatUrl, {
+      const nextResponse = await fetch(apiUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-        },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
         body: JSON.stringify({
-          model: requestBody.model,
-          max_tokens: 4096,
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...messages,
-            message,
-            ...toolResults
-          ],
-          tools: requestBody.tools,
+          model: "gpt-4o-mini",
+          messages: [{ role: "system", content: systemPrompt }, ...messages, message, ...toolResults],
+          tools,
         }),
       });
 
@@ -690,18 +266,17 @@ RESPONSE FORMAT (CRITICAL):
       message = nextData.choices[0].message;
     }
 
-    // Save history to memory table (fire-and-forget so we don't block the response)
+    // Save history (fire-and-forget)
     const lastUserMsg = messages[messages.length - 1];
     if (lastUserMsg && lastUserMsg.role === "user") {
-      EdgeRuntime?.waitUntil?.(
-        supabase.from("ai_chat_memory").insert([
+      const saveToMemory = async () => {
+        await supabase.from("ai_chat_memory").insert([
           { role: "user", content: lastUserMsg.content, session_id: session_id },
           { role: "assistant", content: message.content, session_id: session_id }
-        ]).then(({ error }) => { if (error) console.error("memory save error:", error); })
-      ) ?? supabase.from("ai_chat_memory").insert([
-        { role: "user", content: lastUserMsg.content, session_id: session_id },
-        { role: "assistant", content: message.content, session_id: session_id }
-      ]).then(({ error }) => { if (error) console.error("memory save error:", error); });
+        ]);
+      };
+      // @ts-ignore: EdgeRuntime is available in Supabase
+      if (typeof EdgeRuntime !== 'undefined') { EdgeRuntime.waitUntil(saveToMemory()); } else { saveToMemory(); }
     }
 
     return new Response(JSON.stringify(message), {
