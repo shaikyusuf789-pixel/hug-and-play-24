@@ -64,7 +64,7 @@ function ScriptGenerator() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  
   const [selectedIdeaId, setSelectedIdeaId] = useState<string>(search.ideaId || "");
   const [showHistory, setShowHistory] = useState(false);
   const [selectedHistoryScriptId, setSelectedHistoryScriptId] = useState<string>("");
@@ -75,7 +75,9 @@ function ScriptGenerator() {
   // Fact-checking AI
   type FactFinding = { claim: string; issue: string; correction: string; source: string; severity?: "high" | "medium" | "low" };
   const [isFactChecking, setIsFactChecking] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
   const [factFindings, setFactFindings] = useState<FactFinding[]>([]);
+
   const [factCheckRan, setFactCheckRan] = useState(false);
   const [isApplyingFacts, setIsApplyingFacts] = useState(false);
   const [factCheckedAgainst, setFactCheckedAgainst] = useState<string>("");
@@ -132,6 +134,27 @@ function ScriptGenerator() {
     }
   };
 
+  const handleEnhanceScript = async () => {
+    if (!scriptText.trim()) return;
+    setIsEnhancing(true);
+    try {
+      const res = await supabase.functions.invoke("enhance-script", {
+        body: { script: scriptText },
+      });
+      if (res.error) throw res.error;
+      const enhanced = res.data?.enhancedScript;
+      if (!enhanced) throw new Error("No enhanced script returned");
+      setScriptText(enhanced);
+      toast.success("Script enhanced with punctuations and emotions! ✓");
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Enhancement failed");
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
+
+
   const liveWordCount = scriptText.trim() ? scriptText.trim().split(/\s+/).filter(Boolean).length : 0;
   const liveCharCount = scriptText.length;
 
@@ -171,7 +194,19 @@ function ScriptGenerator() {
   const approvedIdeas = (priorityIdeasData?.ideas || []) as any[];
   const scriptMap = (priorityIdeasData?.scriptMap || {}) as Record<string, { id: string; updated_at: string }>;
 
+  // Autosave logic
   useEffect(() => {
+    if (!scriptText.trim() || isGenerating || isEnhancing || isSaving) return;
+
+    const timer = setTimeout(() => {
+      handleSaveScript();
+    }, 2000); // 2 seconds debounce
+
+    return () => clearTimeout(timer);
+  }, [scriptText]);
+
+  useEffect(() => {
+
     if (search.ideaId && approvedIdeas.length > 0) {
       handleIdeaSelect(search.ideaId);
     }
@@ -1074,63 +1109,28 @@ function ScriptGenerator() {
                 )}
               </Button>
 
-              {scriptText && (
-                <div className="space-y-4 pt-6 border-t border-slate-100">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1 h-4 bg-blue-600 rounded-full" />
-                      <Label className="text-slate-900 font-black uppercase text-[11px] tracking-wider">Generated Full Script</Label>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 text-[10px] font-bold"
-                        onClick={() => {
-                          navigator.clipboard.writeText(scriptText);
-                          toast.success("Script copied!");
-                        }}
-                      >
-                        Copy
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 text-[10px] font-bold text-green-600"
-                        onClick={handleSaveScript}
-                        disabled={isSaving}
-                      >
-                        {isSaving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
-                        Save
-                      </Button>
-                    </div>
+              {isExistingScript && (
+                <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex items-center gap-3 mt-6">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                    <CheckCircle2 className="h-4 w-4" />
                   </div>
-                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 leading-relaxed text-sm font-telugu max-h-[500px] overflow-y-auto whitespace-pre-wrap shadow-inner text-slate-700">
-                    {scriptText}
+                  <div className="flex-1">
+                    <p className="text-xs text-indigo-900 font-bold">Previous version found</p>
+                    <p className="text-[10px] text-indigo-600 font-medium">This script was already generated and is saved in your pipeline.</p>
                   </div>
-                  {isExistingScript && (
-                    <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
-                        <CheckCircle2 className="h-4 w-4" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs text-indigo-900 font-bold">Previous version found</p>
-                        <p className="text-[10px] text-indigo-600 font-medium">This script was already generated and is saved in your pipeline.</p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 text-[10px] font-bold bg-white"
-                        onClick={() => setRegenConfirmOpen(true)}
-                        disabled={isGenerating}
-                      >
-                        {isGenerating ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RotateCcw className="h-3 w-3 mr-1" />}
-                        Regenerate
-                      </Button>
-                    </div>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-[10px] font-bold bg-white"
+                    onClick={() => setRegenConfirmOpen(true)}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RotateCcw className="h-3 w-3 mr-1" />}
+                    Regenerate
+                  </Button>
                 </div>
               )}
+
             </CardContent>
           </Card>
         </div>
@@ -1167,11 +1167,16 @@ function ScriptGenerator() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setIsEditing(!isEditing)}
-                    className={isEditing ? "bg-blue-50" : ""}
+                    onClick={handleEnhanceScript}
+                    disabled={isEnhancing || isGenerating}
+                    className="border-blue-300 text-blue-700 hover:bg-blue-50"
                   >
-                    <Edit3 className="w-4 h-4 mr-1" />
-                    {isEditing ? "Stop Editing" : "Edit"}
+                    {isEnhancing ? (
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 mr-1" />
+                    )}
+                    Script Enhancer
                   </Button>
                   <Button
                     variant="outline"
@@ -1196,21 +1201,15 @@ function ScriptGenerator() {
                     )}
                     Fact Check
                   </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="bg-green-600 hover:bg-green-700"
-                    onClick={handleSaveScript}
-                    disabled={isSaving}
-                  >
+                  <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 border border-slate-200 rounded text-[10px] font-bold text-slate-500 uppercase tracking-tight italic">
                     {isSaving ? (
-                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Saving...</>
                     ) : (
-                      <Save className="w-4 h-4 mr-1" />
+                      <>✓ Autosaved</>
                     )}
-                    {isFromHistory ? "Update Script" : "Save Script"}
-                  </Button>
+                  </div>
                 </div>
+
               )}
             </CardHeader>
             <CardContent className="flex-1 p-0">
@@ -1219,17 +1218,13 @@ function ScriptGenerator() {
                   <div className="flex justify-between items-center">
                     <h3 className="font-black text-xl text-slate-900">Entire Production Script</h3>
                   </div>
-                  {isEditing ? (
-                    <Textarea
-                      className="p-6 bg-white rounded-2xl border border-slate-200 leading-relaxed text-lg font-telugu min-h-[400px] whitespace-pre-wrap text-slate-800"
-                      value={scriptText}
-                      onChange={(e) => setScriptText(e.target.value)}
-                    />
-                  ) : (
-                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 leading-relaxed text-lg font-telugu min-h-[400px] whitespace-pre-wrap text-slate-800">
-                      {scriptText}
-                    </div>
-                  )}
+                  <Textarea
+                    className="p-6 bg-white rounded-2xl border border-slate-200 leading-relaxed text-lg font-telugu min-h-[500px] whitespace-pre-wrap text-slate-800 focus:ring-2 focus:ring-blue-500"
+                    value={scriptText}
+                    onChange={(e) => setScriptText(e.target.value)}
+                    placeholder="Enter or edit your script here..."
+                  />
+
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-12 text-center space-y-4">

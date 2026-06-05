@@ -30,6 +30,13 @@ Deno.serve(async (req) => {
     if (chunkErr || !chunk) return json({ error: "Chunk not found" }, 400);
     if (!chunk.content?.trim()) return json({ error: "Chunk content empty" }, 400);
 
+    // Filter out emotion tags for non-Cartesia providers to avoid them being read as text
+    let cleanContent = chunk.content;
+    if (provider !== "cartesia") {
+      cleanContent = cleanContent.replace(/<emotion[^>]*\/>/g, "");
+    }
+
+
     // Delete previous audio file (regenerate = replace)
     if (chunk.audio_url) {
       try {
@@ -56,7 +63,7 @@ Deno.serve(async (req) => {
           method: "POST",
           headers: { "xi-api-key": key, "Content-Type": "application/json" },
           body: JSON.stringify({
-            text: chunk.content,
+            text: cleanContent,
             model_id: model || "eleven_v3",
           }),
         },
@@ -81,7 +88,7 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           model_id: modelId,
-          transcript: chunk.content,
+          transcript: cleanContent,
           voice: { mode: "id", id: vId },
           output_format: {
             container: "mp3",
@@ -107,7 +114,7 @@ Deno.serve(async (req) => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: chunk.content }] }],
+            contents: [{ parts: [{ text: cleanContent }] }],
             generationConfig: {
               responseModalities: ["AUDIO"],
               speechConfig: {
