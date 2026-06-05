@@ -1109,63 +1109,28 @@ function ScriptGenerator() {
                 )}
               </Button>
 
-              {scriptText && (
-                <div className="space-y-4 pt-6 border-t border-slate-100">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1 h-4 bg-blue-600 rounded-full" />
-                      <Label className="text-slate-900 font-black uppercase text-[11px] tracking-wider">Generated Full Script</Label>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 text-[10px] font-bold"
-                        onClick={() => {
-                          navigator.clipboard.writeText(scriptText);
-                          toast.success("Script copied!");
-                        }}
-                      >
-                        Copy
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 text-[10px] font-bold text-green-600"
-                        onClick={handleSaveScript}
-                        disabled={isSaving}
-                      >
-                        {isSaving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
-                        Save
-                      </Button>
-                    </div>
+              {isExistingScript && (
+                <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex items-center gap-3 mt-6">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                    <CheckCircle2 className="h-4 w-4" />
                   </div>
-                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 leading-relaxed text-sm font-telugu max-h-[500px] overflow-y-auto whitespace-pre-wrap shadow-inner text-slate-700">
-                    {scriptText}
+                  <div className="flex-1">
+                    <p className="text-xs text-indigo-900 font-bold">Previous version found</p>
+                    <p className="text-[10px] text-indigo-600 font-medium">This script was already generated and is saved in your pipeline.</p>
                   </div>
-                  {isExistingScript && (
-                    <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
-                        <CheckCircle2 className="h-4 w-4" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs text-indigo-900 font-bold">Previous version found</p>
-                        <p className="text-[10px] text-indigo-600 font-medium">This script was already generated and is saved in your pipeline.</p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 text-[10px] font-bold bg-white"
-                        onClick={() => setRegenConfirmOpen(true)}
-                        disabled={isGenerating}
-                      >
-                        {isGenerating ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RotateCcw className="h-3 w-3 mr-1" />}
-                        Regenerate
-                      </Button>
-                    </div>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-[10px] font-bold bg-white"
+                    onClick={() => setRegenConfirmOpen(true)}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RotateCcw className="h-3 w-3 mr-1" />}
+                    Regenerate
+                  </Button>
                 </div>
               )}
+
             </CardContent>
           </Card>
         </div>
