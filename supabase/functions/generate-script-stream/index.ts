@@ -258,7 +258,7 @@ serve(async (req) => {
       });
     }
     parts.push(
-      `\nGenerate ONE continuous Telugu script of approximately ${targetWords} words. PLAIN TEXT ONLY.`,
+      `\nGenerate ONE continuous Telugu script of approximately ${targetWords} words (hard range ${Math.max(50, targetWords - 50)}-${targetWords + 50}). Do NOT stop before reaching ${Math.max(50, targetWords - 50)} words. If the source is short, EXPAND with sub-topics, examples, exam relevance, definitions and a recap around the SAME topic. PLAIN TEXT ONLY.`,
     );
     const userPrompt = parts.join("\n\n");
 
