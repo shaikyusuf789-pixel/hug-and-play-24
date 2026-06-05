@@ -273,6 +273,14 @@ HARD CONTENT BOUNDARY (most common failure):
   department or domain word (e.g. "railway", "RRB", "IPL",
   "auction") from a transcript unless that exact thing also
   appears in USER INPUT.
+- BRAND SAFETY: NO MATTER WHAT THE INPUT IS (competitor scripts,
+  books, newspapers, etc.), you are STRICTLY FORBIDDEN from using:
+    - Any other academy names (e.g., Adda247, etc.)
+    - Any other course promotions or batch names (e.g., Safar Express)
+    - Any discount codes or offers NOT explicitly mentioned in the
+      "Special Instructions" box of the USER INPUT.
+    - Any other mentor names.
+  This script is exclusively for the sky academy YouTube channel.
 - If user input is about SSC / Banking, the script is about
   SSC / Banking only. Zero spillover from transcript topics.
 - Do not invent stats, dates, vacancies, results, winners,
