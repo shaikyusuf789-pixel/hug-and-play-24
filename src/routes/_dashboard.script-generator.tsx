@@ -64,7 +64,7 @@ function ScriptGenerator() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  
   const [selectedIdeaId, setSelectedIdeaId] = useState<string>(search.ideaId || "");
   const [showHistory, setShowHistory] = useState(false);
   const [selectedHistoryScriptId, setSelectedHistoryScriptId] = useState<string>("");
