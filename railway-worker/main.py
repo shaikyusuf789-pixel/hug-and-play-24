@@ -225,7 +225,7 @@ def timestamps_run(req: TsRunReq):
     tmp = None
     try:
         print(f"[TS/run] chunk {req.chunk_number} ({req.chunk_id})")
-        tmp = download_to_tmp(AUDIO_BUCKET, audio_path(req.script_id, req.chunk_number), ".mp3")
+        tmp = download_audio_to_tmp(req.script_id, req.chunk_number)
         words, duration = get_timestamps(tmp)
         _upsert_timestamps(req.script_id, req.chunk_id, req.chunk_number, words)
         return {"ok": True, "word_count": len(words), "duration": duration}
