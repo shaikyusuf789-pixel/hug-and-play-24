@@ -648,15 +648,7 @@ RESPONSE FORMAT (CRITICAL):
     });
 
     let responseData = await response.json();
-    console.log("Response from Google:", JSON.stringify(responseData));
-    
-    if (responseData.error) {
-      throw new Error(`Google API Error: ${responseData.error.message || JSON.stringify(responseData.error)}`);
-    }
-    
-    if (!responseData.choices || responseData.choices.length === 0) {
-      throw new Error(`Google API returned no choices. Full response: ${JSON.stringify(responseData)}`);
-    }
+    if (responseData.error) throw new Error(responseData.error.message);
     
     let message = responseData.choices[0].message;
 
