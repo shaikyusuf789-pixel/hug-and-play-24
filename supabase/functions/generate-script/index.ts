@@ -284,6 +284,12 @@ serve(async (req) => {
 
     let scriptId: string | null = null;
     if (save) {
+      // Delete any prior scripts for this idea so regeneration truly replaces.
+      if (body.idea_id) {
+        const { error: delErr } = await supa.from("scripts").delete().eq("idea_id", body.idea_id);
+        if (delErr) console.error("prior script delete error", delErr);
+      }
+
       const { data: scriptRow, error: scriptErr } = await supa
         .from("scripts")
         .insert({
