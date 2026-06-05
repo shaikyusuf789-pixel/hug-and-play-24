@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS scripts_idea_id_unique ON public.scripts(idea_id) WHERE idea_id IS NOT NULL;
