@@ -35,6 +35,7 @@ from lib.storage import (
 from workers.ocr import run_ocr
 from workers.timestamps import get_timestamps
 from workers.render import render_clip, get_audio_duration
+from workers.merger import merge_script_clips
 
 import httpx
 
