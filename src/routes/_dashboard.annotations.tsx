@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Play,
@@ -84,6 +84,10 @@ function AnnotationsPage() {
   const toggleExp = (k: string) => setExpanded((e) => ({ ...e, [k]: !e[k] }));
   const [bulkBusy, setBulkBusy] = useState<string | null>(null);
   const [mergeState, setMergeState] = useState<{ status: string; url?: string | null; error?: string | null; clip_count?: number }>({ status: "idle" });
+  const scriptIdRef = useRef(scriptId);
+  const slideSourceRef = useRef(slideSource);
+  useEffect(() => { scriptIdRef.current = scriptId; }, [scriptId]);
+  useEffect(() => { slideSourceRef.current = slideSource; }, [slideSource]);
 
   // ── fetch scripts
   useEffect(() => {
@@ -199,20 +203,52 @@ function AnnotationsPage() {
   };
 
   // ── bulk actions
+  // Poll DB until all chunks for `scriptId` have a row in `table`
+  // (or until timeout / scriptId/source changes).
+  const pollUntilComplete = async (
+    table: "audio_timestamps" | "ocr_results",
+    sid: string,
+    src: SlideSource,
+    label: string,
+  ) => {
+    const totalChunks = chunks.length || (await supabase
+      .from("script_chunks").select("id", { count: "exact", head: true })
+      .eq("script_id", sid)).count || 0;
+    if (!totalChunks) return;
+    const started = Date.now();
+    const MAX_MS = 15 * 60_000; // 15 min hard cap
+    while (Date.now() - started < MAX_MS) {
+      await new Promise((r) => setTimeout(r, 4000));
+      // bail out if user navigated away from this script/source
+      if (scriptIdRef.current !== sid || slideSourceRef.current !== src) return;
+      const baseQ = table === "ocr_results"
+        ? supabase.from("ocr_results").select("chunk_id", { count: "exact", head: true })
+            .eq("script_id", sid).eq("slide_source", src)
+        : supabase.from("audio_timestamps").select("chunk_id", { count: "exact", head: true })
+            .eq("script_id", sid);
+      const { count } = await baseQ;
+      await refreshAll(sid, src);
+      if ((count || 0) >= totalChunks) {
+        toast.success(`${label}: ${count}/${totalChunks} chunks ready`);
+        return;
+      }
+    }
+    toast.warning(`${label}: still running after 15 min — refresh to check status`);
+  };
+
   const bulk = async (label: string, path: string) => {
     if (!scriptId) return toast.error("Pick a script first");
     setBulkBusy(label);
     try {
       if (path === "/timestamps/run-all") {
-        // Timestamps now run via ElevenLabs forced alignment (server fn).
+        // Worker queues background tasks per chunk; poll DB until all rows land.
         const res = await runTimestampsAll({ data: { scriptId } });
-        const failedMsg = res.failed ? `, ${res.failed} failed` : "";
-        toast.success(`${label}: ${res.succeeded}/${res.queued} chunks${failedMsg}`);
+        toast.info(`${label}: queued ${res.queued} chunks — waiting for results…`);
+        await pollUntilComplete("audio_timestamps", scriptId, slideSource, label);
       } else if (path === "/ocr/run-all") {
-        // OCR now runs via Google Cloud Vision (server fn).
         const res: any = await runOcrAllFn({ data: { scriptId, slideSource } });
-        const failedMsg = res.failed ? `, ${res.failed} failed` : "";
-        toast.success(`${label}: ${res.succeeded}/${res.queued} chunks${failedMsg}`);
+        toast.info(`${label}: queued ${res.queued} chunks — waiting for results…`);
+        await pollUntilComplete("ocr_results", scriptId, slideSource, label);
       } else if (path === "/ai/run-all") {
         // AI annotations now run via Supabase Edge Function (calling 2x GPT-4o pipeline)
         const pending = chunks.map(async (c) => {
@@ -222,9 +258,6 @@ function AnnotationsPage() {
         });
         await Promise.all(pending);
         toast.success(`${label}: Processed all chunks via GPT-4o pipeline`);
-
-
-
       } else {
         const body: any = { script_id: scriptId, slide_source: slideSource };
         const res = await workerPost(path, body);
