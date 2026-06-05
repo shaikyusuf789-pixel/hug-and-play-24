@@ -84,6 +84,10 @@ function AnnotationsPage() {
   const toggleExp = (k: string) => setExpanded((e) => ({ ...e, [k]: !e[k] }));
   const [bulkBusy, setBulkBusy] = useState<string | null>(null);
   const [mergeState, setMergeState] = useState<{ status: string; url?: string | null; error?: string | null; clip_count?: number }>({ status: "idle" });
+  const scriptIdRef = useRef(scriptId);
+  const slideSourceRef = useRef(slideSource);
+  useEffect(() => { scriptIdRef.current = scriptId; }, [scriptId]);
+  useEffect(() => { slideSourceRef.current = slideSource; }, [slideSource]);
 
   // ── fetch scripts
   useEffect(() => {
