@@ -536,6 +536,17 @@ export const saveScript = createServerFn({ method: "POST" })
     model: z.string().optional(),
   }))
   .handler(async ({ data }) => {
+    const updateExistingScript = async (id: string) => {
+      const { data: updated, error } = await supabaseAdmin
+        .from("scripts")
+        .update({ ...data, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .select("id")
+        .single();
+      if (error) throw error;
+      return { ok: true, id: updated.id };
+    };
+
     if (data.idea_id) {
       const { data: existing, error: lookupError } = await supabaseAdmin
         .from("scripts")
@@ -546,18 +557,20 @@ export const saveScript = createServerFn({ method: "POST" })
       if (lookupError) throw lookupError;
 
       if (existing?.id) {
-        const { data: updated, error } = await supabaseAdmin
-          .from("scripts")
-          .update({ ...data, updated_at: new Date().toISOString() })
-          .eq("id", existing.id)
-          .select("id")
-          .single();
-        if (error) throw error;
-        return { ok: true, id: updated.id };
+        return updateExistingScript(existing.id);
       }
     }
 
     const { data: inserted, error } = await supabaseAdmin.from("scripts").insert(data).select("id").single();
+    if (error && data.idea_id && (error as any).code === "23505") {
+      const { data: existing, error: lookupError } = await supabaseAdmin
+        .from("scripts")
+        .select("id")
+        .eq("idea_id", data.idea_id)
+        .single();
+      if (lookupError) throw lookupError;
+      return updateExistingScript(existing.id);
+    }
     if (error) throw error;
     return { ok: true, id: inserted.id };
   });
