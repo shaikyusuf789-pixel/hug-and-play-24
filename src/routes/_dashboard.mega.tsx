@@ -727,9 +727,23 @@ function ChunkRow({
           chunk.slide_job_status === "failed" ? <span className="text-[9px] text-red-600 font-bold">FAILED</span> : null
         }>
           {chunk.slide_url ? (
-            <a href={chunk.slide_url} target="_blank" rel="noreferrer">
-              <img src={chunk.slide_url} alt={`Slide ${idx + 1}`} className="w-full h-20 object-cover rounded" />
-            </a>
+            chunk.slide_url.includes("gamma.app") ? (
+              <div className="relative group">
+                <iframe
+                  src={chunk.slide_url.replace(/\/docs\//, "/embed/")}
+                  title={`Gamma slide ${idx + 1}`}
+                  className="w-full h-20 rounded border-0 bg-slate-50"
+                  loading="lazy"
+                  allow="fullscreen"
+                />
+                <a href={chunk.slide_url} target="_blank" rel="noreferrer"
+                  className="absolute top-0.5 right-0.5 bg-white/90 text-[8px] font-bold uppercase text-orange-700 px-1 py-0.5 rounded opacity-0 group-hover:opacity-100">Open ↗</a>
+              </div>
+            ) : (
+              <a href={chunk.slide_url} target="_blank" rel="noreferrer">
+                <img src={chunk.slide_url} alt={`Slide ${idx + 1}`} className="w-full h-20 object-cover rounded" />
+              </a>
+            )
           ) : chunk.slide_job_status === "processing" ? (
             <span className="text-rose-600 italic">Generating…</span>
           ) : <span className="text-slate-400 italic">—</span>}
