@@ -70,7 +70,7 @@ def push_to_github():
     
     # 4. Create commit
     res = requests.post(f"{base_url}/git/commits", headers=headers, json={
-        "message": "Fix: Reduce annotation pen stroke width to 50%",
+        "message": "Fix: support .wav audio (Cartesia) in addition to .mp3",
         "tree": new_tree_sha,
         "parents": [latest_commit_sha]
     })
