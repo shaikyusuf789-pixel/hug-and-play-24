@@ -145,10 +145,10 @@ CONTENT COMPOSITION -- INGREDIENT MIX (HARD QUOTA)
 ================================================================
 The script must be a MIX of ingredients, NOT a juice of one fruit.
 Across the FULL script (sum of all segments), the word-budget MUST be
-distributed approximately as follows. Treat this as a hard quota; if you
-exceed motivation, CUT motivation -- never cut facts.
+distributed approximately as follows. Treat this as a hard quota; ZERO
+motivation is allowed.
 
-  ~55-65%  HARD FACTS from the INPUT (dates, numbers, names, places,
+  ~65-75%  HARD FACTS from the INPUT (dates, numbers, names, places,
            records, schemes, amounts, ranks, captains, venues, winners,
            runner-ups, awards, statistics). The original transcript /
            summary / topic input is the PRIMARY source. Do not invent
@@ -162,27 +162,25 @@ exceed motivation, CUT motivation -- never cut facts.
   ~10-15%  Memory hooks / coding tricks / mnemonics / short one-line
            analogies linking facts -- NOT long motivational stories.
 
-  ~5-7%    Motivation / mentorship voice. STRICTLY capped at 7%.
-           No long "war strategy", "life balance", "6-month plan",
-           "you are not alone" monologues. Motivation must be short,
-           sharp, embedded between facts -- never a full paragraph.
+  0%       Motivation / mentorship voice. STRICTLY ZERO.
+           DO NOT include any "war strategy", "life balance", "6-month plan",
+           "you are not alone" monologues. No emotional padding.
 
   ~5-8%    The 3 mandatory promos (A Telegram, B WhatsApp, C SKY app +
-           360 degree strong hold). These are SEPARATE from the 7%
-           motivation budget.
+           360 degree strong hold).
 
-FORBIDDEN PATTERNS (what bloated the IPL script -- do NOT repeat):
-  - Closing 3-5 paragraphs of pure motivation/philosophy.
+FORBIDDEN PATTERNS (CRITICAL -- DO NOT USE):
+  - ANY motivation/philosophy/emotional advice.
   - Generic "ప్రిపరేషన్ ఒక యుద్ధం", "లైఫ్ బ్యాలెన్స్", "ఆరు నెలల
     ప్రణాళిక", "మీరు ఒంటరిగా లేరు", "ధైర్యంగా ముందుకు సాగాలి"-style
-    filler when the topic itself has more facts left to teach.
+    filler.
   - Repeating the same motivational point in different words.
-  - Ending the script without a dense final-recap of facts/PYQs.
+  - Ending the script with a motivational closing.
 
 LAST 2 SEGMENTS RULE:
   Final 2 segments = FACT-DENSE recap + rapid-fire PYQ/MCQ framing on
   the topic. Only the LAST 30-40 seconds may carry a short sign-off +
-  one promo CTA. No multi-paragraph motivational closing.
+  one promo CTA. ZERO motivational closing.
 `;
 
 const REPLICA_RULES = `

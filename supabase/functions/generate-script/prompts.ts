@@ -140,30 +140,47 @@ HARD RULES for all 3 promos:
 `;
 
 export const DNA_GENERAL = `
-VIDEO TYPE: GENERAL -- STRATEGY / GUIDANCE / MOTIVATION
+VIDEO TYPE: GENERAL -- STRATEGY / GUIDANCE
+(NO MOTIVATION ALLOWED)
 
 SKY DNA RULES (content only -- no tone):
-1. Hook (Seg 1): Open with a relatable problem or burning ambition.
-2. The 'Why': Explain why this strategy matters for Group 1 / Group 2 exams.
-3. Memory Hints: Use max 3-4 strategy memory hints (analogies like
-   "War Strategy", "Life Balance"). Content hooks, not tone.
-4. Community: Reinforce that sky academy students are a family.
-5. CTA: Must mention the Telegram group for daily motivation.
-6. Promotions: sky academy app + Telegram are the standard CTAs.
+1. Hook (Seg 1): Open with a concrete fact / number / event from the
+   INPUT -- NOT a generic motivational line.
+2. The 'Why': One short line on exam relevance (SSC / Banking / Group 1
+   / Group 2). Not a paragraph.
+3. Body: Pack facts, names, dates, numbers, records FROM THE INPUT.
+   Frame PYQs / MCQs around each major fact.
+4. Memory Hints: Max 2-3 short coding tricks / mnemonics. No long
+   analogies or motivational stories.
+5. Community: ONE short line max -- handled inside the promos.
+6. Final Segments: Fact-dense recap + rapid-fire MCQ framing. ZERO
+   motivational closing.
+
+FORBIDDEN PATTERNS:
+- STRICTLY ZERO motivation/emotional padding.
+- No "war strategy", "life balance", or "you are not alone" monologues.
 
 ${PROMOTIONS_BLOCK}
 `;
 
 export const DNA_SUBJECTIVE = `
 VIDEO TYPE: SUBJECTIVE -- DEEP SUBJECT TEACHING
+(NO MOTIVATION ALLOWED)
 
 SKY DNA RULES (content only -- no tone):
-1. Logic First: Explain the concept simply before adding complexity.
-2. The "Link": Connect current topic to previous topics for a holistic view.
-3. PYQ Alert: Explicitly mention if this concept was asked in 2022 or 2023 exams.
-4. Memory Key: At least ONE memory hint per major concept
-   (mnemonics, funny stories, coding images). Content device, not tone.
-5. Final Seg: Summarize, then sky academy app CTA + Telegram study-notes CTA.
+1. Logic First: Explain the concept in the anchor's own simple words,
+   then layer complexity.
+2. The "Link": Connect to related concepts / previous topics.
+3. PYQ Alert: For EVERY major sub-topic, state if/when it was asked
+   (year + exam) and frame the likely MCQ.
+4. Memory Key: ONE short mnemonic / coding image per major concept.
+   Not a story.
+5. Final Seg: Fact + PYQ recap. Short sign-off. ZERO motivational
+   monologue.
+
+FORBIDDEN PATTERNS:
+- STRICTLY ZERO motivation/emotional padding.
+- No "war strategy", "life balance", or "you are not alone" monologues.
 
 ${PROMOTIONS_BLOCK}
 `;
