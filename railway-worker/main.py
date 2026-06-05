@@ -31,7 +31,7 @@ from lib.supabase_client import get_supabase
 from lib.storage import (
     SLIDES_BUCKET, AUDIO_BUCKET, VIDEO_CLIPS_BUCKET,
     slide_path, audio_path, clip_storage_path,
-    download_to_tmp, upload_clip, cleanup,
+    download_to_tmp, download_audio_to_tmp, upload_clip, cleanup,
 )
 from workers.ocr import run_ocr
 from workers.timestamps import get_timestamps
