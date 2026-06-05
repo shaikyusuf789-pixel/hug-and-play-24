@@ -283,7 +283,7 @@ def _render_job(script_id: str, chunk_id: str, chunk_number: int, slide_source: 
             raise ValueError("Annotations not found in DB — run AI step first")
 
         tmp_slide = download_to_tmp(SLIDES_BUCKET, slide_path(script_id, chunk_number), ".png")
-        tmp_audio = download_to_tmp(AUDIO_BUCKET, audio_path(script_id, chunk_number), ".mp3")
+        tmp_audio = download_audio_to_tmp(script_id, chunk_number)
 
         tmp_out = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4", dir="/tmp/render").name
         annotations = json.loads(ai_row["annotations"])
