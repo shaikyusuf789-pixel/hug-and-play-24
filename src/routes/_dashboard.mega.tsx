@@ -521,7 +521,7 @@ function MegaPage() {
                 </SelectContent>
               </Select>
               <Input className="h-8 text-xs" placeholder="Voice ID" value={voiceId} onChange={e => setVoiceId(e.target.value)} />
-              <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={generateAllAudio}>
+              <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 gap-2" disabled={!!bulkBusy || !scriptId || !chunks.length} onClick={() => allAudioDone ? guardRun("Audios", true, () => generateAllAudio(true)) : generateAllAudio(false)}>
                 {bulkBusy === "All Audios" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
                 Run
               </Button>
