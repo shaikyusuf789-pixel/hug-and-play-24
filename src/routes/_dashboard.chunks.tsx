@@ -47,11 +47,11 @@ function ChunksPage() {
     const { data, error } = await supabase
       .from("scripts")
       .select("*")
-      .eq("status", "SCRIPT_DONE")
+      .in("status", ["SCRIPT_DONE", "FACT_CHECKED", "ENHANCED", "CLEANED", "CHUNKED", "AUDIO_DONE", "SLIDES_DONE", "DONE"])
       .not("content", "is", null)
       .neq("content", "")
       .order("updated_at", { ascending: false })
-      .limit(50);
+      .limit(100);
 
     if (error) {
       toast.error("Failed to fetch scripts");
