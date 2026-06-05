@@ -398,10 +398,11 @@ function ScriptGenerator() {
       const fullScript = scriptText;
       
       
-      if (isFromHistory && selectedHistoryScriptId) {
+      const existingId = (isFromHistory && selectedHistoryScriptId) || (isExistingScript && existingScriptId) || null;
+      if (existingId) {
         await updateScriptFn({ 
           data: {
-            id: selectedHistoryScriptId,
+            id: existingId,
             content: fullScript,
           } 
         });
