@@ -615,6 +615,21 @@ function MegaPage() {
           ))
         )}
       </div>
+
+      <AlertDialog open={!!confirmState} onOpenChange={(o) => !o && setConfirmState(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmState?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmState?.message}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep existing</AlertDialogCancel>
+            <AlertDialogAction onClick={() => confirmState?.onConfirm()} className="bg-purple-600 hover:bg-purple-700">
+              Re-run anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
