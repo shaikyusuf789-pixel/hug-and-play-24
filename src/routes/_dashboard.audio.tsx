@@ -8,7 +8,10 @@ import {
   Volume2, 
   RefreshCcw, 
   Download,
-  Merge
+  Merge,
+  Pencil,
+  X,
+  Save
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,8 +24,11 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { updateChunk } from "@/lib/engine.functions";
 
 export const Route = createFileRoute("/_dashboard/audio")({
   component: AudioEngine,
@@ -64,6 +70,7 @@ const ELEVENLABS_MODELS = [
 
 
 function AudioEngine() {
+  const updateChunkFn = useServerFn(updateChunk);
   const [scripts, setScripts] = useState<any[]>([]);
   const [selectedScriptId, setSelectedScriptId] = useState<string>("");
   const [chunks, setChunks] = useState<any[]>([]);
@@ -72,6 +79,9 @@ function AudioEngine() {
   const [ttsModel, setTtsModel] = useState<string>("gemini-2.5-pro-preview-tts");
   const [loading, setLoading] = useState(false);
   const [generatingChunkId, setGeneratingChunkId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<string>("");
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchScripts();
@@ -159,6 +169,33 @@ function AudioEngine() {
       setGeneratingChunkId(null);
     }
   };
+
+  const startEdit = (chunk: any) => {
+    setEditingId(chunk.id);
+    setEditDraft(chunk.content || "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditDraft("");
+  };
+
+  const saveEdit = async (chunk: any) => {
+    if (!editDraft.trim()) {
+      toast.error("Chunk content cannot be empty");
+      return;
+    }
+    setSavingId(chunk.id);
+    try {
+      await updateChunkFn({ data: { id: chunk.id, content: editDraft } });
+      setChunks(prev => prev.map(c => c.id === chunk.id ? { ...c, content: editDraft, word_count: editDraft.trim().split(/\s+/).length } : c));
+      setEditingId(null);
+      toast.success("Chunk updated successfully");
+    } catch (error: any) {
+      toast.error("Failed to update chunk: " + error.message);
+    } finally {
+      setSavingId(null);
+    }
 
   const generateAllAudio = async () => {
     if (!selectedScriptId || chunks.length === 0) return;
@@ -395,12 +432,42 @@ function AudioEngine() {
                       )}
                     </div>
                     <div className="flex gap-2">
+                      {editingId === chunk.id ? (
+                        <>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-8 w-8 p-0 text-red-600"
+                            onClick={cancelEdit}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-8 w-8 p-0 text-green-600"
+                            onClick={() => saveEdit(chunk)}
+                            disabled={savingId === chunk.id}
+                          >
+                            {savingId === chunk.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                          </Button>
+                        </>
+                      ) : (
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-8 w-8 p-0"
+                          onClick={() => startEdit(chunk)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button 
                         size="sm" 
                         variant="ghost" 
                         className="h-8 w-8 p-0"
                         onClick={() => generateAudio(chunk.id)}
-                        disabled={generatingChunkId === chunk.id}
+                        disabled={generatingChunkId === chunk.id || editingId === chunk.id}
                       >
                         <RefreshCcw className={`h-4 w-4 ${generatingChunkId === chunk.id ? 'animate-spin' : ''}`} />
                       </Button>
@@ -419,9 +486,17 @@ function AudioEngine() {
                     </div>
                   </div>
                   
-                  <p className="text-sm text-slate-700 leading-relaxed line-clamp-3">
-                    {chunk.content}
-                  </p>
+                  {editingId === chunk.id ? (
+                    <Textarea
+                      value={editDraft}
+                      onChange={(e) => setEditDraft(e.target.value)}
+                      className="text-sm text-slate-700 leading-relaxed min-h-[100px]"
+                    />
+                  ) : (
+                    <p className="text-sm text-slate-700 leading-relaxed line-clamp-3">
+                      {chunk.content}
+                    </p>
+                  )}
 
                   {chunk.audio_url ? (
                     <div className="flex items-center gap-3 pt-2">
