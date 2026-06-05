@@ -191,20 +191,21 @@ function MegaPage() {
   };
 
   // ── bulk actions (audio + slides queue via process-queue; OCR/TS/AI/render via worker+fns)
-  const generateAllAudio = async () => {
+  const generateAllAudio = async (force = false) => {
     if (!scriptId || chunks.length === 0) return;
     setBulkBusy("All Audios");
     try {
       const eligibleIds = chunks
-        .filter(c => !c.audio_url && c.audio_job_status !== "processing")
+        .filter(c => (force || !c.audio_url) && c.audio_job_status !== "processing")
         .map(c => c.id);
-      if (eligibleIds.length === 0) { toast.info("All chunks already have audio"); return; }
+      if (eligibleIds.length === 0) { toast.info("Nothing to queue"); return; }
       const { error } = await supabase.from("script_chunks").update({
         audio_job_status: "queued",
         audio_job_provider: audioProvider,
         audio_job_voice_id: voiceId,
         audio_job_model: audioModel,
         audio_job_error: null,
+        ...(force ? { audio_url: null } : {}),
       }).in("id", eligibleIds);
       if (error) throw error;
       supabase.functions.invoke("process-queue", { body: { scriptId } }).catch(() => {});
