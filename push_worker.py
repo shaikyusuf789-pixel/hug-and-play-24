@@ -70,7 +70,7 @@ def push_to_github():
     
     # 4. Create commit
     res = requests.post(f"{base_url}/git/commits", headers=headers, json={
-        "message": "Fix: try .wav fallback after .mp3 for Cartesia audio (timestamps 400)",
+        "message": "Add POST /merge/run endpoint (fixes 404 on Merge Mega Video)",
         "tree": new_tree_sha,
         "parents": [latest_commit_sha]
     })
