@@ -636,12 +636,13 @@ RESPONSE FORMAT (CRITICAL):
       ]
     };
 
-    const googleChatUrl = `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions?key=${encodeURIComponent(apiKey)}`;
+    const googleChatUrl = `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`;
 
     let response = await fetch(googleChatUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify(requestBody),
     });
@@ -669,6 +670,7 @@ RESPONSE FORMAT (CRITICAL):
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
           model: requestBody.model,
