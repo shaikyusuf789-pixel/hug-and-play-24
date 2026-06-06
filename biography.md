@@ -1,4 +1,4 @@
-# Sky Studio — Project Biography (v6.0)
+# Sky Studio — Project Biography (v6.1)
 
 > Single-source reproduction guide for the Sky Studio video pipeline. Any AI agent (Replit, Bolt, Cursor) should be able to rebuild this app one-to-one from this file alone.
 
