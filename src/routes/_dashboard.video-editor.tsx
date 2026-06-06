@@ -718,22 +718,68 @@ function VideoEditorPage() {
             {/* Scrubber */}
             <Slider value={[current]} min={0} max={duration || 1} step={0.01} onValueChange={(v) => seek(v[0])} />
 
-            {/* Waveform timeline (click to seek) */}
-            <div className="relative">
-              <canvas
-                ref={waveCanvasRef}
-                className="w-full h-20 rounded-md border border-slate-200 cursor-crosshair"
-                onClick={(e) => {
-                  if (!duration) return;
-                  const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
-                  const pct = (e.clientX - rect.left) / rect.width;
-                  seek(pct * duration);
-                }}
-              />
-              <div className="absolute top-1 right-2 text-[10px] text-slate-500 bg-white/80 px-1.5 rounded">
-                {waveLoading ? "decoding…" : wavePeaks ? "waveform" : "no audio"}
+            {/* Waveform timeline: zoom + scroll + drag-select */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-1 text-xs">
+                <Button size="sm" variant="outline" onClick={() => zoomWaveAt(0.5)} title="Zoom out">−</Button>
+                <Button size="sm" variant="outline" onClick={() => zoomWaveAt(2)} title="Zoom in">+</Button>
+                <Button size="sm" variant="outline" onClick={() => { setWaveZoom(1); if (waveScrollRef.current) waveScrollRef.current.scrollLeft = 0; }}>Fit</Button>
+                <div className="w-40 ml-2">
+                  <Slider value={[waveZoom]} min={1} max={50} step={0.5} onValueChange={(v) => setWaveZoom(v[0])} />
+                </div>
+                <span className="font-mono text-slate-500">{waveZoom.toFixed(1)}x</span>
+                {selection && (
+                  <span className="ml-auto font-mono text-amber-600">
+                    Selection: {fmtTime(Math.min(selection.start, selection.end))} → {fmtTime(Math.max(selection.start, selection.end))}
+                  </span>
+                )}
               </div>
+              <div
+                ref={waveScrollRef}
+                className="relative overflow-x-auto overflow-y-hidden rounded-md border border-slate-200"
+                onWheel={(e) => {
+                  if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    zoomWaveAt(e.deltaY < 0 ? 1.2 : 1 / 1.2);
+                  }
+                }}
+              >
+                <canvas
+                  ref={waveCanvasRef}
+                  style={{ width: `${waveZoom * 100}%`, height: "80px", display: "block" }}
+                  className="cursor-crosshair select-none"
+                  onMouseDown={(e) => {
+                    if (!duration) return;
+                    const cvs = e.currentTarget;
+                    const rect = cvs.getBoundingClientRect();
+                    const pct = (e.clientX - rect.left) / rect.width;
+                    const t = pct * duration;
+                    if (e.shiftKey) {
+                      dragRef.current = { startX: e.clientX, startT: t };
+                      setSelection({ start: t, end: t });
+                    } else {
+                      seek(t);
+                    }
+                  }}
+                  onMouseMove={(e) => {
+                    if (!dragRef.current || !duration) return;
+                    const cvs = e.currentTarget;
+                    const rect = cvs.getBoundingClientRect();
+                    const pct = (e.clientX - rect.left) / rect.width;
+                    const t = Math.max(0, Math.min(duration, pct * duration));
+                    setSelection({ start: dragRef.current.startT, end: t });
+                  }}
+                  onMouseUp={() => { dragRef.current = null; }}
+                  onMouseLeave={() => { dragRef.current = null; }}
+                  onDoubleClick={() => setSelection(null)}
+                />
+                <div className="sticky top-1 right-2 float-right text-[10px] text-slate-500 bg-white/80 px-1.5 rounded mr-1 mt-1">
+                  {waveLoading ? "decoding…" : wavePeaks ? "waveform" : "no audio"}
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-400">Tip: Click = seek · Shift+Drag = select region · Ctrl/Cmd+Wheel = zoom · Double-click = clear selection</p>
             </div>
+
 
             {/* Razor / cut toolbar */}
             <div className="flex items-center gap-2 flex-wrap text-xs">
