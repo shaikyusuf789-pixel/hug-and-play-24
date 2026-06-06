@@ -132,8 +132,13 @@ function VideoEditorPage() {
 
   // waveform
   const waveCanvasRef = useRef<HTMLCanvasElement>(null);
+  const waveScrollRef = useRef<HTMLDivElement>(null);
   const [wavePeaks, setWavePeaks] = useState<Float32Array | null>(null);
   const [waveLoading, setWaveLoading] = useState(false);
+  const [waveZoom, setWaveZoom] = useState(1); // 1x..50x
+  const [selection, setSelection] = useState<{ start: number; end: number } | null>(null);
+  const dragRef = useRef<{ startX: number; startT: number } | null>(null);
+
 
   // saving
   const [saving, setSaving] = useState(false);
