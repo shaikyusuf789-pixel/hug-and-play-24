@@ -36,7 +36,12 @@ from workers.ocr import run_ocr
 from workers.timestamps import get_timestamps
 from workers.render import render_clip, get_audio_duration
 from workers.merger import merge_script_clips
-from workers.editor import apply_cuts as editor_apply_cuts, _meta_key as editor_meta_key
+from workers.editor import (
+    apply_cuts as editor_apply_cuts,
+    _meta_key as editor_meta_key,
+    export_video as editor_export_video,
+    _export_meta_key as editor_export_meta_key,
+)
 
 import httpx
 
