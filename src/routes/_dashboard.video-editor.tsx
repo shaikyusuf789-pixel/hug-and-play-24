@@ -794,6 +794,10 @@ function VideoEditorPage() {
               <Button size="sm" variant="outline" onClick={deleteBetweenLastTwoRazors} disabled={razorPoints.length < 2}>
                 Delete between last 2 razors
               </Button>
+              <Button size="sm" variant="destructive" onClick={deleteSelection} disabled={!selection}>
+                <Trash2 className="h-3 w-3 mr-1" />Delete selection
+              </Button>
+
               {(cuts.length > 0 || razorPoints.length > 0) && (
                 <Button size="sm" variant="ghost" onClick={clearCuts}><Eraser className="h-3 w-3 mr-1" />Clear cuts</Button>
               )}
