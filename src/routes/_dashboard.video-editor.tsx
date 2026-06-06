@@ -338,12 +338,26 @@ function VideoEditorPage() {
     x = (outPoint / duration) * w;
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
 
+    // selection (yellow translucent)
+    if (selection && duration) {
+      const s = Math.min(selection.start, selection.end);
+      const eT = Math.max(selection.start, selection.end);
+      const sx = (s / duration) * w;
+      const sw = ((eT - s) / duration) * w;
+      ctx.fillStyle = "rgba(250,204,21,0.35)";
+      ctx.fillRect(sx, 0, sw, h);
+      ctx.strokeStyle = "#ca8a04";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(sx + 0.5, 0.5, sw - 1, h - 1);
+    }
+
     // playhead
     ctx.strokeStyle = "#f59e0b";
     ctx.lineWidth = 2;
     x = (current / duration) * w;
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-  }, [wavePeaks, waveLoading, duration, cuts, razorPoints, inPoint, outPoint, current]);
+  }, [wavePeaks, waveLoading, duration, cuts, razorPoints, inPoint, outPoint, current, waveZoom, selection]);
+
 
   const togglePlay = () => { const v = videoRef.current; if (!v) return; if (v.paused) v.play(); else v.pause(); };
   const seek = (t: number) => { const v = videoRef.current; if (!v) return; v.currentTime = Math.max(0, Math.min(duration || 0, t)); };
