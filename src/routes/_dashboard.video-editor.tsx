@@ -574,6 +574,70 @@ function VideoEditorPage() {
     a.click(); URL.revokeObjectURL(a.href);
   };
 
+  // ===== EXPORT: Railway re-encodes at chosen quality → browser downloads =====
+  // Bitrates here MUST mirror QUALITY_PRESETS in railway-worker/workers/editor.py
+  const QUALITY_BITRATES = { low: 600 + 96, medium: 1800 + 128, high: 4500 + 192 } as const;
+  const finalDurationForExport = Math.max(0, (duration || 0) - normalizeCuts(cuts, duration).reduce((a, c) => a + (c.end - c.start), 0));
+  const estimateMb = (q: "low" | "medium" | "high") =>
+    ((QUALITY_BITRATES[q] * finalDurationForExport) / 8 / 1024).toFixed(1);
+
+  const exportDownload = async () => {
+    if (!selected) return;
+    if (!selected.bucket || !selected.path) { toast.error("Source URL not in Supabase storage"); return; }
+    const sourceMatch = selected.path.match(/mega_([^./]+)\.mp4$/i);
+    const slide_source = sourceMatch?.[1] || "gamma";
+
+    setExporting(true); setExportMsg(`Queuing ${exportQuality} export…`);
+    try {
+      const { ANNOTATIONS_WORKER_URL } = await import("@/lib/worker");
+      const res = await fetch(`${ANNOTATIONS_WORKER_URL}/editor/export`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          script_id: selected.script_id,
+          slide_source,
+          bucket: selected.bucket,
+          path: selected.path,
+          quality: exportQuality,
+        }),
+      });
+      if (!res.ok) throw new Error(`Worker rejected (${res.status}): ${await res.text()}`);
+      setExportMsg("Server re-encoding…");
+
+      const metaKey = `editor_export:${selected.script_id}:${slide_source}`;
+      const deadline = Date.now() + 10 * 60 * 1000;
+      while (Date.now() < deadline) {
+        await new Promise(r => setTimeout(r, 3000));
+        const { data: row } = await supabase
+          .from("app_metadata").select("value").eq("key", metaKey).maybeSingle();
+        const v = (row?.value as any) || {};
+        if (v.status === "running") setExportMsg(`Encoding ${exportQuality}…`);
+        if (v.status === "done" && v.url) {
+          setExportMsg("Downloading…");
+          const fileRes = await fetch(v.url);
+          const blob = await fileRes.blob();
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          const title = selected.title.replace(/[^a-z0-9-_]+/gi, "_").slice(0, 40) || "video";
+          a.download = `${title}_${exportQuality}.mp4`;
+          document.body.appendChild(a); a.click(); a.remove();
+          URL.revokeObjectURL(a.href);
+          toast.success(`Exported (${exportQuality}) — saved to Downloads`);
+          return;
+        }
+        if (v.status === "error") throw new Error(v.error || "Worker error");
+      }
+      throw new Error("Export timed out (10 min)");
+    } catch (e: any) {
+      console.error(e);
+      toast.error(`Export failed: ${e?.message || e}`);
+    } finally {
+      setExporting(false);
+      setTimeout(() => setExportMsg(""), 1500);
+    }
+  };
+
+
   // keyboard
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
