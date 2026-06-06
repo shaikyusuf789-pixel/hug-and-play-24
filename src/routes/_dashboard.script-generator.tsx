@@ -253,7 +253,8 @@ function ScriptGenerator() {
             // @ts-ignore - dynamic import of pdfjs-dist
             const mod = await import("pdfjs-dist");
             pdfjsLib = mod;
-            pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+            const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
+            pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
           } catch (e) {
             console.error("Delayed PDF.js load failed:", e);
             throw new Error("Could not initialize PDF reader. Please try refreshing.");
