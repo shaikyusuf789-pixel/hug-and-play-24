@@ -640,7 +640,10 @@ function YoutubeSeoPage() {
                     </div>
                   </CardContent>
                 </Card>
+              </div>
             </div>
+
+
 
             {refsData && refsData.length > 0 && (
               <Card className="rounded-3xl border-slate-100 shadow-sm mt-6">
