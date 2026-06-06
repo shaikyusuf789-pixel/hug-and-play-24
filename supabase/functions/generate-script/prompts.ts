@@ -147,7 +147,66 @@ HARD RULES for all 3 promos:
   - Do NOT add any new promo, link or product beyond A, B and C above.
 `;
 
+const SPECIAL_INSTRUCTIONS = `
+================================================================
+!!! SPECIAL INSTRUCTIONS — ABSOLUTE TOP PRIORITY !!!
+THESE RULES OVERRIDE EVERY OTHER INSTRUCTION IN THIS PROMPT,
+INCLUDING THE STYLE REFERENCE TRANSCRIPTS. NO EXCEPTIONS.
+================================================================
+
+NUMBER RULE (HARDEST RULE IN THIS PROMPT):
+  EVERY number in telugu_text MUST be spelled out as ENGLISH WORDS only.
+  NEVER use digits. NEVER use Telugu-script number words. NEVER use
+  Telugu numerals (౦ ౧ ౨ ౩ ౪ ౫ ౬ ౭ ౮ ౯).
+
+  CORRECT examples (do this):
+    • 23      →  "twenty three"
+    • 42.5    →  "forty two point five"
+    • 2022    →  "twenty twenty two"
+    • 1947    →  "nineteen forty seven"
+    • 1/2     →  "one by two"
+    • 50%     →  "fifty percent"
+    • 13000   →  "thirteen thousand"
+    • 1st     →  "first"
+    • Rs.500  →  "rupees five hundred"
+
+  WRONG (NEVER do this):
+    • "23"                          ← digit, banned
+    • "2022"                        ← digits, banned
+    • "ఇరవై మూడు"                   ← Telugu-script number, banned
+    • "రెండు వేల ఇరవై రెండు"        ← Telugu-script year, banned
+    • "నలభై రెండు పాయింట్ ఐదు"      ← Telugu-script decimal, banned
+    • "౨౦౨౨"                        ← Telugu numerals, banned
+
+  Years, ranks, marks, dates, scores, percentages, fractions, decimals,
+  amounts, phone numbers, exam years — EVERY single number — must appear
+  as ENGLISH WORDS embedded inside the Telugu sentence.
+
+MANDATORY SELF-CHECK BEFORE RETURNING JSON:
+  Re-scan every telugu_text field. If you find ANY of the following,
+  STOP and rewrite that token in English words:
+    1. Any digit 0-9
+    2. Any Telugu numeral ౦-౯
+    3. Any Telugu number word used as a count: ఒకటి, రెండు, మూడు,
+       నాలుగు, ఐదు, ఆరు, ఏడు, ఎనిమిది, తొమ్మిది, పది, పదకొండు ...
+       ఇరవై, ముప్పై, నలభై, యాభై ... వంద, వేయి/వేలు, లక్ష, కోటి,
+       పాయింట్ followed by Telugu digits, శాతం after a Telugu number.
+    4. Any %, /, ., ₹, $, Rs. attached to a number.
+
+  Only after this self-check passes, return the JSON.
+
+This NUMBER RULE overrides anchor-voice mimicry. Even if the reference
+transcripts contain Telugu-script numbers, you MUST output English-word
+numbers. This is non-negotiable.
+================================================================
+END SPECIAL INSTRUCTIONS
+================================================================
+`;
+
+
 export const DNA_GENERAL = `
+${SPECIAL_INSTRUCTIONS}
+
 VIDEO TYPE: GENERAL -- STRATEGY / GUIDANCE
 (NO MOTIVATION ALLOWED)
 
@@ -172,6 +231,8 @@ ${PROMOTIONS_BLOCK}
 `;
 
 export const DNA_SUBJECTIVE = `
+${SPECIAL_INSTRUCTIONS}
+
 VIDEO TYPE: SUBJECTIVE -- DEEP SUBJECT TEACHING
 (NO MOTIVATION ALLOWED)
 
