@@ -241,7 +241,10 @@ export function MasterVideoEditor({ videoUrl, title, onSave, onBack }: MasterVid
               <video 
                 ref={videoRef}
                 src={videoUrl}
-                className="w-full h-full object-contain"
+                controls
+                playsInline
+                preload="metadata"
+                className="w-full h-full object-contain bg-black"
               />
               
               {/* Overlay Preview */}
