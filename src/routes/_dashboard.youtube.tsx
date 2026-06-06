@@ -156,19 +156,41 @@ function YoutubeSeoPage() {
     if (!thumbnailPrompt) return;
     setIsGeneratingImage(true);
     try {
-      const { data, error } = await supabase.functions.invoke("youtube-seo", {
-        body: { action: "thumbnail-image", prompt: thumbnailPrompt }
+      const { data, error } = await supabase.functions.invoke("generate-thumbnail", {
+        body: {
+          prompt: thumbnailPrompt,
+          model: thumbnailModel,
+          lines: thumbnailLines,
+          script_id: selectedScriptId || null,
+          source: "youtube_page",
+          size: "1792x1024",
+        },
       });
       if (error) throw error;
-      
+      if (data?.error) throw new Error(data.error);
       setThumbnailUrl(data.url);
-      toast.success("Thumbnail generated successfully!");
+      queryClient.invalidateQueries({ queryKey: ["thumbnail-refs"] });
+      toast.success(`Thumbnail generated (${data.refs_used || 0} Sky refs used)`);
     } catch (err: any) {
-      toast.error("Failed to generate image: " + err.message);
+      toast.error("Failed to generate image: " + (err?.message || err));
     } finally {
       setIsGeneratingImage(false);
     }
   };
+
+  // Sky-style reference strip (permanent thumbnail library)
+  const { data: refsData } = useQuery({
+    queryKey: ["thumbnail-refs"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("thumbnail_library")
+        .select("id, url, model, created_at")
+        .eq("is_sky_style", true)
+        .order("created_at", { ascending: false })
+        .limit(6);
+      return data || [];
+    },
+  });
 
   const handleSave = async () => {
     if (!selectedScriptId) return;
