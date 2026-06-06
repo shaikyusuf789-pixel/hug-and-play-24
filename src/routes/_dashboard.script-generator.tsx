@@ -219,7 +219,8 @@ function ScriptGenerator() {
           // @ts-ignore - dynamic import for pdfjs-dist
           const mod = await import("pdfjs-dist");
           pdfjsLib = mod;
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+          const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
+          pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
           console.log("PDF.js loaded successfully");
         } catch (error) {
           console.error("Failed to load PDF.js:", error);
