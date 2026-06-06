@@ -9,7 +9,7 @@
 **Sky Studio** is an autonomous AI video-production pipeline for Indian competitive-exam YouTube content (SSC, UPSC, RRB, Banking). A single operator drives an entire channel by chaining specialised AI workers:
 
 ```
-Ideas Engine → Idea Cards → Script → Chunks → Audio → Slides → Annotations → Render → Master Video → YouTube
+Ideas Engine → Idea Cards → Script → Chunks → Audio → Slides → Annotations → Render → Video Editor → YouTube
 ```
 
 **Three runtimes:**
@@ -59,14 +59,14 @@ Ideas Engine → Idea Cards → Script → Chunks → Audio → Slides → Annot
 | `audio_timestamps` | ElevenLabs word-level alignment JSON keyed by `(script_id, chunk_id)` | `/annotations` Timestamps panel |
 | `ocr_results` | Google Vision word bboxes keyed by `(script_id, chunk_id, slide_source)` | `/annotations` OCR panel |
 | `clip_annotations` | GPT-4o output: 3–8 underline/circle ops per chunk | `/annotations` Annotations panel |
-| `video_clips` | Rendered MP4s (`status` = pending/done/error) → bucket `video-clips/{script_id}/clip_NNN_{source}.mp4` | `/annotations` final-clip column, `/master-video` |
+| `video_clips` | Rendered MP4s (`status` = pending/done/error) → bucket `video-clips/{script_id}/clip_NNN_{source}.mp4` | `/annotations` final-clip column, `/video-editor` |
 | `youtube_seo` | Titles, description, tags, thumbnail per script | `/youtube` |
 | `notifications` | Header bell | All pages |
 | `user_uploads` | Manual reference files | `/uploads` |
 | `ai_chat_memory` | Second Brain assistant log | `/history`, chat bubble |
 | `chat_sessions` | Reserved for multi-session chat | (none yet) |
 | `app_settings` | Single-row config (provider keys, telegram, etc.) | `/settings`, `/pipeline` |
-| `app_metadata` | Generic KV — also holds `merge:{script_id}` job state and `doc:biography` | `/master-video` polling, this doc |
+| `app_metadata` | Generic KV — holds `merge:{script_id}`, `editor:{script_id}:{slide_source}`, `editor_export:{script_id}:{slide_source}` job state and `doc:biography` | `/video-editor` polling, this doc |
 | `daily_backup_logs` | "Full Backup" telemetry | `/dashboard` |
 
 **Storage buckets** (all public): `slides` (`{script_id}/slide_{NNN}.png`), `audio-files` (`{script_id}/audio_{N}.mp3` + master), `video-clips` (`{script_id}/clip_{NNN}_{source}.mp4` + `mega_{source}.mp4`), `user-uploads`.
@@ -109,8 +109,8 @@ Bulk controls along the top:
 
 Per-chunk row shows: Original Script, Slide preview, OCR Output (token, bbox, conf), Timestamps (start→end, word), Annotations (raw JSON of underline/circle ops with `target_text` + `match_word`), Final Clip (video player + "Re-render").
 
-### Phase 7 — Master Video (`/master-video`)
-Library of merged mega videos. SBI Clerk 2026 mega: 7 clips, 7:05 runtime. Buttons: **Download MP4**, **Edit**, **Open**.
+### Phase 7 — Video Editor (`/video-editor`)
+Precision trimming workstation for the merged mega video. Pick a `mega_{source}.mp4` from the dropdown → scrub the timeline with a zoomable waveform (Ctrl/Cmd+Wheel = zoom, Shift+Drag = select region, double-click = clear). Tools: **IN / OUT** markers, **Razor** (b) to split, **Delete IN→OUT**, **Delete between last 2 razors**, **Delete selection**. **Save (replace original)** ships the cut list to Railway `/editor/apply-cuts` → ffmpeg `trim+atrim+concat` → uploads back to the **same** storage path with `upsert=true` (no duplicate file, original is overwritten in place). **Export** dropdown (Low / Medium / High with estimated MB) calls `/editor/export` and downloads the re-encoded MP4 to the browser. FX tab adds preview-only Brightness / Contrast / Saturate / Hue / Blur / Grayscale / Sepia / Invert sliders. Polling is via `app_metadata.editor:{script_id}:{slide_source}` and `editor_export:{script_id}:{slide_source}`.
 
 ### Phase 8 — YouTube (`/youtube`)
 Per script: title variations, selected title, description, tags, thumbnail prompt + URL.
@@ -186,9 +186,9 @@ Bulk controls: DALL·E / **Gamma** / Replit toggle, **MEGA RUN**, **All OCR** + 
 ![Mega](./docs/biography-screenshots/13-mega-empty.png)
 Script picker + words/chunk slider + **Generate Chunks**. All-buttons grid: All Slides (Gamma+Oasis), All Audios (Cartesia+sonic-3-latest+voice id), All OCR, All Timestamps, All Annotations, Render All. **RUN ALL** chains Audios→Slides→OCR→TS→Annotations→Render.
 
-### 14 — Master Video (`/master-video`)
-![Master Video](./docs/biography-screenshots/14-master-video.png)
-Cards per merged mega: thumbnail (first slide), title, chunk count, date, source. **Download MP4** / **Edit** / **Open**.
+### 14 — Video Editor (`/video-editor`)
+![Video Editor](./docs/biography-screenshots/14-video-editor.png)
+Loads the mega MP4 into a single-clip timeline with a zoomable waveform. Toolbar: **Undo / Redo / Reset FX / Plan JSON / Save (replace original) / Export quality picker**. Transport row: prev/next-frame, play, jump-to-IN/OUT, loop, playback-rate. Cut tools: **[ IN (i)**, **OUT (o) ]**, **Razor (b)**, **Delete IN→OUT**, **Delete between last 2 razors**, **Delete selection**. FX tab = preview-only Brightness / Contrast / Saturate / Hue / Blur / Grayscale / Sepia / Invert. Save sends cuts to Railway `/editor/apply-cuts` → ffmpeg re-encode (libx264/aac, `+faststart`) → upserts the same `mega_{source}.mp4` path (no duplicates). Export sends to `/editor/export` → re-encodes at low (600k) / medium (1800k) / high (4500k) bitrate, browser auto-downloads. Mobile-usable at 390 px (Rule 3).
 
 ### 15 — YouTube (`/youtube`)
 ![YouTube](./docs/biography-screenshots/15-youtube-empty.png)

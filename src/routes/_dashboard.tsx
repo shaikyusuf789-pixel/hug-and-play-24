@@ -60,8 +60,7 @@ function DashboardLayout() {
         { to: "/slides", label: "Slides", icon: FileVideo, number: "4" },
         { to: "/annotations", label: "Annotations", icon: Wand2, number: "5" },
         { to: "/mega", label: "Mega", icon: Rocket, badge: "AUTO" },
-        { to: "/master-video", label: "Master Video", icon: FileVideo, number: "6" },
-        { to: "/video-editor", label: "Video Editor", icon: Wand2, badge: "NEW" },
+        { to: "/video-editor", label: "Video Editor", icon: Wand2, number: "6" },
         { to: "/youtube", label: "YouTube", icon: Youtube, number: "7" },
       ]
     },

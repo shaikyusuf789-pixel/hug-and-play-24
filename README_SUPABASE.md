@@ -24,7 +24,7 @@ This project is architected with a strict separation:
 | `audio_timestamps` | `/annotations` — ElevenLabs forced-alignment per-word timings |
 | `ocr_results` | `/annotations` — Google Vision word + bbox JSON |
 | `clip_annotations` | `/annotations` — AI overlay JSON |
-| `video_clips` | `/annotations` final clip, `/master-video` |
+| `video_clips` | `/annotations` final clip, `/video-editor` |
 | `youtube_seo` | `/youtube` |
 | `notifications` | header bell |
 | `user_uploads` | `/uploads` |

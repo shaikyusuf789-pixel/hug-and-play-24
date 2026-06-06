@@ -18,7 +18,7 @@ This file is the single source of truth for **table → UI** wiring. Keep it in 
 | `audio_timestamps` | `/annotations` Timestamps panel | Source: ElevenLabs Forced Alignment |
 | `ocr_results` | `/annotations` OCR Output panel | Source: Google Cloud Vision `DOCUMENT_TEXT_DETECTION` |
 | `clip_annotations` | `/annotations` Annotations panel | AI overlay JSON |
-| `video_clips` | `/annotations` Final Clip + `/master-video` | MP4 stored in `video-clips/` bucket |
+| `video_clips` | `/annotations` Final Clip + `/video-editor` | MP4 stored in `video-clips/` bucket |
 | `youtube_seo` | `/youtube` | Title/desc/tags/thumb per script |
 | `notifications` | header bell | |
 | `user_uploads` | `/uploads` | |
