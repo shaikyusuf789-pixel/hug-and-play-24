@@ -640,8 +640,27 @@ function YoutubeSeoPage() {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
             </div>
+
+            {refsData && refsData.length > 0 && (
+              <Card className="rounded-3xl border-slate-100 shadow-sm mt-6">
+                <CardHeader className="border-b bg-slate-50/50 px-6 py-3">
+                  <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    🎨 Sky Style Library — {refsData.length} reference{refsData.length === 1 ? "" : "s"} (auto-attached to next generation)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                    {refsData.map((r: any) => (
+                      <a key={r.id} href={r.url} target="_blank" rel="noreferrer"
+                         className="aspect-video rounded-lg overflow-hidden border border-slate-200 hover:ring-2 hover:ring-indigo-400 transition">
+                        <img src={r.url} alt="Sky thumbnail" className="w-full h-full object-cover" />
+                      </a>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       )}
