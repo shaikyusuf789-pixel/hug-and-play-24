@@ -325,6 +325,8 @@ ${PROMOTIONS_BLOCK}
  * Contains ONLY content / structural / promotional rules.
  */
 export const DNA_SUBJECTIVE = `
+${SPECIAL_INSTRUCTIONS}
+
 VIDEO TYPE: SUBJECTIVE -- DEEP SUBJECT TEACHING
 
 DNA RULES FOR SUBJECTIVE (content only):
