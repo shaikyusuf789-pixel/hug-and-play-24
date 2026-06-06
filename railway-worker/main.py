@@ -505,3 +505,53 @@ def editor_status(script_id: str = Query(...), slide_source: str = Query("gamma"
         return {"ok": True, "value": res.data[0]["value"]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── EDITOR EXPORT ─────────────────────────────────────────────────────────────
+
+class EditorExportReq(BaseModel):
+    script_id:    str
+    slide_source: str = "gamma"
+    bucket:       str = "video-clips"
+    path:         str
+    quality:      str = "medium"  # "low" | "medium" | "high"
+
+
+def _editor_export_job(script_id: str, slide_source: str, bucket: str,
+                       path: str, quality: str) -> None:
+    try:
+        editor_export_video(script_id, slide_source, bucket, path, quality)
+    except Exception as e:
+        print(f"[EDITOR/EXPORT] background job ERROR: {e}")
+
+
+@app.post("/editor/export")
+def editor_export_route(req: EditorExportReq, bg: BackgroundTasks):
+    try:
+        key = editor_export_meta_key(req.script_id, req.slide_source)
+        get_supabase().table("app_metadata").upsert({
+            "key":   key,
+            "value": {
+                "status": "queued", "quality": req.quality,
+                "bucket": req.bucket, "path": req.path,
+                "url": None, "size_bytes": None, "error": None,
+            },
+        }, on_conflict="key").execute()
+        bg.add_task(_editor_export_job, req.script_id, req.slide_source,
+                    req.bucket, req.path, req.quality)
+        return {"ok": True, "status": "queued", "key": key}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/editor/export-status")
+def editor_export_status(script_id: str = Query(...), slide_source: str = Query("gamma")):
+    try:
+        key = editor_export_meta_key(script_id, slide_source)
+        res = (get_supabase().table("app_metadata").select("value")
+               .eq("key", key).limit(1).execute())
+        if not res.data:
+            return {"ok": True, "status": "unknown", "value": None}
+        return {"ok": True, "value": res.data[0]["value"]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
