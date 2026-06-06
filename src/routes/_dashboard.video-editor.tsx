@@ -145,6 +145,11 @@ function VideoEditorPage() {
   const [saveProgress, setSaveProgress] = useState(0);
   const [saveMsg, setSaveMsg] = useState("");
 
+  // exporting
+  const [exportQuality, setExportQuality] = useState<"low" | "medium" | "high">("medium");
+  const [exporting, setExporting] = useState(false);
+  const [exportMsg, setExportMsg] = useState("");
+
   // history
   const historyRef = useRef<any[]>([]);
   const futureRef = useRef<any[]>([]);
