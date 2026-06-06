@@ -41,12 +41,12 @@ async function callGamma(inputText: string, themeName: string, supabase: ReturnT
       cardSplit: "inputTextBreaks",
       exportAs: "png",
       textOptions: {
-        amount: "detailed",
+        amount: "brief",
         language: "en",
       },
       additionalInstructions: strictInstructions,
       cardOptions: { dimensions: "16x9" },
-      imageOptions: { source: "noImages" },
+      imageOptions: { source: "aiGenerated", model: "imagen-3-pro", style: "photorealistic" },
     }),
   })
 
