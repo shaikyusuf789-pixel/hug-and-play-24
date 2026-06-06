@@ -191,105 +191,43 @@ RESPONSE FORMAT (CRITICAL):
         }
       }
       if (name === "generate_image" || name === "edit_image") {
+        // Delegate to the generate-thumbnail edge function so EVERY image generated
+        // by Jerry is auto-saved to thumbnail_library (Sky Style Library) AND uses
+        // the past Sky thumbnails as visual style references.
         try {
-          const model = args.model || "openai/gpt-image-2";
-          const size = args.size || "1792x1024";
-          const prompt = args.prompt;
-          if (!prompt) return JSON.stringify({ error: "prompt is required" });
+          const payload: any = {
+            prompt: args.prompt,
+            model: args.model || "openai/gpt-image-2",
+            size: args.size || "1792x1024",
+            source: "jerry_chat",
+          };
+          if (args.lines) payload.lines = args.lines;
+          if (name === "edit_image") payload.edit_image_url = args.image_url;
 
-          let b64: string | null = null;
-          let mime = "image/png";
-
-          // Fetch source image bytes for edit_image
-          let srcB64: string | null = null;
-          if (name === "edit_image") {
-            if (!args.image_url) return JSON.stringify({ error: "image_url is required for edit_image" });
-            const ir = await fetch(args.image_url);
-            if (!ir.ok) return JSON.stringify({ error: `Could not fetch source image: ${ir.status}` });
-            const buf = new Uint8Array(await ir.arrayBuffer());
-            let bin = "";
-            for (let i = 0; i < buf.length; i += 8192) bin += String.fromCharCode(...buf.subarray(i, i + 8192));
-            srcB64 = btoa(bin);
-          }
-
-          if (model.startsWith("openai/")) {
-            const openaiKey = Deno.env.get("OPENAI_API_KEY");
-            if (!openaiKey) return JSON.stringify({ error: "OPENAI_API_KEY not configured" });
-            const openaiModel = model.replace("openai/", "");
-
-            if (name === "edit_image") {
-              // OpenAI image edits use multipart/form-data
-              const form = new FormData();
-              form.append("model", openaiModel);
-              form.append("prompt", prompt);
-              form.append("size", size);
-              const imgBlob = new Blob([Uint8Array.from(atob(srcB64!), c => c.charCodeAt(0))], { type: "image/png" });
-              form.append("image", imgBlob, "source.png");
-              const r = await fetch("https://api.openai.com/v1/images/edits", {
-                method: "POST",
-                headers: { Authorization: `Bearer ${openaiKey}` },
-                body: form,
-              });
-              const j = await r.json();
-              if (j.error) return JSON.stringify({ error: `OpenAI: ${j.error.message}` });
-              b64 = j.data?.[0]?.b64_json;
-            } else {
-              const r = await fetch("https://api.openai.com/v1/images/generations", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${openaiKey}` },
-                body: JSON.stringify({ model: openaiModel, prompt, size, n: 1 }),
-              });
-              const j = await r.json();
-              if (j.error) return JSON.stringify({ error: `OpenAI: ${j.error.message}` });
-              b64 = j.data?.[0]?.b64_json;
-              if (!b64 && j.data?.[0]?.url) {
-                const ir = await fetch(j.data[0].url);
-                const buf = new Uint8Array(await ir.arrayBuffer());
-                let bin = "";
-                for (let i = 0; i < buf.length; i += 8192) bin += String.fromCharCode(...buf.subarray(i, i + 8192));
-                b64 = btoa(bin);
-              }
-            }
-          } else if (model.startsWith("google/")) {
-            const googleKey = Deno.env.get("GOOGLE_API_KEY");
-            if (!googleKey) return JSON.stringify({ error: "GOOGLE_API_KEY not configured" });
-            const googleModel = model.replace("google/", "");
-            const parts: any[] = [{ text: prompt }];
-            if (srcB64) parts.push({ inlineData: { mimeType: "image/png", data: srcB64 } });
-            const r = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${googleKey}`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  contents: [{ role: "user", parts }],
-                  generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
-                }),
-              }
-            );
-            const j = await r.json();
-            if (j.error) return JSON.stringify({ error: `Google: ${j.error.message}` });
-            const inline = j.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData)?.inlineData;
-            if (inline) { b64 = inline.data; mime = inline.mimeType || "image/png"; }
-          } else {
-            return JSON.stringify({ error: `Unknown model: ${model}` });
-          }
-
-          if (!b64) return JSON.stringify({ error: "No image returned from model" });
-
-          // Upload to user-uploads/thumbnails/
-          const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-          const ext = mime.includes("jpeg") ? "jpg" : "png";
-          const path = `thumbnails/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
-          const { error: upErr } = await supabase.storage.from("user-uploads").upload(path, bytes, {
-            contentType: mime, upsert: false,
+          const r = await fetch(`${supabaseUrl}/functions/v1/generate-thumbnail`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify(payload),
           });
-          if (upErr) return JSON.stringify({ error: `Upload failed: ${upErr.message}` });
-          const { data: pub } = supabase.storage.from("user-uploads").getPublicUrl(path);
-          return JSON.stringify({ success: true, url: pub.publicUrl, model, prompt });
+          const j = await r.json();
+          if (j.error) return JSON.stringify({ error: j.error });
+          return JSON.stringify({ success: true, url: j.url, model: j.model, refs_used: j.refs_used, archived_in: "thumbnail_library" });
         } catch (e) {
           return JSON.stringify({ error: String(e) });
         }
+      }
+      if (name === "get_sky_thumbnail_refs") {
+        const limit = Math.min(Math.max(Number(args.limit) || 6, 1), 20);
+        const { data } = await supabase
+          .from("thumbnail_library")
+          .select("id, url, prompt, lines, model, created_at")
+          .eq("is_sky_style", true)
+          .order("created_at", { ascending: false })
+          .limit(limit);
+        return JSON.stringify({ count: data?.length || 0, refs: data || [] });
       }
       if (name === "list_training_docs") {
         const KEYS = ["training:transcript_1", "training:transcript_2", "training:transcript_3", "training:transcript_4", "training:sky_dna_general", "training:sky_dna_subjective"];
