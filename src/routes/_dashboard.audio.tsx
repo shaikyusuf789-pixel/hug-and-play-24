@@ -74,9 +74,9 @@ function AudioEngine() {
   const [scripts, setScripts] = useState<any[]>([]);
   const [selectedScriptId, setSelectedScriptId] = useState<string>("");
   const [chunks, setChunks] = useState<any[]>([]);
-  const [model, setModel] = useState<string>("google");
-  const [voiceId, setVoiceId] = useState<string>("Charon");
-  const [ttsModel, setTtsModel] = useState<string>("gemini-2.5-pro-preview-tts");
+  const [model, setModel] = useState<string>("cartesia");
+  const [voiceId, setVoiceId] = useState<string>("4987882a-488c-480a-ace8-f1127032a83b");
+  const [ttsModel, setTtsModel] = useState<string>("sonic-3-latest");
   const [loading, setLoading] = useState(false);
   const [generatingChunkId, setGeneratingChunkId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
