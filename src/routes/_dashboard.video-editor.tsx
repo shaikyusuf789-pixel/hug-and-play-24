@@ -4,7 +4,7 @@ import {
   Play, Pause, SkipBack, SkipForward, Rewind, FastForward,
   Volume2, VolumeX, Maximize2, PictureInPicture2, Repeat,
   Scissors, Camera, Download, RotateCw, FlipHorizontal, FlipVertical,
-  Type, Sparkles, Eraser, Undo2, Redo2, Loader2, Film, Plus, Trash2
+  Type, Sparkles, Eraser, Undo2, Redo2, Loader2, Film, Plus, Trash2, Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -24,9 +24,13 @@ type MergedVideo = {
   title: string;
   url: string;
   updated_at: string;
+  bucket?: string;
+  path?: string;
 };
 
-type TrimSegment = { id: string; start: number; end: number };
+// A CUT is a range to REMOVE from the final video (razor + delete-between)
+type Cut = { id: string; start: number; end: number };
+
 type TextOverlay = {
   id: string;
   text: string;
@@ -39,14 +43,8 @@ type TextOverlay = {
 };
 
 const FILTER_DEFAULTS = {
-  brightness: 100,
-  contrast: 100,
-  saturate: 100,
-  hue: 0,
-  blur: 0,
-  grayscale: 0,
-  sepia: 0,
-  invert: 0,
+  brightness: 100, contrast: 100, saturate: 100, hue: 0,
+  blur: 0, grayscale: 0, sepia: 0, invert: 0,
 };
 
 const fmtTime = (s: number) => {
@@ -55,6 +53,47 @@ const fmtTime = (s: number) => {
   const sec = (s % 60).toFixed(2).padStart(5, "0");
   return `${m}:${sec}`;
 };
+
+// Parse a public Supabase storage URL into { bucket, path }
+function parseSupabaseStorageUrl(url: string): { bucket: string; path: string } | null {
+  try {
+    const u = new URL(url);
+    const m = u.pathname.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+)$/);
+    if (!m) return null;
+    return { bucket: decodeURIComponent(m[1]), path: decodeURIComponent(m[2].split("?")[0]) };
+  } catch { return null; }
+}
+
+// Merge overlapping/adjacent cuts and clamp to [0, duration]
+function normalizeCuts(cuts: Cut[], duration: number): Cut[] {
+  const cleaned = cuts
+    .map(c => ({ ...c, start: Math.max(0, Math.min(duration, c.start)), end: Math.max(0, Math.min(duration, c.end)) }))
+    .filter(c => c.end - c.start > 0.02)
+    .sort((a, b) => a.start - b.start);
+  const out: Cut[] = [];
+  for (const c of cleaned) {
+    const last = out[out.length - 1];
+    if (last && c.start <= last.end + 0.001) {
+      last.end = Math.max(last.end, c.end);
+    } else {
+      out.push({ ...c });
+    }
+  }
+  return out;
+}
+
+// Invert cuts → list of KEPT ranges [start,end]
+function keptRanges(cuts: Cut[], duration: number): { start: number; end: number }[] {
+  const norm = normalizeCuts(cuts, duration);
+  const ranges: { start: number; end: number }[] = [];
+  let cursor = 0;
+  for (const c of norm) {
+    if (c.start > cursor + 0.01) ranges.push({ start: cursor, end: c.start });
+    cursor = Math.max(cursor, c.end);
+  }
+  if (cursor < duration - 0.01) ranges.push({ start: cursor, end: duration });
+  return ranges;
+}
 
 function VideoEditorPage() {
   const [videos, setVideos] = useState<MergedVideo[]>([]);
@@ -82,25 +121,36 @@ function VideoEditorPage() {
   // filters
   const [filters, setFilters] = useState({ ...FILTER_DEFAULTS });
 
-  // trim / segments
+  // razor / cuts (delete-between)
   const [inPoint, setInPoint] = useState(0);
   const [outPoint, setOutPoint] = useState(0);
-  const [segments, setSegments] = useState<TrimSegment[]>([]);
+  const [cuts, setCuts] = useState<Cut[]>([]);
+  const [razorPoints, setRazorPoints] = useState<number[]>([]); // blade marks on timeline
 
   // overlays
   const [overlays, setOverlays] = useState<TextOverlay[]>([]);
+
+  // waveform
+  const waveCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [wavePeaks, setWavePeaks] = useState<Float32Array | null>(null);
+  const [waveLoading, setWaveLoading] = useState(false);
+
+  // saving
+  const [saving, setSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState(0);
+  const [saveMsg, setSaveMsg] = useState("");
 
   // history
   const historyRef = useRef<any[]>([]);
   const futureRef = useRef<any[]>([]);
 
   const snapshotState = useCallback(() => ({
-    filters: { ...filters },
-    rotate, flipH, flipV, zoom,
-    segments: [...segments],
-    overlays: [...overlays],
+    filters: { ...filters }, rotate, flipH, flipV, zoom,
+    cuts: cuts.map(c => ({ ...c })),
+    razorPoints: [...razorPoints],
+    overlays: overlays.map(o => ({ ...o })),
     inPoint, outPoint,
-  }), [filters, rotate, flipH, flipV, zoom, segments, overlays, inPoint, outPoint]);
+  }), [filters, rotate, flipH, flipV, zoom, cuts, razorPoints, overlays, inPoint, outPoint]);
 
   const pushHistory = () => {
     historyRef.current.push(snapshotState());
@@ -111,24 +161,15 @@ function VideoEditorPage() {
   const applyState = (s: any) => {
     setFilters(s.filters);
     setRotate(s.rotate); setFlipH(s.flipH); setFlipV(s.flipV); setZoom(s.zoom);
-    setSegments(s.segments); setOverlays(s.overlays);
+    setCuts(s.cuts); setRazorPoints(s.razorPoints || []);
+    setOverlays(s.overlays);
     setInPoint(s.inPoint); setOutPoint(s.outPoint);
   };
 
-  const undo = () => {
-    const prev = historyRef.current.pop();
-    if (!prev) return;
-    futureRef.current.push(snapshotState());
-    applyState(prev);
-  };
-  const redo = () => {
-    const next = futureRef.current.pop();
-    if (!next) return;
-    historyRef.current.push(snapshotState());
-    applyState(next);
-  };
+  const undo = () => { const p = historyRef.current.pop(); if (!p) return; futureRef.current.push(snapshotState()); applyState(p); };
+  const redo = () => { const n = futureRef.current.pop(); if (!n) return; historyRef.current.push(snapshotState()); applyState(n); };
 
-  // load list
+  // load merged videos
   useEffect(() => {
     (async () => {
       setLoadingList(true);
@@ -142,19 +183,21 @@ function VideoEditorPage() {
         const ids = (meta || []).map((m: any) => String(m.key).replace("merge:", ""));
         let titleMap: Record<string, string> = {};
         if (ids.length) {
-          const { data: scripts } = await supabase
-            .from("scripts").select("id,title").in("id", ids);
+          const { data: scripts } = await supabase.from("scripts").select("id,title").in("id", ids);
           titleMap = Object.fromEntries((scripts || []).map((s: any) => [s.id, s.title || "Untitled"]));
         }
         const built: MergedVideo[] = (meta || [])
           .map((m: any) => {
             const sid = String(m.key).replace("merge:", "");
             const v = m.value || {};
+            const parsed = v.url ? parseSupabaseStorageUrl(v.url) : null;
             return {
               script_id: sid,
               title: titleMap[sid] || `Script ${sid.slice(0, 8)}`,
               url: v.url || "",
               updated_at: m.updated_at,
+              bucket: parsed?.bucket,
+              path: parsed?.path,
             };
           })
           .filter((r) => r.url && (meta || []).find((m: any) => m.key === `merge:${r.script_id}` && (m.value?.status === "done")));
@@ -167,89 +210,189 @@ function VideoEditorPage() {
     })();
   }, []);
 
-  // sync video element with controls
+  // sync video element
   useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    v.volume = volume;
-    v.muted = muted;
-    v.playbackRate = rate;
-    v.loop = loop;
+    const v = videoRef.current; if (!v) return;
+    v.volume = volume; v.muted = muted; v.playbackRate = rate; v.loop = loop;
   }, [volume, muted, rate, loop, selectedId]);
 
-  // reset state on video change
+  // reset on change + load waveform
   useEffect(() => {
     if (!selected) return;
-    historyRef.current = [];
-    futureRef.current = [];
-    setSegments([]); setOverlays([]);
+    historyRef.current = []; futureRef.current = [];
+    setCuts([]); setRazorPoints([]); setOverlays([]);
     setFilters({ ...FILTER_DEFAULTS });
     setRotate(0); setFlipH(false); setFlipV(false); setZoom(100);
     setInPoint(0); setOutPoint(0);
     setCurrent(0); setDuration(0); setPlaying(false);
+    setWavePeaks(null);
+    void loadWaveform(selected.url);
   }, [selectedId]);
 
-  const togglePlay = () => {
+  // ripple-skip during playback
+  useEffect(() => {
     const v = videoRef.current; if (!v) return;
-    if (v.paused) v.play(); else v.pause();
+    const norm = normalizeCuts(cuts, duration || v.duration || 0);
+    for (const c of norm) {
+      if (current >= c.start - 0.01 && current < c.end - 0.05) {
+        try { v.currentTime = Math.min((duration || v.duration), c.end + 0.001); } catch {}
+        break;
+      }
+    }
+  }, [current, cuts, duration]);
+
+  const loadWaveform = async (url: string) => {
+    setWaveLoading(true);
+    try {
+      const resp = await fetch(url);
+      const buf = await resp.arrayBuffer();
+      const AC: typeof AudioContext = (window.AudioContext || (window as any).webkitAudioContext);
+      const ac = new AC();
+      const audio = await ac.decodeAudioData(buf.slice(0));
+      const ch = audio.getChannelData(0);
+      const BUCKETS = 1200;
+      const block = Math.max(1, Math.floor(ch.length / BUCKETS));
+      const peaks = new Float32Array(BUCKETS);
+      for (let i = 0; i < BUCKETS; i++) {
+        let max = 0;
+        const start = i * block;
+        const end = Math.min(ch.length, start + block);
+        for (let j = start; j < end; j++) {
+          const a = Math.abs(ch[j]);
+          if (a > max) max = a;
+        }
+        peaks[i] = max;
+      }
+      setWavePeaks(peaks);
+      ac.close();
+    } catch (e: any) {
+      console.warn("waveform decode failed", e);
+    } finally {
+      setWaveLoading(false);
+    }
   };
 
-  const seek = (t: number) => {
-    const v = videoRef.current; if (!v) return;
-    v.currentTime = Math.max(0, Math.min(duration || 0, t));
-  };
+  // draw waveform
+  useEffect(() => {
+    const cvs = waveCanvasRef.current; if (!cvs) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = cvs.clientWidth, h = cvs.clientHeight;
+    cvs.width = w * dpr; cvs.height = h * dpr;
+    const ctx = cvs.getContext("2d"); if (!ctx) return;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
 
-  const stepFrame = (dir: 1 | -1) => {
-    seek(current + dir * (1 / 30));
-  };
+    // background
+    ctx.fillStyle = "#f1f5f9";
+    ctx.fillRect(0, 0, w, h);
 
-  const filterCss = useMemo(() => (
+    if (wavePeaks && wavePeaks.length) {
+      const mid = h / 2;
+      const step = w / wavePeaks.length;
+      ctx.fillStyle = "#6366f1";
+      for (let i = 0; i < wavePeaks.length; i++) {
+        const v = wavePeaks[i];
+        const barH = Math.max(1, v * (h - 4));
+        ctx.fillRect(i * step, mid - barH / 2, Math.max(1, step * 0.85), barH);
+      }
+    } else if (waveLoading) {
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "11px ui-sans-serif";
+      ctx.fillText("Loading waveform…", 8, h / 2 + 4);
+    }
+
+    if (!duration) return;
+
+    // cut regions (red translucent)
+    const norm = normalizeCuts(cuts, duration);
+    for (const c of norm) {
+      const x = (c.start / duration) * w;
+      const ww = ((c.end - c.start) / duration) * w;
+      ctx.fillStyle = "rgba(239,68,68,0.35)";
+      ctx.fillRect(x, 0, ww, h);
+      ctx.strokeStyle = "#dc2626";
+      ctx.setLineDash([3, 2]);
+      ctx.strokeRect(x + 0.5, 0.5, ww - 1, h - 1);
+      ctx.setLineDash([]);
+    }
+
+    // razor marks
+    ctx.strokeStyle = "#0ea5e9";
+    ctx.lineWidth = 1.5;
+    for (const t of razorPoints) {
+      const x = (t / duration) * w;
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+
+    // in/out
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#16a34a";
+    let x = (inPoint / duration) * w;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    ctx.strokeStyle = "#ef4444";
+    x = (outPoint / duration) * w;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+
+    // playhead
+    ctx.strokeStyle = "#f59e0b";
+    ctx.lineWidth = 2;
+    x = (current / duration) * w;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+  }, [wavePeaks, waveLoading, duration, cuts, razorPoints, inPoint, outPoint, current]);
+
+  const togglePlay = () => { const v = videoRef.current; if (!v) return; if (v.paused) v.play(); else v.pause(); };
+  const seek = (t: number) => { const v = videoRef.current; if (!v) return; v.currentTime = Math.max(0, Math.min(duration || 0, t)); };
+  const stepFrame = (dir: 1 | -1) => seek(current + dir * (1 / 30));
+
+  const filterCss = useMemo(() =>
     `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturate}%) hue-rotate(${filters.hue}deg) blur(${filters.blur}px) grayscale(${filters.grayscale}%) sepia(${filters.sepia}%) invert(${filters.invert}%)`
-  ), [filters]);
-
-  const transformCss = useMemo(() => (
+  , [filters]);
+  const transformCss = useMemo(() =>
     `rotate(${rotate}deg) scaleX(${flipH ? -1 : 1}) scaleY(${flipV ? -1 : 1}) scale(${zoom / 100})`
-  ), [rotate, flipH, flipV, zoom]);
+  , [rotate, flipH, flipV, zoom]);
 
   const visibleOverlays = overlays.filter(o => current >= o.start && current <= o.end);
 
-  // actions
+  // razor & cut actions
   const markIn = () => { pushHistory(); setInPoint(current); };
   const markOut = () => { pushHistory(); setOutPoint(current); };
-  const addSegment = () => {
-    if (outPoint <= inPoint) { toast.error("Set IN < OUT"); return; }
-    pushHistory();
-    setSegments(prev => [...prev, { id: crypto.randomUUID(), start: inPoint, end: outPoint }]);
-    toast.success("Segment added");
-  };
-  const removeSegment = (id: string) => { pushHistory(); setSegments(prev => prev.filter(s => s.id !== id)); };
 
-  const splitAtPlayhead = () => {
+  const razorAtPlayhead = () => {
     pushHistory();
-    const t = current;
-    setSegments(prev => prev.flatMap(s => {
-      if (t > s.start && t < s.end) {
-        return [{ ...s, end: t }, { id: crypto.randomUUID(), start: t, end: s.end }];
-      }
-      return [s];
-    }));
-    toast.success(`Split at ${fmtTime(t)}`);
+    setRazorPoints(prev => [...prev, current].sort((a, b) => a - b));
+    toast.success(`Razor @ ${fmtTime(current)}`);
   };
 
+  const deleteBetweenInOut = () => {
+    if (outPoint <= inPoint) { toast.error("Set IN < OUT first"); return; }
+    pushHistory();
+    setCuts(prev => normalizeCuts([...prev, { id: crypto.randomUUID(), start: inPoint, end: outPoint }], duration));
+    toast.success(`Cut ${fmtTime(inPoint)} → ${fmtTime(outPoint)} removed`);
+  };
+
+  const deleteBetweenLastTwoRazors = () => {
+    if (razorPoints.length < 2) { toast.error("Need at least 2 razor marks"); return; }
+    const sorted = [...razorPoints].sort((a, b) => a - b);
+    const b = sorted.pop()!; const a = sorted.pop()!;
+    pushHistory();
+    setRazorPoints(sorted);
+    setCuts(prev => normalizeCuts([...prev, { id: crypto.randomUUID(), start: a, end: b }], duration));
+    toast.success(`Cut ${fmtTime(a)} → ${fmtTime(b)} removed`);
+  };
+
+  const removeCut = (id: string) => { pushHistory(); setCuts(prev => prev.filter(c => c.id !== id)); };
+  const clearCuts = () => { pushHistory(); setCuts([]); setRazorPoints([]); };
+
+  // overlays
   const addOverlay = () => {
     pushHistory();
     setOverlays(prev => [...prev, {
-      id: crypto.randomUUID(),
-      text: "New text",
-      x: 50, y: 50, size: 32,
+      id: crypto.randomUUID(), text: "New text", x: 50, y: 50, size: 32,
       color: "#ffffff", bg: "transparent",
-      start: current, end: Math.min(duration, current + 3),
-      bold: true,
+      start: current, end: Math.min(duration, current + 3), bold: true,
     }]);
   };
-  const updateOverlay = (id: string, patch: Partial<TextOverlay>) => {
-    setOverlays(prev => prev.map(o => o.id === id ? { ...o, ...patch } : o));
-  };
+  const updateOverlay = (id: string, patch: Partial<TextOverlay>) => setOverlays(prev => prev.map(o => o.id === id ? { ...o, ...patch } : o));
   const removeOverlay = (id: string) => { pushHistory(); setOverlays(prev => prev.filter(o => o.id !== id)); };
 
   const snapshot = async () => {
@@ -257,55 +400,129 @@ function VideoEditorPage() {
     const canvas = document.createElement("canvas");
     canvas.width = v.videoWidth; canvas.height = v.videoHeight;
     const ctx = canvas.getContext("2d"); if (!ctx) return;
-    ctx.filter = filterCss;
-    ctx.drawImage(v, 0, 0);
+    ctx.filter = filterCss; ctx.drawImage(v, 0, 0);
     canvas.toBlob((blob) => {
       if (!blob) return;
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
       a.download = `frame_${Math.round(current * 100)}.png`;
-      a.click();
-      URL.revokeObjectURL(a.href);
+      a.click(); URL.revokeObjectURL(a.href);
     }, "image/png");
   };
 
   const enterFullscreen = () => containerRef.current?.requestFullscreen?.();
   const enterPip = async () => {
     const v = videoRef.current as any;
-    if (v && document.pictureInPictureEnabled) {
-      try { await v.requestPictureInPicture(); } catch {}
-    }
+    if (v && document.pictureInPictureEnabled) { try { await v.requestPictureInPicture(); } catch {} }
   };
 
-  const resetAll = () => {
-    pushHistory();
-    setFilters({ ...FILTER_DEFAULTS });
-    setRotate(0); setFlipH(false); setFlipV(false); setZoom(100);
+  const resetAll = () => { pushHistory(); setFilters({ ...FILTER_DEFAULTS }); setRotate(0); setFlipH(false); setFlipV(false); setZoom(100); };
+
+  // ===== SAVE: ffmpeg.wasm → re-encode kept ranges → upload replacing original =====
+  const saveEdited = async () => {
+    if (!selected) return;
+    if (!selected.bucket || !selected.path) { toast.error("Source URL not in Supabase storage — cannot overwrite"); return; }
+    const ranges = keptRanges(cuts, duration);
+    if (ranges.length === 0) { toast.error("Nothing kept — would produce empty video"); return; }
+    if (cuts.length === 0) { toast.error("No cuts made — nothing to render"); return; }
+
+    setSaving(true); setSaveProgress(0); setSaveMsg("Loading ffmpeg…");
+
+    try {
+      const { FFmpeg } = await import("@ffmpeg/ffmpeg");
+      const { fetchFile, toBlobURL } = await import("@ffmpeg/util");
+      const ffmpeg = new FFmpeg();
+      ffmpeg.on("progress", ({ progress }) => setSaveProgress(Math.min(99, Math.round(progress * 100))));
+      ffmpeg.on("log", ({ message }) => { if (message) console.log("[ffmpeg]", message); });
+
+      const base = "https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd";
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, "text/javascript"),
+        wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, "application/wasm"),
+      });
+
+      setSaveMsg("Downloading source video…");
+      await ffmpeg.writeFile("input.mp4", await fetchFile(selected.url));
+
+      setSaveMsg(`Rendering ${ranges.length} kept range(s)…`);
+      // Build trim+concat filter graph
+      const parts = ranges.map((r, i) =>
+        `[0:v]trim=start=${r.start.toFixed(3)}:end=${r.end.toFixed(3)},setpts=PTS-STARTPTS[v${i}];` +
+        `[0:a]atrim=start=${r.start.toFixed(3)}:end=${r.end.toFixed(3)},asetpts=PTS-STARTPTS[a${i}];`
+      ).join("");
+      const concatIns = ranges.map((_, i) => `[v${i}][a${i}]`).join("");
+      const filter = `${parts}${concatIns}concat=n=${ranges.length}:v=1:a=1[outv][outa]`;
+
+      await ffmpeg.exec([
+        "-i", "input.mp4",
+        "-filter_complex", filter,
+        "-map", "[outv]", "-map", "[outa]",
+        "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+        "-c:a", "aac", "-b:a", "128k",
+        "-movflags", "+faststart",
+        "out.mp4",
+      ]);
+
+      setSaveMsg("Uploading replacement…");
+      const data = (await ffmpeg.readFile("out.mp4")) as Uint8Array;
+      const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+      const blob = new Blob([ab], { type: "video/mp4" });
+
+      const { error: upErr } = await supabase.storage
+        .from(selected.bucket)
+        .upload(selected.path, blob, { upsert: true, contentType: "video/mp4", cacheControl: "0" });
+      if (upErr) throw upErr;
+
+      // bump app_metadata updated_at so list reflects change + add edited marker
+      const { data: existing } = await supabase
+        .from("app_metadata")
+        .select("value")
+        .eq("key", `merge:${selected.script_id}`)
+        .maybeSingle();
+      const newValue = { ...(existing?.value as any || {}), edited_at: new Date().toISOString(), edit_cuts: cuts.length };
+      await supabase
+        .from("app_metadata")
+        .update({ value: newValue, updated_at: new Date().toISOString() })
+        .eq("key", `merge:${selected.script_id}`);
+
+      setSaveProgress(100);
+      setSaveMsg("Saved.");
+      toast.success("Edited video saved — original replaced.");
+
+      // refresh video element with cache-buster
+      const newUrl = `${selected.url.split("?")[0]}?v=${Date.now()}`;
+      setVideos(prev => prev.map(v => v.script_id === selected.script_id ? { ...v, url: newUrl, updated_at: new Date().toISOString() } : v));
+      setCuts([]); setRazorPoints([]);
+
+      try { ffmpeg.terminate(); } catch {}
+    } catch (e: any) {
+      console.error(e);
+      toast.error(`Save failed: ${e?.message || e}`);
+    } finally {
+      setSaving(false);
+      setTimeout(() => { setSaveProgress(0); setSaveMsg(""); }, 1500);
+    }
   };
 
   const exportEditPlan = () => {
     if (!selected) return;
     const plan = {
-      source: selected.url,
-      title: selected.title,
-      duration,
+      source: selected.url, title: selected.title, duration,
       filters, rotate, flipH, flipV, zoom,
-      segments, overlays,
-      inPoint, outPoint,
+      cuts, kept: keptRanges(cuts, duration), overlays, inPoint, outPoint,
     };
     const blob = new Blob([JSON.stringify(plan, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `edit_${selected.script_id.slice(0, 8)}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    toast.success("Edit plan exported");
+    a.click(); URL.revokeObjectURL(a.href);
   };
 
-  // keyboard shortcuts
+  // keyboard
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement)?.tagName === "INPUT" || (e.target as HTMLElement)?.tagName === "TEXTAREA") return;
+      const t = e.target as HTMLElement;
+      if (t?.tagName === "INPUT" || t?.tagName === "TEXTAREA") return;
       if (e.code === "Space") { e.preventDefault(); togglePlay(); }
       else if (e.key === "ArrowLeft") seek(current - (e.shiftKey ? 5 : 1));
       else if (e.key === "ArrowRight") seek(current + (e.shiftKey ? 5 : 1));
@@ -313,7 +530,8 @@ function VideoEditorPage() {
       else if (e.key === ".") stepFrame(1);
       else if (e.key === "i") markIn();
       else if (e.key === "o") markOut();
-      else if (e.key === "s") splitAtPlayhead();
+      else if (e.key === "b") razorAtPlayhead();
+      else if (e.key === "x") deleteBetweenInOut();
       else if (e.key === "m") setMuted(m => !m);
       else if ((e.ctrlKey || e.metaKey) && e.key === "z") { e.preventDefault(); undo(); }
       else if ((e.ctrlKey || e.metaKey) && e.key === "y") { e.preventDefault(); redo(); }
@@ -322,26 +540,40 @@ function VideoEditorPage() {
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  const totalCutSecs = normalizeCuts(cuts, duration).reduce((a, c) => a + (c.end - c.start), 0);
+  const finalDur = Math.max(0, duration - totalCutSecs);
+
   return (
     <div className="p-6 max-w-[1600px] mx-auto space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-bold bg-fuchsia-500/15 text-fuchsia-600 px-1.5 py-0.5 rounded uppercase tracking-wider">
-              Advanced
-            </span>
+            <span className="text-[10px] font-bold bg-fuchsia-500/15 text-fuchsia-600 px-1.5 py-0.5 rounded uppercase tracking-wider">Advanced</span>
             <span className="text-[10px] text-slate-400 font-medium tracking-wider">• VIDEO EDITOR</span>
           </div>
           <h1 className="text-2xl font-bold">Video Editor</h1>
-          <p className="text-slate-500 text-sm">Pick a merged video and edit. Standalone tool — does not change any other page.</p>
+          <p className="text-slate-500 text-sm">Razor • Waveform • Delete-between. Saves over the original — no duplicates.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={undo}><Undo2 className="h-4 w-4" /></Button>
           <Button size="sm" variant="outline" onClick={redo}><Redo2 className="h-4 w-4" /></Button>
-          <Button size="sm" variant="outline" onClick={resetAll}><Eraser className="h-4 w-4 mr-1" />Reset</Button>
-          <Button size="sm" onClick={exportEditPlan} disabled={!selected}><Download className="h-4 w-4 mr-1" />Export Plan</Button>
+          <Button size="sm" variant="outline" onClick={resetAll}><Eraser className="h-4 w-4 mr-1" />Reset FX</Button>
+          <Button size="sm" variant="outline" onClick={exportEditPlan} disabled={!selected}><Download className="h-4 w-4 mr-1" />Plan JSON</Button>
+          <Button size="sm" onClick={saveEdited} disabled={!selected || saving || cuts.length === 0}>
+            {saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
+            {saving ? `${saveProgress}%` : "Save (replace original)"}
+          </Button>
         </div>
       </div>
+
+      {saving && (
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-xs">
+          <div className="flex justify-between mb-1"><span>{saveMsg}</span><span className="font-mono">{saveProgress}%</span></div>
+          <div className="h-1.5 bg-indigo-100 rounded overflow-hidden">
+            <div className="h-full bg-indigo-500 transition-all" style={{ width: `${saveProgress}%` }} />
+          </div>
+        </div>
+      )}
 
       {/* Video picker */}
       <div className="rounded-2xl border border-slate-200 bg-white p-4 flex items-center gap-3 flex-wrap">
@@ -349,34 +581,24 @@ function VideoEditorPage() {
         <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Final Rendered Video</Label>
         <div className="flex-1 min-w-[260px]">
           <Select value={selectedId} onValueChange={setSelectedId}>
-            <SelectTrigger>
-              <SelectValue placeholder={loadingList ? "Loading…" : "Choose a merged video"} />
-            </SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={loadingList ? "Loading…" : "Choose a merged video"} /></SelectTrigger>
             <SelectContent>
               {videos.map(v => (
                 <SelectItem key={v.script_id} value={v.script_id}>
                   {v.title} — {new Date(v.updated_at).toLocaleDateString()}
                 </SelectItem>
               ))}
-              {!loadingList && videos.length === 0 && (
-                <div className="p-2 text-xs text-slate-500">No merged videos found.</div>
-              )}
+              {!loadingList && videos.length === 0 && <div className="p-2 text-xs text-slate-500">No merged videos found.</div>}
             </SelectContent>
           </Select>
         </div>
-        {selected && (
-          <a href={selected.url} target="_blank" rel="noreferrer" className="text-xs text-indigo-600 underline">open source</a>
-        )}
+        {selected && <a href={selected.url} target="_blank" rel="noreferrer" className="text-xs text-indigo-600 underline">open source</a>}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4">
         {/* Preview + Timeline */}
         <div className="space-y-3">
-          <div
-            ref={containerRef}
-            className="relative bg-black rounded-2xl overflow-hidden flex items-center justify-center"
-            style={{ aspectRatio: "16/9" }}
-          >
+          <div ref={containerRef} className="relative bg-black rounded-2xl overflow-hidden flex items-center justify-center" style={{ aspectRatio: "16/9" }}>
             {selected ? (
               <>
                 <video
@@ -392,7 +614,6 @@ function VideoEditorPage() {
                     const v = e.currentTarget;
                     setDuration(v.duration || 0);
                     if (outPoint === 0) setOutPoint(v.duration || 0);
-                    // seek a bit to avoid black first frame
                     try { v.currentTime = 0.05; } catch {}
                   }}
                   onTimeUpdate={(e) => setCurrent(e.currentTarget.currentTime)}
@@ -400,30 +621,17 @@ function VideoEditorPage() {
                   onPause={() => setPlaying(false)}
                   onError={() => toast.error("Video failed to load")}
                 />
-                {/* Overlays */}
                 <div className="absolute inset-0 pointer-events-none">
                   {visibleOverlays.map(o => (
-                    <div
-                      key={o.id}
-                      className="absolute -translate-x-1/2 -translate-y-1/2 px-2 py-1 rounded"
-                      style={{
-                        left: `${o.x}%`, top: `${o.y}%`,
-                        color: o.color, background: o.bg,
-                        fontSize: o.size, fontWeight: o.bold ? 800 : 500,
-                        textShadow: "0 2px 8px rgba(0,0,0,0.6)",
-                      }}
-                    >{o.text}</div>
+                    <div key={o.id} className="absolute -translate-x-1/2 -translate-y-1/2 px-2 py-1 rounded"
+                      style={{ left: `${o.x}%`, top: `${o.y}%`, color: o.color, background: o.bg, fontSize: o.size, fontWeight: o.bold ? 800 : 500, textShadow: "0 2px 8px rgba(0,0,0,0.6)" }}>
+                      {o.text}
+                    </div>
                   ))}
                 </div>
-                {/* Center play */}
                 {!playing && (
-                  <button
-                    onClick={togglePlay}
-                    className="absolute inset-0 flex items-center justify-center"
-                  >
-                    <div className="bg-white/90 hover:bg-white text-black rounded-full p-5 shadow-2xl">
-                      <Play className="h-8 w-8" />
-                    </div>
+                  <button onClick={togglePlay} className="absolute inset-0 flex items-center justify-center">
+                    <div className="bg-white/90 hover:bg-white text-black rounded-full p-5 shadow-2xl"><Play className="h-8 w-8" /></div>
                   </button>
                 )}
               </>
@@ -437,37 +645,21 @@ function VideoEditorPage() {
             <div className="flex items-center gap-2 flex-wrap">
               <Button size="icon" variant="outline" onClick={() => seek(0)}><SkipBack className="h-4 w-4" /></Button>
               <Button size="icon" variant="outline" onClick={() => seek(current - 5)}><Rewind className="h-4 w-4" /></Button>
-              <Button size="icon" variant="outline" onClick={() => stepFrame(-1)} title="Prev frame (,)">⟨</Button>
+              <Button size="icon" variant="outline" onClick={() => stepFrame(-1)}>⟨</Button>
               <Button size="icon" onClick={togglePlay}>{playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}</Button>
-              <Button size="icon" variant="outline" onClick={() => stepFrame(1)} title="Next frame (.)">⟩</Button>
+              <Button size="icon" variant="outline" onClick={() => stepFrame(1)}>⟩</Button>
               <Button size="icon" variant="outline" onClick={() => seek(current + 5)}><FastForward className="h-4 w-4" /></Button>
               <Button size="icon" variant="outline" onClick={() => seek(duration)}><SkipForward className="h-4 w-4" /></Button>
-
-              <div className="mx-2 text-xs font-mono text-slate-600">
-                {fmtTime(current)} / {fmtTime(duration)}
-              </div>
-
-              <Button size="sm" variant={loop ? "default" : "outline"} onClick={() => setLoop(l => !l)}>
-                <Repeat className="h-4 w-4" />
-              </Button>
+              <div className="mx-2 text-xs font-mono text-slate-600">{fmtTime(current)} / {fmtTime(duration)}</div>
+              <Button size="sm" variant={loop ? "default" : "outline"} onClick={() => setLoop(l => !l)}><Repeat className="h-4 w-4" /></Button>
               <Select value={String(rate)} onValueChange={(v) => setRate(parseFloat(v))}>
                 <SelectTrigger className="w-[90px] h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 3, 4].map(r => (
-                    <SelectItem key={r} value={String(r)}>{r}x</SelectItem>
-                  ))}
-                </SelectContent>
+                <SelectContent>{[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 3, 4].map(r => <SelectItem key={r} value={String(r)}>{r}x</SelectItem>)}</SelectContent>
               </Select>
-
               <div className="flex items-center gap-2 ml-2">
-                <Button size="icon" variant="outline" onClick={() => setMuted(m => !m)}>
-                  {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                </Button>
-                <div className="w-24">
-                  <Slider value={[volume * 100]} min={0} max={100} step={1} onValueChange={(v) => setVolume(v[0] / 100)} />
-                </div>
+                <Button size="icon" variant="outline" onClick={() => setMuted(m => !m)}>{muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}</Button>
+                <div className="w-24"><Slider value={[volume * 100]} min={0} max={100} step={1} onValueChange={(v) => setVolume(v[0] / 100)} /></div>
               </div>
-
               <div className="ml-auto flex gap-2">
                 <Button size="sm" variant="outline" onClick={snapshot}><Camera className="h-4 w-4 mr-1" />Snap</Button>
                 <Button size="sm" variant="outline" onClick={enterPip}><PictureInPicture2 className="h-4 w-4" /></Button>
@@ -476,57 +668,62 @@ function VideoEditorPage() {
             </div>
 
             {/* Scrubber */}
-            <div className="space-y-1">
-              <Slider
-                value={[current]}
-                min={0}
-                max={duration || 1}
-                step={0.01}
-                onValueChange={(v) => seek(v[0])}
+            <Slider value={[current]} min={0} max={duration || 1} step={0.01} onValueChange={(v) => seek(v[0])} />
+
+            {/* Waveform timeline (click to seek) */}
+            <div className="relative">
+              <canvas
+                ref={waveCanvasRef}
+                className="w-full h-20 rounded-md border border-slate-200 cursor-crosshair"
+                onClick={(e) => {
+                  if (!duration) return;
+                  const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
+                  const pct = (e.clientX - rect.left) / rect.width;
+                  seek(pct * duration);
+                }}
               />
-              {/* Timeline ruler with segments + markers */}
-              <div className="relative h-10 rounded-md bg-slate-100 overflow-hidden">
-                {duration > 0 && (
-                  <>
-                    {segments.map(s => (
-                      <div key={s.id}
-                        className="absolute top-0 bottom-0 bg-indigo-400/40 border-l border-r border-indigo-500"
-                        style={{ left: `${(s.start / duration) * 100}%`, width: `${((s.end - s.start) / duration) * 100}%` }}
-                        title={`${fmtTime(s.start)} → ${fmtTime(s.end)}`}
-                      />
-                    ))}
-                    <div className="absolute top-0 bottom-0 w-0.5 bg-green-500"
-                      style={{ left: `${(inPoint / duration) * 100}%` }} title={`IN ${fmtTime(inPoint)}`} />
-                    <div className="absolute top-0 bottom-0 w-0.5 bg-red-500"
-                      style={{ left: `${(outPoint / duration) * 100}%` }} title={`OUT ${fmtTime(outPoint)}`} />
-                    <div className="absolute top-0 bottom-0 w-0.5 bg-amber-500"
-                      style={{ left: `${(current / duration) * 100}%` }} />
-                  </>
-                )}
+              <div className="absolute top-1 right-2 text-[10px] text-slate-500 bg-white/80 px-1.5 rounded">
+                {waveLoading ? "decoding…" : wavePeaks ? "waveform" : "no audio"}
               </div>
             </div>
 
+            {/* Razor / cut toolbar */}
             <div className="flex items-center gap-2 flex-wrap text-xs">
-              <Button size="sm" variant="outline" onClick={markIn}><span className="text-green-600 font-bold mr-1">[</span>Mark IN</Button>
-              <Button size="sm" variant="outline" onClick={markOut}>Mark OUT<span className="text-red-600 font-bold ml-1">]</span></Button>
-              <Button size="sm" variant="outline" onClick={addSegment}><Scissors className="h-3 w-3 mr-1" />Add segment</Button>
-              <Button size="sm" variant="outline" onClick={splitAtPlayhead}>Split @ playhead</Button>
-              <span className="font-mono text-slate-500">IN {fmtTime(inPoint)} · OUT {fmtTime(outPoint)}</span>
+              <Button size="sm" variant="outline" onClick={markIn}><span className="text-green-600 font-bold mr-1">[</span>IN (i)</Button>
+              <Button size="sm" variant="outline" onClick={markOut}>OUT (o)<span className="text-red-600 font-bold ml-1">]</span></Button>
+              <Button size="sm" variant="outline" onClick={razorAtPlayhead} title="Razor (b)">
+                <Scissors className="h-3 w-3 mr-1" />Razor (b)
+              </Button>
+              <Button size="sm" variant="destructive" onClick={deleteBetweenInOut} title="Delete IN→OUT (x)">
+                <Trash2 className="h-3 w-3 mr-1" />Delete IN→OUT
+              </Button>
+              <Button size="sm" variant="outline" onClick={deleteBetweenLastTwoRazors} disabled={razorPoints.length < 2}>
+                Delete between last 2 razors
+              </Button>
+              {(cuts.length > 0 || razorPoints.length > 0) && (
+                <Button size="sm" variant="ghost" onClick={clearCuts}><Eraser className="h-3 w-3 mr-1" />Clear cuts</Button>
+              )}
+              <span className="font-mono text-slate-500 ml-auto">
+                IN {fmtTime(inPoint)} · OUT {fmtTime(outPoint)} · Final {fmtTime(finalDur)}
+              </span>
             </div>
           </div>
 
-          {/* Segments list */}
-          {segments.length > 0 && (
+          {/* Cuts list */}
+          {cuts.length > 0 && (
             <div className="rounded-2xl border border-slate-200 bg-white p-3">
-              <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Segments ({segments.length})</div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Cuts to remove ({cuts.length})</div>
+                <div className="text-xs text-slate-500">Total removed: <span className="font-mono">{fmtTime(totalCutSecs)}</span></div>
+              </div>
               <div className="space-y-1.5">
-                {segments.map((s, i) => (
+                {normalizeCuts(cuts, duration).map((s, i) => (
                   <div key={s.id} className="flex items-center gap-2 text-xs">
                     <span className="w-6 text-slate-400">#{i + 1}</span>
-                    <span className="font-mono">{fmtTime(s.start)} → {fmtTime(s.end)}</span>
+                    <span className="font-mono text-red-600">{fmtTime(s.start)} → {fmtTime(s.end)}</span>
                     <span className="text-slate-400">({(s.end - s.start).toFixed(2)}s)</span>
-                    <Button size="sm" variant="ghost" onClick={() => seek(s.start)}>Preview</Button>
-                    <Button size="sm" variant="ghost" onClick={() => removeSegment(s.id)}><Trash2 className="h-3 w-3 text-red-500" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => seek(s.start)}>Goto</Button>
+                    <Button size="sm" variant="ghost" onClick={() => removeCut(s.id)}><Trash2 className="h-3 w-3 text-red-500" /></Button>
                   </div>
                 ))}
               </div>
@@ -534,7 +731,7 @@ function VideoEditorPage() {
           )}
         </div>
 
-        {/* Right panel: tabs */}
+        {/* Right panel */}
         <div className="rounded-2xl border border-slate-200 bg-white p-3">
           <Tabs defaultValue="filters">
             <TabsList className="grid grid-cols-4 w-full">
@@ -545,101 +742,49 @@ function VideoEditorPage() {
             </TabsList>
 
             <TabsContent value="filters" className="space-y-3 mt-3">
-              {([
-                ["brightness", 0, 200],
-                ["contrast", 0, 200],
-                ["saturate", 0, 200],
-                ["hue", 0, 360],
-                ["blur", 0, 20],
-                ["grayscale", 0, 100],
-                ["sepia", 0, 100],
-                ["invert", 0, 100],
-              ] as const).map(([k, min, max]) => (
+              {([["brightness",0,200],["contrast",0,200],["saturate",0,200],["hue",0,360],["blur",0,20],["grayscale",0,100],["sepia",0,100],["invert",0,100]] as const).map(([k, min, max]) => (
                 <div key={k}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="capitalize">{k}</span>
-                    <span className="font-mono text-slate-500">{(filters as any)[k]}</span>
-                  </div>
-                  <Slider
-                    value={[(filters as any)[k]]}
-                    min={min} max={max} step={1}
-                    onValueChange={(v) => setFilters(f => ({ ...f, [k]: v[0] }))}
-                    onValueCommit={pushHistory}
-                  />
+                  <div className="flex justify-between text-xs mb-1"><span className="capitalize">{k}</span><span className="font-mono text-slate-500">{(filters as any)[k]}</span></div>
+                  <Slider value={[(filters as any)[k]]} min={min} max={max} step={1} onValueChange={(v) => setFilters(f => ({ ...f, [k]: v[0] }))} onValueCommit={pushHistory} />
                 </div>
               ))}
-              <Button size="sm" variant="outline" className="w-full" onClick={() => { pushHistory(); setFilters({ ...FILTER_DEFAULTS }); }}>
-                Reset Filters
-              </Button>
+              <Button size="sm" variant="outline" className="w-full" onClick={() => { pushHistory(); setFilters({ ...FILTER_DEFAULTS }); }}>Reset Filters</Button>
+              <p className="text-[10px] text-slate-400">Note: filters are preview-only; Save only bakes razor cuts into the file.</p>
             </TabsContent>
 
             <TabsContent value="transform" className="space-y-3 mt-3">
               <div>
                 <div className="flex justify-between text-xs mb-1"><span>Rotate</span><span className="font-mono">{rotate}°</span></div>
-                <Slider value={[rotate]} min={-180} max={180} step={1}
-                  onValueChange={(v) => setRotate(v[0])} onValueCommit={pushHistory} />
-                <div className="flex gap-1 mt-2">
-                  {[0, 90, 180, 270].map(deg => (
-                    <Button key={deg} size="sm" variant="outline" onClick={() => { pushHistory(); setRotate(deg); }}>{deg}°</Button>
-                  ))}
-                </div>
+                <Slider value={[rotate]} min={-180} max={180} step={1} onValueChange={(v) => setRotate(v[0])} onValueCommit={pushHistory} />
+                <div className="flex gap-1 mt-2">{[0,90,180,270].map(d => <Button key={d} size="sm" variant="outline" onClick={() => { pushHistory(); setRotate(d); }}>{d}°</Button>)}</div>
               </div>
               <div className="flex gap-2">
-                <Button size="sm" variant={flipH ? "default" : "outline"} className="flex-1" onClick={() => { pushHistory(); setFlipH(f => !f); }}>
-                  <FlipHorizontal className="h-4 w-4 mr-1" />Flip H
-                </Button>
-                <Button size="sm" variant={flipV ? "default" : "outline"} className="flex-1" onClick={() => { pushHistory(); setFlipV(f => !f); }}>
-                  <FlipVertical className="h-4 w-4 mr-1" />Flip V
-                </Button>
+                <Button size="sm" variant={flipH ? "default" : "outline"} className="flex-1" onClick={() => { pushHistory(); setFlipH(f => !f); }}><FlipHorizontal className="h-4 w-4 mr-1" />Flip H</Button>
+                <Button size="sm" variant={flipV ? "default" : "outline"} className="flex-1" onClick={() => { pushHistory(); setFlipV(f => !f); }}><FlipVertical className="h-4 w-4 mr-1" />Flip V</Button>
               </div>
               <div>
                 <div className="flex justify-between text-xs mb-1"><span>Zoom</span><span className="font-mono">{zoom}%</span></div>
-                <Slider value={[zoom]} min={10} max={300} step={1}
-                  onValueChange={(v) => setZoom(v[0])} onValueCommit={pushHistory} />
+                <Slider value={[zoom]} min={10} max={300} step={1} onValueChange={(v) => setZoom(v[0])} onValueCommit={pushHistory} />
               </div>
             </TabsContent>
 
             <TabsContent value="text" className="space-y-3 mt-3">
-              <Button size="sm" className="w-full" onClick={addOverlay} disabled={!selected}>
-                <Plus className="h-4 w-4 mr-1" />Add text @ {fmtTime(current)}
-              </Button>
+              <Button size="sm" className="w-full" onClick={addOverlay} disabled={!selected}><Plus className="h-4 w-4 mr-1" />Add text @ {fmtTime(current)}</Button>
               <div className="space-y-3 max-h-[420px] overflow-y-auto">
                 {overlays.map(o => (
                   <div key={o.id} className="rounded-xl border border-slate-200 p-3 space-y-2">
                     <Input value={o.text} onChange={(e) => updateOverlay(o.id, { text: e.target.value })} />
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <Label className="text-[10px]">X%</Label>
-                        <Input type="number" value={o.x} onChange={(e) => updateOverlay(o.id, { x: +e.target.value })} />
-                      </div>
-                      <div>
-                        <Label className="text-[10px]">Y%</Label>
-                        <Input type="number" value={o.y} onChange={(e) => updateOverlay(o.id, { y: +e.target.value })} />
-                      </div>
-                      <div>
-                        <Label className="text-[10px]">Size</Label>
-                        <Input type="number" value={o.size} onChange={(e) => updateOverlay(o.id, { size: +e.target.value })} />
-                      </div>
-                      <div>
-                        <Label className="text-[10px]">Color</Label>
-                        <input type="color" value={o.color} onChange={(e) => updateOverlay(o.id, { color: e.target.value })} className="w-full h-9 rounded" />
-                      </div>
-                      <div>
-                        <Label className="text-[10px]">Start (s)</Label>
-                        <Input type="number" step="0.1" value={o.start} onChange={(e) => updateOverlay(o.id, { start: +e.target.value })} />
-                      </div>
-                      <div>
-                        <Label className="text-[10px]">End (s)</Label>
-                        <Input type="number" step="0.1" value={o.end} onChange={(e) => updateOverlay(o.id, { end: +e.target.value })} />
-                      </div>
+                      <div><Label className="text-[10px]">X%</Label><Input type="number" value={o.x} onChange={(e) => updateOverlay(o.id, { x: +e.target.value })} /></div>
+                      <div><Label className="text-[10px]">Y%</Label><Input type="number" value={o.y} onChange={(e) => updateOverlay(o.id, { y: +e.target.value })} /></div>
+                      <div><Label className="text-[10px]">Size</Label><Input type="number" value={o.size} onChange={(e) => updateOverlay(o.id, { size: +e.target.value })} /></div>
+                      <div><Label className="text-[10px]">Color</Label><input type="color" value={o.color} onChange={(e) => updateOverlay(o.id, { color: e.target.value })} className="w-full h-9 rounded" /></div>
+                      <div><Label className="text-[10px]">Start (s)</Label><Input type="number" step="0.1" value={o.start} onChange={(e) => updateOverlay(o.id, { start: +e.target.value })} /></div>
+                      <div><Label className="text-[10px]">End (s)</Label><Input type="number" step="0.1" value={o.end} onChange={(e) => updateOverlay(o.id, { end: +e.target.value })} /></div>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => updateOverlay(o.id, { bold: !o.bold })}>
-                        {o.bold ? "Bold ✓" : "Bold"}
-                      </Button>
-                      <Button size="sm" variant="ghost" className="ml-auto" onClick={() => removeOverlay(o.id)}>
-                        <Trash2 className="h-3 w-3 text-red-500" />
-                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => updateOverlay(o.id, { bold: !o.bold })}>{o.bold ? "Bold ✓" : "Bold"}</Button>
+                      <Button size="sm" variant="ghost" className="ml-auto" onClick={() => removeOverlay(o.id)}><Trash2 className="h-3 w-3 text-red-500" /></Button>
                     </div>
                   </div>
                 ))}
@@ -650,25 +795,28 @@ function VideoEditorPage() {
             <TabsContent value="info" className="space-y-2 mt-3 text-xs">
               <div className="rounded-lg bg-slate-50 p-3 space-y-1">
                 <div><b>Source:</b> {selected?.title || "—"}</div>
-                <div><b>Duration:</b> {fmtTime(duration)}</div>
-                <div><b>Segments:</b> {segments.length}</div>
-                <div><b>Overlays:</b> {overlays.length}</div>
+                <div><b>Bucket/Path:</b> <span className="font-mono">{selected?.bucket || "—"}/{selected?.path || ""}</span></div>
+                <div><b>Original duration:</b> {fmtTime(duration)}</div>
+                <div><b>Removed:</b> {fmtTime(totalCutSecs)} · <b>Final:</b> {fmtTime(finalDur)}</div>
+                <div><b>Cuts:</b> {cuts.length} · <b>Razor marks:</b> {razorPoints.length}</div>
               </div>
               <div className="rounded-lg bg-slate-50 p-3 space-y-1">
-                <p className="font-bold mb-1">Keyboard shortcuts</p>
-                <div><kbd>Space</kbd> play/pause</div>
-                <div><kbd>← →</kbd> seek 1s (shift = 5s)</div>
-                <div><kbd>, .</kbd> frame step</div>
-                <div><kbd>I / O</kbd> mark IN / OUT</div>
-                <div><kbd>S</kbd> split at playhead</div>
-                <div><kbd>M</kbd> mute</div>
-                <div><kbd>Ctrl+Z / Y</kbd> undo / redo</div>
+                <p className="font-bold mb-1">Workflow</p>
+                <div>1. Pick video → scrub on waveform.</div>
+                <div>2. Mark IN (i) and OUT (o) around bad part.</div>
+                <div>3. Click <b>Delete IN→OUT</b> (or use Razor x2 then Delete-between).</div>
+                <div>4. Repeat for all cuts.</div>
+                <div>5. Click <b>Save</b> — original file is overwritten in storage.</div>
               </div>
-              <p className="text-slate-400">
-                This is a standalone visual editor. Export Plan saves your edit as JSON
-                (filters, transforms, segments, text overlays) that can be applied by a
-                renderer later. Snap downloads the current frame as PNG with filters baked in.
-              </p>
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-amber-900">
+                Save runs ffmpeg in your browser and uploads the result back to the same storage path. The old file is replaced — no duplicates.
+              </div>
+              <div className="rounded-lg bg-slate-50 p-3 space-y-1">
+                <p className="font-bold mb-1">Shortcuts</p>
+                <div><kbd>Space</kbd> play/pause · <kbd>← →</kbd> seek · <kbd>, .</kbd> frame</div>
+                <div><kbd>I / O</kbd> mark IN / OUT · <kbd>B</kbd> razor · <kbd>X</kbd> delete IN→OUT</div>
+                <div><kbd>M</kbd> mute · <kbd>Ctrl+Z / Y</kbd> undo / redo</div>
+              </div>
             </TabsContent>
           </Tabs>
         </div>
