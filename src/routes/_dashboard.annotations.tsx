@@ -612,7 +612,7 @@ function AnnotationsPage() {
           {mergeState.status === "done" && mergeState.url && (
             <div className="flex gap-2">
               <Button 
-                onClick={() => window.location.href = `/_dashboard/master-video?script_id=${scriptId}`}
+                onClick={() => window.location.href = `/video-editor?script_id=${scriptId}`}
                 className="bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl gap-2 h-10 shadow-lg shadow-indigo-500/20"
               >
                 <Film className="h-4 w-4" /> Open in Editor
