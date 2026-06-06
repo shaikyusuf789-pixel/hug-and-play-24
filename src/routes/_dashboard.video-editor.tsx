@@ -400,7 +400,36 @@ function VideoEditorPage() {
   };
 
   const removeCut = (id: string) => { pushHistory(); setCuts(prev => prev.filter(c => c.id !== id)); };
-  const clearCuts = () => { pushHistory(); setCuts([]); setRazorPoints([]); };
+  const clearCuts = () => { pushHistory(); setCuts([]); setRazorPoints([]); setSelection(null); };
+
+  const deleteSelection = () => {
+    if (!selection || !duration) { toast.error("Drag on waveform to select a region first"); return; }
+    const s = Math.min(selection.start, selection.end);
+    const e = Math.max(selection.start, selection.end);
+    if (e - s < 0.01) { toast.error("Selection too small"); return; }
+    pushHistory();
+    setCuts(prev => normalizeCuts([...prev, { id: crypto.randomUUID(), start: s, end: e }], duration));
+    setSelection(null);
+    toast.success(`Cut ${fmtTime(s)} → ${fmtTime(e)} removed`);
+  };
+
+  // waveform zoom helpers
+  const zoomWaveAt = (factor: number, anchorT?: number) => {
+    const sc = waveScrollRef.current;
+    const newZoom = Math.max(1, Math.min(50, waveZoom * factor));
+    if (newZoom === waveZoom) return;
+    if (sc && duration) {
+      const anchor = anchorT ?? current;
+      const ratio = newZoom / waveZoom;
+      const targetX = (anchor / duration) * (sc.clientWidth * newZoom);
+      requestAnimationFrame(() => {
+        if (waveScrollRef.current) waveScrollRef.current.scrollLeft = targetX - sc.clientWidth / 2;
+      });
+      void ratio;
+    }
+    setWaveZoom(newZoom);
+  };
+
 
   // overlays
   const addOverlay = () => {
