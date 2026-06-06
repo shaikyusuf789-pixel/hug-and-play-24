@@ -259,6 +259,91 @@ function AnnotationsPage() {
     toast.warning(`${label}: still running after 30 min — refresh to check status`);
   };
 
+  // Render chunks ONE AT A TIME on the Railway worker (avoids ffmpeg OOM /
+  // exit 187 from parallel renders). Waits for each chunk to reach a terminal
+  // status (`done` or `error`) before queuing the next. Zombie `rendering`
+  // rows (no updated_at change for >3 min) are auto-marked `error` so the
+  // loop never hangs forever.
+  const renderAllSequential = async (
+    sid: string,
+    src: SlideSource,
+    targetChunks: Array<{ id: string; chunk_index: number }>,
+    label: string,
+  ) => {
+    let done = 0;
+    let failed = 0;
+    const PER_CHUNK_TIMEOUT_MS = 6 * 60_000; // 6 min/chunk hard cap
+    const ZOMBIE_MS = 3 * 60_000;            // 3 min with no updated_at change → mark error
+
+    for (let i = 0; i < targetChunks.length; i++) {
+      if (scriptIdRef.current !== sid || slideSourceRef.current !== src) return { done, failed };
+      const c = targetChunks[i];
+      toast.info(`${label}: rendering ${i + 1}/${targetChunks.length}…`);
+
+      // Seed this chunk's row as 'rendering' so UI flips immediately
+      await supabase.from("video_clips").upsert(
+        [{
+          script_id: sid, chunk_id: c.id, chunk_number: c.chunk_index,
+          slide_source: src, status: "rendering", error_msg: null,
+        }],
+        { onConflict: "script_id,chunk_id,slide_source" },
+      );
+
+      try {
+        await workerPost("/clips/render", {
+          script_id: sid, chunk_id: c.id, chunk_number: c.chunk_index, slide_source: src,
+        });
+      } catch (e: any) {
+        failed++;
+        await supabase.from("video_clips").upsert(
+          [{
+            script_id: sid, chunk_id: c.id, chunk_number: c.chunk_index,
+            slide_source: src, status: "error", error_msg: `Worker call failed: ${e?.message || e}`,
+          }],
+          { onConflict: "script_id,chunk_id,slide_source" },
+        );
+        await refreshAll(sid, src);
+        continue;
+      }
+
+      // Wait for this chunk to settle
+      const started = Date.now();
+      let lastUpdated: string | null = null;
+      let lastChangeAt = Date.now();
+      while (Date.now() - started < PER_CHUNK_TIMEOUT_MS) {
+        await new Promise((r) => setTimeout(r, 2500));
+        if (scriptIdRef.current !== sid || slideSourceRef.current !== src) return { done, failed };
+        const { data: row } = await supabase
+          .from("video_clips")
+          .select("status, updated_at, error_msg")
+          .eq("script_id", sid).eq("chunk_id", c.id).eq("slide_source", src)
+          .maybeSingle();
+        await refreshAll(sid, src);
+        if (!row) continue;
+        if (row.status === "done") { done++; break; }
+        if (row.status === "error") {
+          failed++;
+          toast.error(`${label}: chunk ${c.chunk_index + 1} failed${row.error_msg ? ` — ${String(row.error_msg).slice(0, 80)}` : ""}`);
+          break;
+        }
+        // Zombie detection: status still 'rendering' but updated_at hasn't changed
+        if (row.updated_at !== lastUpdated) {
+          lastUpdated = row.updated_at as string;
+          lastChangeAt = Date.now();
+        } else if (Date.now() - lastChangeAt > ZOMBIE_MS) {
+          failed++;
+          await supabase.from("video_clips").update({
+            status: "error",
+            error_msg: "Worker stopped responding (zombie render — likely crashed). Click Render to retry.",
+          }).eq("script_id", sid).eq("chunk_id", c.id).eq("slide_source", src);
+          toast.error(`${label}: chunk ${c.chunk_index + 1} stalled — marked failed`);
+          break;
+        }
+      }
+    }
+    return { done, failed };
+  };
+
   const bulk = async (label: string, path: string) => {
     if (!scriptId) return toast.error("Pick a script first");
     setBulkBusy(label);
@@ -282,25 +367,15 @@ function AnnotationsPage() {
         await Promise.all(pending);
         toast.success(`${label}: Processed all chunks via GPT-4o pipeline`);
       } else if (path === "/clips/render-all") {
-        // Seed every chunk with annotations to status='rendering' so previews flip immediately.
-        const seedRows = chunks
-          .filter((c) => !!aiMap[c.id])
-          .map((c) => ({
-            script_id: scriptId,
-            chunk_id: c.id,
-            chunk_number: c.chunk_index,
-            slide_source: slideSource,
-            status: "rendering",
-            error_msg: null,
-          }));
-        if (seedRows.length) {
-          await supabase.from("video_clips").upsert(seedRows, {
-            onConflict: "script_id,chunk_id,slide_source",
-          });
+        // SEQUENTIAL render — one chunk at a time to avoid Railway worker OOM.
+        const target = chunks.filter((c) => !!aiMap[c.id]);
+        if (!target.length) {
+          toast.warning(`${label}: no chunks have annotations yet`);
+        } else {
+          const { done, failed } = await renderAllSequential(scriptId, slideSource, target, label);
+          if (failed) toast.warning(`${label}: ${done} done, ${failed} failed — click Render on red chunks to retry`);
+          else toast.success(`${label}: ${done}/${target.length} rendered`);
         }
-        const res = await workerPost(path, { script_id: scriptId, slide_source: slideSource });
-        toast.info(`${label}: queued ${res.queued ?? seedRows.length} chunks — rendering…`);
-        await pollUntilComplete("video_clips", scriptId, slideSource, label);
       } else {
         const body: any = { script_id: scriptId, slide_source: slideSource };
         const res = await workerPost(path, body);
