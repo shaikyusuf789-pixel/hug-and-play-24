@@ -23,7 +23,7 @@ async function callGamma(inputText: string, themeName: string, supabase: ReturnT
     "PRESERVE MODE — the input text is FINAL COPY. Reproduce every word EXACTLY as provided. Do NOT rewrite, paraphrase, summarize, condense, expand, translate, reorder, add, or remove ANY word, bullet, punctuation, or line break.",
     "Output exactly one 16:9 widescreen slide (1920x1080) for YouTube/PowerPoint. Not a document, webpage, social post, square or vertical card. No fluid/tall/scrolling layout.",
     "Layout: title at top, balanced two-column or compact grid below. Fit ALL preserved text by adjusting font size and spacing ONLY — never by editing the text.",
-    `Visual style: apply the ${themeName} theme. No images, no added icons, no extra labels.`,
+    `Visual style: apply the ${themeName} theme. Include one relevant AI-generated image that fits the slide topic.`,
   ].join(" ")
 
   // Kick off generation — textMode "preserve" forces Gamma to keep input text verbatim.
@@ -41,12 +41,12 @@ async function callGamma(inputText: string, themeName: string, supabase: ReturnT
       cardSplit: "inputTextBreaks",
       exportAs: "png",
       textOptions: {
-        amount: "detailed",
+        amount: "brief",
         language: "en",
       },
       additionalInstructions: strictInstructions,
       cardOptions: { dimensions: "16x9" },
-      imageOptions: { source: "noImages" },
+      imageOptions: { source: "aiGenerated", model: "imagen-3-pro", style: "photorealistic" },
     }),
   })
 
@@ -142,11 +142,11 @@ serve(async (req) => {
     if (action === 'generate-prompt') {
       const promptResult = await geminiGenerateText(requireGoogleApiKey(), {
         model: 'gemini-2.5-flash-lite',
-        system: `You are an expert at creating slide content. ALWAYS write the output in ENGLISH ONLY, regardless of the input language. If the source text is in Telugu, Hindi, or any non-English language, translate the meaning into clear, natural English first, then produce the slide. Your output must be exactly one English heading followed by exactly 6 English bullet points. No transliteration, no native script, no other text.
+        system: `You are an expert at creating slide content. ALWAYS write the output in ENGLISH ONLY, regardless of the input language. If the source text is in Telugu, Hindi, or any non-English language, translate the meaning into clear, natural English first, then produce the slide. Your output must be exactly one English heading followed by exactly 4 SHORT English bullet points (max 10 words each). No transliteration, no native script, no other text.
 
 CRITICAL — VOCABULARY REUSE RULE:
 The bullets will later be matched word-for-word against the spoken audio of this same chunk. To make that alignment work, REUSE the exact same English words, phrases, and key nouns/verbs that already appear (or are the direct English translation of) the source chunk. Prefer the chunk's own vocabulary over fancy synonyms. Keep numbers, names, brand terms, and technical words verbatim. Short, plain bullets that echo the chunk's wording > clever rephrased bullets.`,
-        user: `Source chunk (this is the FINAL spoken script — may be in any language; translate to English while keeping the same words/phrases wherever possible):\n\n${chunk.content}\n\nProduce: one English heading and exactly 6 English bullet points. English only. REUSE the chunk's own words/phrases as much as possible so the bullets read like a condensed echo of the script, not a paraphrase.`,
+        user: `Source chunk (this is the FINAL spoken script — may be in any language; translate to English while keeping the same words/phrases wherever possible):\n\n${chunk.content}\n\nProduce: one English heading and exactly 4 SHORT English bullet points (max 10 words each). English only. REUSE the chunk's own words/phrases as much as possible so the bullets read like a condensed echo of the script, not a paraphrase. Keep bullets tight so the slide renders with large readable font.`,
         temperature: 0.2,
       })
 
