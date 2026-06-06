@@ -1,4 +1,4 @@
-# Sky Studio — Project Biography (v6.0)
+# Sky Studio — Project Biography (v6.1)
 
 > Single-source reproduction guide for the Sky Studio video pipeline. Any AI agent (Replit, Bolt, Cursor) should be able to rebuild this app one-to-one from this file alone.
 
@@ -317,4 +317,28 @@ The Railway service is connected to repo `shaikyusuf789-pixel/sky-annotations-wo
 
 ---
 
-_Document version: v6.0 · Last refreshed by Lovable agent 2026-06-05 with 31 live screenshots of the SBI Clerk 2026 production._
+## 9. Recent Changes (v6.1 · 2026-06-06)
+
+### 9.1 New defaults
+- **Audio (`/audio`)** — Provider now defaults to **Cartesia** with model `sonic-3-latest` and the operator's cloned voice ID `4987882a-488c-480a-ace8-f1127032a839` (Telugu). The Provider/Model/Voice dropdowns still let you pick ElevenLabs or Google AI Studio per chunk. File: `src/routes/_dashboard.audio.tsx`.
+- **Script Generator (`/script-generator`)** — Provider defaults to **Claude (Anthropic)**, Model `Claude Sonnet 4.5 (Recommended)`. File: `src/routes/_dashboard.script-generator.tsx`.
+
+![Audio — Cartesia default](./docs/biography-screenshots/35-audio-cartesia-default.png)
+![Script Generator — Claude default](./docs/biography-screenshots/36-script-generator-claude-default.png)
+
+### 9.2 Global DELETE MEDIA button (`/dashboard`)
+A destructive red **DELETE MEDIA** button sits next to **Full Backup** on the dashboard header. It opens a confirm dialog and, on confirm, calls the `purgeAllMedia` server function (`src/lib/purge.functions.ts`) which:
+
+1. Recursively lists and deletes every object in the `audio-files`, `slides`, and `video-clips` Storage buckets (uses paginated `list()` to bypass the 1000-row cap).
+2. Clears `script_chunks.audio_url`, `slide_url`, `slide_id`, `slide_prompt`, and all per-stage `*_job_status` / `*_job_error` columns.
+3. Clears `scripts.final_audio_url`.
+4. Deletes all rows in `video_clips`.
+
+Script text, chunk text, ideas, uploads, and `user-uploads` bucket are **kept**. Operation is permanent and cannot be undone. Toast reports per-bucket deletion counts.
+
+![Dashboard DELETE MEDIA button](./docs/biography-screenshots/33-dashboard-delete-media.png)
+![DELETE MEDIA confirm dialog](./docs/biography-screenshots/34-delete-media-confirm.png)
+
+---
+
+_Document version: v6.1 · Last refreshed by Lovable agent 2026-06-06. Adds Cartesia/Claude defaults and global DELETE MEDIA purge (screenshots 33–36)._
