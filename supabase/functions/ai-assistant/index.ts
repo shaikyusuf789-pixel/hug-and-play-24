@@ -42,9 +42,20 @@ CAPABILITIES:
 - Docs: read_ui_spec.
 - YouTube: analyze_youtube_channel.
 - Internet: web_search + fetch_url.
-- Image gen: generate_image.
+- Image gen: generate_image (text→image) / edit_image (modify existing image URL).
 - Memory: save_app_note / clear_chat_memory.
 - Training: list_training_docs / get_training_doc / update_training_doc.
+
+IMAGE GENERATION (CRITICAL):
+- You CAN generate images. Never say you cannot. Call \`generate_image\` with the user's prompt.
+- Available models (pass via \`model\` arg, default = openai/gpt-image-2):
+  - OpenAI: openai/gpt-image-2 (flagship, best text), openai/gpt-image-1, openai/gpt-image-1-mini, openai/dall-e-3
+  - Google: google/gemini-3-pro-image-preview (flagship), google/gemini-3.1-flash-image-preview (Nano Banana 2), google/gemini-2.5-flash-image (Nano Banana 1)
+- For YouTube thumbnails default to openai/gpt-image-2 with size 1792x1024.
+- To modify an already-generated image, call \`edit_image\` with the previous URL + new prompt.
+- After generation, ALWAYS embed the result in your reply as markdown:
+  \`![thumbnail](URL)\`
+  then on a new line: \`[⬇ Download](URL)\`
 
 RESPONSE FORMAT (CRITICAL):
 - Always reply in clean GitHub-flavored Markdown.
@@ -179,9 +190,106 @@ RESPONSE FORMAT (CRITICAL):
           return JSON.stringify({ error: String(e) });
         }
       }
-      if (name === "generate_image") {
-        // Keeping Gemini for images if available, else placeholders. Assuming Google key is for Gemini.
-        return JSON.stringify({ error: "Image generation currently unavailable in optimized mode." });
+      if (name === "generate_image" || name === "edit_image") {
+        try {
+          const model = args.model || "openai/gpt-image-2";
+          const size = args.size || "1792x1024";
+          const prompt = args.prompt;
+          if (!prompt) return JSON.stringify({ error: "prompt is required" });
+
+          let b64: string | null = null;
+          let mime = "image/png";
+
+          // Fetch source image bytes for edit_image
+          let srcB64: string | null = null;
+          if (name === "edit_image") {
+            if (!args.image_url) return JSON.stringify({ error: "image_url is required for edit_image" });
+            const ir = await fetch(args.image_url);
+            if (!ir.ok) return JSON.stringify({ error: `Could not fetch source image: ${ir.status}` });
+            const buf = new Uint8Array(await ir.arrayBuffer());
+            let bin = "";
+            for (let i = 0; i < buf.length; i += 8192) bin += String.fromCharCode(...buf.subarray(i, i + 8192));
+            srcB64 = btoa(bin);
+          }
+
+          if (model.startsWith("openai/")) {
+            const openaiKey = Deno.env.get("OPENAI_API_KEY");
+            if (!openaiKey) return JSON.stringify({ error: "OPENAI_API_KEY not configured" });
+            const openaiModel = model.replace("openai/", "");
+
+            if (name === "edit_image") {
+              // OpenAI image edits use multipart/form-data
+              const form = new FormData();
+              form.append("model", openaiModel);
+              form.append("prompt", prompt);
+              form.append("size", size);
+              const imgBlob = new Blob([Uint8Array.from(atob(srcB64!), c => c.charCodeAt(0))], { type: "image/png" });
+              form.append("image", imgBlob, "source.png");
+              const r = await fetch("https://api.openai.com/v1/images/edits", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${openaiKey}` },
+                body: form,
+              });
+              const j = await r.json();
+              if (j.error) return JSON.stringify({ error: `OpenAI: ${j.error.message}` });
+              b64 = j.data?.[0]?.b64_json;
+            } else {
+              const r = await fetch("https://api.openai.com/v1/images/generations", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${openaiKey}` },
+                body: JSON.stringify({ model: openaiModel, prompt, size, n: 1 }),
+              });
+              const j = await r.json();
+              if (j.error) return JSON.stringify({ error: `OpenAI: ${j.error.message}` });
+              b64 = j.data?.[0]?.b64_json;
+              if (!b64 && j.data?.[0]?.url) {
+                const ir = await fetch(j.data[0].url);
+                const buf = new Uint8Array(await ir.arrayBuffer());
+                let bin = "";
+                for (let i = 0; i < buf.length; i += 8192) bin += String.fromCharCode(...buf.subarray(i, i + 8192));
+                b64 = btoa(bin);
+              }
+            }
+          } else if (model.startsWith("google/")) {
+            const googleKey = Deno.env.get("GOOGLE_API_KEY");
+            if (!googleKey) return JSON.stringify({ error: "GOOGLE_API_KEY not configured" });
+            const googleModel = model.replace("google/", "");
+            const parts: any[] = [{ text: prompt }];
+            if (srcB64) parts.push({ inlineData: { mimeType: "image/png", data: srcB64 } });
+            const r = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${googleKey}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [{ role: "user", parts }],
+                  generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+                }),
+              }
+            );
+            const j = await r.json();
+            if (j.error) return JSON.stringify({ error: `Google: ${j.error.message}` });
+            const inline = j.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData)?.inlineData;
+            if (inline) { b64 = inline.data; mime = inline.mimeType || "image/png"; }
+          } else {
+            return JSON.stringify({ error: `Unknown model: ${model}` });
+          }
+
+          if (!b64) return JSON.stringify({ error: "No image returned from model" });
+
+          // Upload to user-uploads/thumbnails/
+          const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+          const ext = mime.includes("jpeg") ? "jpg" : "png";
+          const path = `thumbnails/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+          const { error: upErr } = await supabase.storage.from("user-uploads").upload(path, bytes, {
+            contentType: mime, upsert: false,
+          });
+          if (upErr) return JSON.stringify({ error: `Upload failed: ${upErr.message}` });
+          const { data: pub } = supabase.storage.from("user-uploads").getPublicUrl(path);
+          return JSON.stringify({ success: true, url: pub.publicUrl, model, prompt });
+        } catch (e) {
+          return JSON.stringify({ error: String(e) });
+        }
       }
       if (name === "list_training_docs") {
         const KEYS = ["training:transcript_1", "training:transcript_2", "training:transcript_3", "training:transcript_4", "training:sky_dna_general", "training:sky_dna_subjective"];
@@ -221,7 +329,9 @@ RESPONSE FORMAT (CRITICAL):
       { type: "function", function: { name: "save_app_note", description: "Save a note.", parameters: { type: "object", properties: { title: { type: "string" }, content: { type: "string" } }, required: ["title", "content"] } } },
       { type: "function", function: { name: "list_training_docs", description: "List training docs." } },
       { type: "function", function: { name: "get_training_doc", description: "Read a training doc.", parameters: { type: "object", properties: { key: { type: "string" } }, required: ["key"] } } },
-      { type: "function", function: { name: "update_training_doc", description: "Update a training doc.", parameters: { type: "object", properties: { key: { type: "string" }, content: { type: "string" } }, required: ["key", "content"] } } }
+      { type: "function", function: { name: "update_training_doc", description: "Update a training doc.", parameters: { type: "object", properties: { key: { type: "string" }, content: { type: "string" } }, required: ["key", "content"] } } },
+      { type: "function", function: { name: "generate_image", description: "Generate an image from a text prompt. Returns a public URL.", parameters: { type: "object", properties: { prompt: { type: "string", description: "Detailed image description" }, model: { type: "string", description: "openai/gpt-image-2 | openai/gpt-image-1 | openai/gpt-image-1-mini | openai/dall-e-3 | google/gemini-3-pro-image-preview | google/gemini-3.1-flash-image-preview | google/gemini-2.5-flash-image", enum: ["openai/gpt-image-2","openai/gpt-image-1","openai/gpt-image-1-mini","openai/dall-e-3","google/gemini-3-pro-image-preview","google/gemini-3.1-flash-image-preview","google/gemini-2.5-flash-image"] }, size: { type: "string", description: "e.g. 1024x1024, 1792x1024 (16:9 thumbnail), 1024x1792" } }, required: ["prompt"] } } },
+      { type: "function", function: { name: "edit_image", description: "Modify an existing image given its URL and a change prompt. Returns a new public URL.", parameters: { type: "object", properties: { image_url: { type: "string" }, prompt: { type: "string" }, model: { type: "string", enum: ["openai/gpt-image-2","openai/gpt-image-1","google/gemini-3-pro-image-preview","google/gemini-3.1-flash-image-preview","google/gemini-2.5-flash-image"] } }, required: ["image_url", "prompt"] } } }
     ];
 
     const apiUrl = "https://api.openai.com/v1/chat/completions";
