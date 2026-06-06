@@ -236,27 +236,43 @@ export function MasterVideoEditor({ videoUrl, title, onSave, onBack }: MasterVid
         {/* Main Content: Player & Timeline */}
         <div className="flex-1 flex flex-col bg-black">
           {/* Player Area */}
-          <div className="flex-1 relative flex items-center justify-center p-8 overflow-hidden min-h-0">
-            <div className="relative aspect-video h-full max-h-full max-w-full bg-[#111114] shadow-2xl rounded-lg overflow-hidden border border-white/5">
-              <video 
+          <div className="flex-1 relative flex items-center justify-center p-4 sm:p-8 overflow-hidden min-h-0 bg-black">
+            <div
+              className="relative bg-[#111114] shadow-2xl rounded-lg overflow-hidden border border-white/5"
+              style={{ width: "min(100%, calc((100% * 16) / 9))", aspectRatio: "16 / 9", maxHeight: "100%" }}
+            >
+              <video
+                key={videoUrl}
                 ref={videoRef}
                 src={videoUrl}
                 controls
                 playsInline
                 preload="metadata"
-                className="w-full h-full object-contain bg-black"
+                crossOrigin="anonymous"
+                className="absolute inset-0 w-full h-full object-contain bg-black"
+                onError={(e) => {
+                  const v = e.currentTarget;
+                  console.error("[MasterEditor] video error", v.error, "src:", v.currentSrc);
+                  toast.error(`Video failed to load (code ${v.error?.code ?? "?"}). Check console.`);
+                }}
+                onLoadedData={() => console.log("[MasterEditor] video loaded:", videoUrl)}
               />
-              
+
               {/* Overlay Preview */}
               {footerText && (
-                <div 
-                  className="absolute bottom-10 left-0 right-0 p-4 text-center text-white font-bold text-2xl"
+                <div
+                  className="absolute bottom-10 left-0 right-0 p-4 text-center text-white font-bold text-2xl pointer-events-none"
                   style={{ backgroundColor: footerBg }}
                 >
                   {footerText}
                 </div>
               )}
             </div>
+            {!videoUrl && (
+              <div className="absolute inset-0 flex items-center justify-center text-slate-500 text-sm">
+                No video URL provided
+              </div>
+            )}
           </div>
 
           {/* Timeline Section */}
