@@ -54,7 +54,7 @@ const ELEVENLABS_MODELS = ["eleven_v3", "eleven_multilingual_v2", "eleven_turbo_
 const GOOGLE_MODELS = ["gemini-2.5-pro-preview-tts", "gemini-2.5-flash-preview-tts"];
 
 async function workerPost(path: string, body: any) {
-  const res = await fetch(`${ANNOTATIONS_WORKER_URL}${path}`, {
+  const res = await fetch(`/api/worker-proxy?path=${encodeURIComponent(path)}`, {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
@@ -64,6 +64,7 @@ async function workerPost(path: string, body: any) {
   if (!res.ok) throw new Error(json?.detail || text || `HTTP ${res.status}`);
   return json;
 }
+
 
 function MegaPage() {
   const processChunksFn = useServerFn(processChunks);
