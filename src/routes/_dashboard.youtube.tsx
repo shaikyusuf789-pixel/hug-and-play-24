@@ -62,6 +62,7 @@ function YoutubeSeoPage() {
   });
   const [thumbnailPrompt, setThumbnailPrompt] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [thumbnailModel, setThumbnailModel] = useState("openai/gpt-image-2");
 
   const { data: scriptsData } = useQuery({
     queryKey: ["done-scripts"],
