@@ -59,8 +59,8 @@ function ScriptGenerator() {
   const [wordCount, setWordCount] = useState(660);
   const [isGenerating, setIsGenerating] = useState(false);
   const [scriptText, setScriptText] = useState<string>("");
-  const [provider, setProvider] = useState("lovable-gemini");
-  const [model, setModel] = useState("google/gemini-3.1-pro-preview");
+  const [provider, setProvider] = useState("anthropic");
+  const [model, setModel] = useState("claude-sonnet-4-5");
   const [fileName, setFileName] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
