@@ -132,8 +132,13 @@ function VideoEditorPage() {
 
   // waveform
   const waveCanvasRef = useRef<HTMLCanvasElement>(null);
+  const waveScrollRef = useRef<HTMLDivElement>(null);
   const [wavePeaks, setWavePeaks] = useState<Float32Array | null>(null);
   const [waveLoading, setWaveLoading] = useState(false);
+  const [waveZoom, setWaveZoom] = useState(1); // 1x..50x
+  const [selection, setSelection] = useState<{ start: number; end: number } | null>(null);
+  const dragRef = useRef<{ startX: number; startT: number } | null>(null);
+
 
   // saving
   const [saving, setSaving] = useState(false);
@@ -333,12 +338,26 @@ function VideoEditorPage() {
     x = (outPoint / duration) * w;
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
 
+    // selection (yellow translucent)
+    if (selection && duration) {
+      const s = Math.min(selection.start, selection.end);
+      const eT = Math.max(selection.start, selection.end);
+      const sx = (s / duration) * w;
+      const sw = ((eT - s) / duration) * w;
+      ctx.fillStyle = "rgba(250,204,21,0.35)";
+      ctx.fillRect(sx, 0, sw, h);
+      ctx.strokeStyle = "#ca8a04";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(sx + 0.5, 0.5, sw - 1, h - 1);
+    }
+
     // playhead
     ctx.strokeStyle = "#f59e0b";
     ctx.lineWidth = 2;
     x = (current / duration) * w;
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-  }, [wavePeaks, waveLoading, duration, cuts, razorPoints, inPoint, outPoint, current]);
+  }, [wavePeaks, waveLoading, duration, cuts, razorPoints, inPoint, outPoint, current, waveZoom, selection]);
+
 
   const togglePlay = () => { const v = videoRef.current; if (!v) return; if (v.paused) v.play(); else v.pause(); };
   const seek = (t: number) => { const v = videoRef.current; if (!v) return; v.currentTime = Math.max(0, Math.min(duration || 0, t)); };
@@ -381,7 +400,36 @@ function VideoEditorPage() {
   };
 
   const removeCut = (id: string) => { pushHistory(); setCuts(prev => prev.filter(c => c.id !== id)); };
-  const clearCuts = () => { pushHistory(); setCuts([]); setRazorPoints([]); };
+  const clearCuts = () => { pushHistory(); setCuts([]); setRazorPoints([]); setSelection(null); };
+
+  const deleteSelection = () => {
+    if (!selection || !duration) { toast.error("Drag on waveform to select a region first"); return; }
+    const s = Math.min(selection.start, selection.end);
+    const e = Math.max(selection.start, selection.end);
+    if (e - s < 0.01) { toast.error("Selection too small"); return; }
+    pushHistory();
+    setCuts(prev => normalizeCuts([...prev, { id: crypto.randomUUID(), start: s, end: e }], duration));
+    setSelection(null);
+    toast.success(`Cut ${fmtTime(s)} → ${fmtTime(e)} removed`);
+  };
+
+  // waveform zoom helpers
+  const zoomWaveAt = (factor: number, anchorT?: number) => {
+    const sc = waveScrollRef.current;
+    const newZoom = Math.max(1, Math.min(50, waveZoom * factor));
+    if (newZoom === waveZoom) return;
+    if (sc && duration) {
+      const anchor = anchorT ?? current;
+      const ratio = newZoom / waveZoom;
+      const targetX = (anchor / duration) * (sc.clientWidth * newZoom);
+      requestAnimationFrame(() => {
+        if (waveScrollRef.current) waveScrollRef.current.scrollLeft = targetX - sc.clientWidth / 2;
+      });
+      void ratio;
+    }
+    setWaveZoom(newZoom);
+  };
+
 
   // overlays
   const addOverlay = () => {
@@ -670,22 +718,68 @@ function VideoEditorPage() {
             {/* Scrubber */}
             <Slider value={[current]} min={0} max={duration || 1} step={0.01} onValueChange={(v) => seek(v[0])} />
 
-            {/* Waveform timeline (click to seek) */}
-            <div className="relative">
-              <canvas
-                ref={waveCanvasRef}
-                className="w-full h-20 rounded-md border border-slate-200 cursor-crosshair"
-                onClick={(e) => {
-                  if (!duration) return;
-                  const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
-                  const pct = (e.clientX - rect.left) / rect.width;
-                  seek(pct * duration);
-                }}
-              />
-              <div className="absolute top-1 right-2 text-[10px] text-slate-500 bg-white/80 px-1.5 rounded">
-                {waveLoading ? "decoding…" : wavePeaks ? "waveform" : "no audio"}
+            {/* Waveform timeline: zoom + scroll + drag-select */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-1 text-xs">
+                <Button size="sm" variant="outline" onClick={() => zoomWaveAt(0.5)} title="Zoom out">−</Button>
+                <Button size="sm" variant="outline" onClick={() => zoomWaveAt(2)} title="Zoom in">+</Button>
+                <Button size="sm" variant="outline" onClick={() => { setWaveZoom(1); if (waveScrollRef.current) waveScrollRef.current.scrollLeft = 0; }}>Fit</Button>
+                <div className="w-40 ml-2">
+                  <Slider value={[waveZoom]} min={1} max={50} step={0.5} onValueChange={(v) => setWaveZoom(v[0])} />
+                </div>
+                <span className="font-mono text-slate-500">{waveZoom.toFixed(1)}x</span>
+                {selection && (
+                  <span className="ml-auto font-mono text-amber-600">
+                    Selection: {fmtTime(Math.min(selection.start, selection.end))} → {fmtTime(Math.max(selection.start, selection.end))}
+                  </span>
+                )}
               </div>
+              <div
+                ref={waveScrollRef}
+                className="relative overflow-x-auto overflow-y-hidden rounded-md border border-slate-200"
+                onWheel={(e) => {
+                  if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    zoomWaveAt(e.deltaY < 0 ? 1.2 : 1 / 1.2);
+                  }
+                }}
+              >
+                <canvas
+                  ref={waveCanvasRef}
+                  style={{ width: `${waveZoom * 100}%`, height: "80px", display: "block" }}
+                  className="cursor-crosshair select-none"
+                  onMouseDown={(e) => {
+                    if (!duration) return;
+                    const cvs = e.currentTarget;
+                    const rect = cvs.getBoundingClientRect();
+                    const pct = (e.clientX - rect.left) / rect.width;
+                    const t = pct * duration;
+                    if (e.shiftKey) {
+                      dragRef.current = { startX: e.clientX, startT: t };
+                      setSelection({ start: t, end: t });
+                    } else {
+                      seek(t);
+                    }
+                  }}
+                  onMouseMove={(e) => {
+                    if (!dragRef.current || !duration) return;
+                    const cvs = e.currentTarget;
+                    const rect = cvs.getBoundingClientRect();
+                    const pct = (e.clientX - rect.left) / rect.width;
+                    const t = Math.max(0, Math.min(duration, pct * duration));
+                    setSelection({ start: dragRef.current.startT, end: t });
+                  }}
+                  onMouseUp={() => { dragRef.current = null; }}
+                  onMouseLeave={() => { dragRef.current = null; }}
+                  onDoubleClick={() => setSelection(null)}
+                />
+                <div className="sticky top-1 right-2 float-right text-[10px] text-slate-500 bg-white/80 px-1.5 rounded mr-1 mt-1">
+                  {waveLoading ? "decoding…" : wavePeaks ? "waveform" : "no audio"}
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-400">Tip: Click = seek · Shift+Drag = select region · Ctrl/Cmd+Wheel = zoom · Double-click = clear selection</p>
             </div>
+
 
             {/* Razor / cut toolbar */}
             <div className="flex items-center gap-2 flex-wrap text-xs">
@@ -700,6 +794,10 @@ function VideoEditorPage() {
               <Button size="sm" variant="outline" onClick={deleteBetweenLastTwoRazors} disabled={razorPoints.length < 2}>
                 Delete between last 2 razors
               </Button>
+              <Button size="sm" variant="destructive" onClick={deleteSelection} disabled={!selection}>
+                <Trash2 className="h-3 w-3 mr-1" />Delete selection
+              </Button>
+
               {(cuts.length > 0 || razorPoints.length > 0) && (
                 <Button size="sm" variant="ghost" onClick={clearCuts}><Eraser className="h-3 w-3 mr-1" />Clear cuts</Button>
               )}
