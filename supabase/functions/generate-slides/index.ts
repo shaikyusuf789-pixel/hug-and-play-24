@@ -23,7 +23,7 @@ async function callGamma(inputText: string, themeName: string, supabase: ReturnT
     "PRESERVE MODE — the input text is FINAL COPY. Reproduce every word EXACTLY as provided. Do NOT rewrite, paraphrase, summarize, condense, expand, translate, reorder, add, or remove ANY word, bullet, punctuation, or line break.",
     "Output exactly one 16:9 widescreen slide (1920x1080) for YouTube/PowerPoint. Not a document, webpage, social post, square or vertical card. No fluid/tall/scrolling layout.",
     "Layout: title at top, balanced two-column or compact grid below. Fit ALL preserved text by adjusting font size and spacing ONLY — never by editing the text.",
-    `Visual style: apply the ${themeName} theme. No images, no added icons, no extra labels.`,
+    `Visual style: apply the ${themeName} theme. Include one relevant AI-generated image that fits the slide topic.`,
   ].join(" ")
 
   // Kick off generation — textMode "preserve" forces Gamma to keep input text verbatim.
