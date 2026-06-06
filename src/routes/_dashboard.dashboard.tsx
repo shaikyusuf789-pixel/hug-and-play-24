@@ -163,7 +163,7 @@ function Dashboard() {
                 className="h-12 gap-2 rounded-xl px-6 text-sm font-bold shadow-lg transition-all hover:scale-105 active:scale-95"
               >
                 {purging ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
-                Purge Media
+                DELETE MEDIA
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -186,17 +186,17 @@ function Dashboard() {
                   onClick={async (e) => {
                     e.preventDefault();
                     setPurging(true);
-                    const t = toast.loading("Purging all media…");
+                    const t = toast.loading("Deleting all media…");
                     try {
                       const res: any = await purgeFn();
                       const d = res?.deleted || {};
                       toast.success(
-                        `Purged: ${d["audio-files"] ?? 0} audio, ${d["slides"] ?? 0} slides, ${d["video-clips"] ?? 0} clips.`,
+                        `Deleted: ${d["audio-files"] ?? 0} audio, ${d["slides"] ?? 0} slides, ${d["video-clips"] ?? 0} clips.`,
                         { id: t },
                       );
                       qc.invalidateQueries();
                     } catch (err: any) {
-                      toast.error(`Purge failed: ${err?.message || err}`, { id: t });
+                      toast.error(`Delete failed: ${err?.message || err}`, { id: t });
                     } finally {
                       setPurging(false);
                     }
