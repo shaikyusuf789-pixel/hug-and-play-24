@@ -420,24 +420,22 @@ function AnnotationsPage() {
           toast.success(`${s.label}: done`);
         } else if (s.path === "/clips/render-all") {
           await refreshAll(scriptId, slideSource);
-          const seedRows = chunks
-            .filter((c) => !!aiMap[c.id])
-            .map((c) => ({
-              script_id: scriptId,
-              chunk_id: c.id,
-              chunk_number: c.chunk_index,
-              slide_source: slideSource,
-              status: "rendering",
-              error_msg: null,
-            }));
-          if (seedRows.length) {
-            await supabase.from("video_clips").upsert(seedRows, {
-              onConflict: "script_id,chunk_id,slide_source",
-            });
+          // Re-query annotations from DB (aiMap closure may be stale right after
+          // the annotations step finishes — React state hasn't flushed yet).
+          const { data: annRows } = await supabase
+            .from("clip_annotations")
+            .select("chunk_id")
+            .eq("script_id", scriptId)
+            .eq("slide_source", slideSource);
+          const annotated = new Set((annRows || []).map((r: any) => r.chunk_id));
+          const target = chunks.filter((c) => annotated.has(c.id));
+          if (!target.length) {
+            toast.warning(`${s.label}: no annotated chunks to render`);
+          } else {
+            const { done, failed } = await renderAllSequential(scriptId, slideSource, target, s.label);
+            if (failed) toast.warning(`${s.label}: ${done} done, ${failed} failed — retry red chunks manually`);
+            else toast.success(`${s.label}: ${done}/${target.length} rendered`);
           }
-          const res = await workerPost(s.path, { script_id: scriptId, slide_source: slideSource });
-          toast.info(`${s.label}: queued ${res.queued ?? seedRows.length} chunks — rendering…`);
-          await pollUntilComplete("video_clips", scriptId, slideSource, s.label);
         }
         await refreshAll(scriptId, slideSource);
       }
