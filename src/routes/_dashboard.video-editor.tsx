@@ -683,8 +683,31 @@ function VideoEditorPage() {
             {saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
             {saving ? `${saveProgress}%` : "Save (replace original)"}
           </Button>
+          <div className="flex items-center gap-1 border border-slate-200 rounded-md pl-2 bg-white">
+            <Download className="h-3.5 w-3.5 text-slate-500" />
+            <Select value={exportQuality} onValueChange={(v) => setExportQuality(v as any)} disabled={!selected || exporting}>
+              <SelectTrigger className="h-8 w-[180px] border-0 shadow-none focus:ring-0 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">Low — ~{selected ? estimateMb("low") : "?"} MB</SelectItem>
+                <SelectItem value="medium">Medium — ~{selected ? estimateMb("medium") : "?"} MB</SelectItem>
+                <SelectItem value="high">High — ~{selected ? estimateMb("high") : "?"} MB</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button size="sm" onClick={exportDownload} disabled={!selected || exporting} className="h-8">
+              {exporting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
+              {exporting ? "Exporting…" : "Export"}
+            </Button>
+          </div>
         </div>
       </div>
+
+      {exporting && exportMsg && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2 text-xs text-emerald-800">
+          {exportMsg}
+        </div>
+      )}
 
       {saving && (
         <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-xs">
