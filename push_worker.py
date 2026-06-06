@@ -70,7 +70,7 @@ def push_to_github():
     
     # 4. Create commit
     res = requests.post(f"{base_url}/git/commits", headers=headers, json={
-        "message": "Add POST /merge/run endpoint (fixes 404 on Merge Mega Video)",
+        "message": "Add /editor/apply-cuts + /editor/status (video editor cut/save, no changes to OCR/TS/render/merge)",
         "tree": new_tree_sha,
         "parents": [latest_commit_sha]
     })
