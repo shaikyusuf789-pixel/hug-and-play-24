@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardYoutubeRouteImport } from './routes/_dashboard.youtube'
+import { Route as DashboardVideoEditorRouteImport } from './routes/_dashboard.video-editor'
 import { Route as DashboardUploadsRouteImport } from './routes/_dashboard.uploads'
 import { Route as DashboardTablesRouteImport } from './routes/_dashboard.tables'
 import { Route as DashboardStorageRouteImport } from './routes/_dashboard.storage'
@@ -44,6 +45,11 @@ const IndexRoute = IndexRouteImport.update({
 const DashboardYoutubeRoute = DashboardYoutubeRouteImport.update({
   id: '/youtube',
   path: '/youtube',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardVideoEditorRoute = DashboardVideoEditorRouteImport.update({
+  id: '/video-editor',
+  path: '/video-editor',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardUploadsRoute = DashboardUploadsRouteImport.update({
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/storage': typeof DashboardStorageRoute
   '/tables': typeof DashboardTablesRoute
   '/uploads': typeof DashboardUploadsRoute
+  '/video-editor': typeof DashboardVideoEditorRoute
   '/youtube': typeof DashboardYoutubeRoute
   '/api/public/hooks/auto-run-engine': typeof ApiPublicHooksAutoRunEngineRoute
 }
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/storage': typeof DashboardStorageRoute
   '/tables': typeof DashboardTablesRoute
   '/uploads': typeof DashboardUploadsRoute
+  '/video-editor': typeof DashboardVideoEditorRoute
   '/youtube': typeof DashboardYoutubeRoute
   '/api/public/hooks/auto-run-engine': typeof ApiPublicHooksAutoRunEngineRoute
 }
@@ -212,6 +220,7 @@ export interface FileRoutesById {
   '/_dashboard/storage': typeof DashboardStorageRoute
   '/_dashboard/tables': typeof DashboardTablesRoute
   '/_dashboard/uploads': typeof DashboardUploadsRoute
+  '/_dashboard/video-editor': typeof DashboardVideoEditorRoute
   '/_dashboard/youtube': typeof DashboardYoutubeRoute
   '/api/public/hooks/auto-run-engine': typeof ApiPublicHooksAutoRunEngineRoute
 }
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
     | '/storage'
     | '/tables'
     | '/uploads'
+    | '/video-editor'
     | '/youtube'
     | '/api/public/hooks/auto-run-engine'
   fileRoutesByTo: FileRoutesByTo
@@ -260,6 +270,7 @@ export interface FileRouteTypes {
     | '/storage'
     | '/tables'
     | '/uploads'
+    | '/video-editor'
     | '/youtube'
     | '/api/public/hooks/auto-run-engine'
   id:
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/_dashboard/storage'
     | '/_dashboard/tables'
     | '/_dashboard/uploads'
+    | '/_dashboard/video-editor'
     | '/_dashboard/youtube'
     | '/api/public/hooks/auto-run-engine'
   fileRoutesById: FileRoutesById
@@ -315,6 +327,13 @@ declare module '@tanstack/react-router' {
       path: '/youtube'
       fullPath: '/youtube'
       preLoaderRoute: typeof DashboardYoutubeRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/video-editor': {
+      id: '/_dashboard/video-editor'
+      path: '/video-editor'
+      fullPath: '/video-editor'
+      preLoaderRoute: typeof DashboardVideoEditorRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/_dashboard/uploads': {
@@ -472,6 +491,7 @@ interface DashboardRouteChildren {
   DashboardStorageRoute: typeof DashboardStorageRoute
   DashboardTablesRoute: typeof DashboardTablesRoute
   DashboardUploadsRoute: typeof DashboardUploadsRoute
+  DashboardVideoEditorRoute: typeof DashboardVideoEditorRoute
   DashboardYoutubeRoute: typeof DashboardYoutubeRoute
 }
 
@@ -494,6 +514,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardStorageRoute: DashboardStorageRoute,
   DashboardTablesRoute: DashboardTablesRoute,
   DashboardUploadsRoute: DashboardUploadsRoute,
+  DashboardVideoEditorRoute: DashboardVideoEditorRoute,
   DashboardYoutubeRoute: DashboardYoutubeRoute,
 }
 
