@@ -41,6 +41,8 @@ const DASHBOARD_TABLES = [
 
 function Dashboard() {
   const qc = useQueryClient();
+  const purgeFn = useServerFn(purgeAllMedia);
+  const [purging, setPurging] = useState(false);
   
   const stats = useQuery({
     queryKey: ["stats"],
