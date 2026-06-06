@@ -154,6 +154,59 @@ function Dashboard() {
             <Github className="h-5 w-5" />
             Full Backup
           </Button>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                disabled={purging}
+                className="h-12 gap-2 rounded-xl px-6 text-sm font-bold shadow-lg transition-all hover:scale-105 active:scale-95"
+              >
+                {purging ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
+                Purge Media
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Permanently delete ALL media?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete every file in storage from the
+                  <b> audio-files</b>, <b>slides</b>, and <b>video-clips</b> buckets
+                  (per-chunk audios, slides, rendered clips, and mega/master videos)
+                  for <b>every script</b>, and clear all related URL columns in the database.
+                  <br /><br />
+                  Script text, chunk text, ideas, and uploads are kept. This cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={purging}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={purging}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    setPurging(true);
+                    const t = toast.loading("Purging all media…");
+                    try {
+                      const res: any = await purgeFn();
+                      const d = res?.deleted || {};
+                      toast.success(
+                        `Purged: ${d["audio-files"] ?? 0} audio, ${d["slides"] ?? 0} slides, ${d["video-clips"] ?? 0} clips.`,
+                        { id: t },
+                      );
+                      qc.invalidateQueries();
+                    } catch (err: any) {
+                      toast.error(`Purge failed: ${err?.message || err}`, { id: t });
+                    } finally {
+                      setPurging(false);
+                    }
+                  }}
+                >
+                  Yes, delete everything
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
