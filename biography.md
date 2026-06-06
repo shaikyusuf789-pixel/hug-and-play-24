@@ -1,6 +1,6 @@
-# Sky Studio — Project Biography (v6.1)
+# Sky Studio — Project Biography
 
-> Single-source reproduction guide for the Sky Studio video pipeline. Any AI agent (Replit, Bolt, Cursor) should be able to rebuild this app one-to-one from this file alone.
+> Living, single-source reproduction guide for the Sky Studio video pipeline. Any AI agent (Replit, Bolt, Cursor) should be able to rebuild this app one-to-one from this file alone. This document has **no version numbers** — it always reflects the current state of the app.
 
 ---
 
@@ -9,7 +9,7 @@
 **Sky Studio** is an autonomous AI video-production pipeline for Indian competitive-exam YouTube content (SSC, UPSC, RRB, Banking). A single operator drives an entire channel by chaining specialised AI workers:
 
 ```
-Ideas Engine → Idea Cards → Script → Chunks → Audio → Slides → Annotations → Render → Video Editor → YouTube
+Ideas Engine → Idea Cards → Script → Chunks → Audio → Slides → Annotations → Render → Mega → Video Editor → YouTube
 ```
 
 **Three runtimes:**
@@ -135,7 +135,7 @@ All shots use the **SBI Clerk 2026 Notification OUT?** script (`id=5e3749a5-4960
 
 ### 01 — Dashboard (`/dashboard`)
 ![Dashboard](./docs/biography-screenshots/01-dashboard.png)
-Top tiles (live): Total Ideas (384), Pending Approval (256), Pending Priority (17), Pending Scripting (1), Pending Audio (108), Pending Slides (0). Production Velocity chart (7-day output). Status Distribution bar chart. Active Database Clusters strip (sources_master, raw_content, scripts, script_chunks, app_settings, notifications, daily_backup_logs, youtube_seo, ai_chat_memory). Footer: Production Workflow explainer. **Full Backup** button = `daily_backup_logs` writer.
+Title `Sky Studio` with badge `SYSTEM LIVE — PRODUCTION V4.2` and subtitle "Your AI-driven content command center." Header actions: blue **Full Backup** button (writes `daily_backup_logs`) and red **DELETE MEDIA** button (opens confirm dialog → `purgeAllMedia` server fn — see §5.X DELETE MEDIA). Top tiles (live counts): Total Ideas, Pending Approval, Pending Priority, Pending Scripting, Pending Audio, Pending Slides. Production Velocity area chart (7-day output) + Status Distribution bar chart. Active Database Clusters strip (sources_master, raw_content, scripts, script_chunks, app_settings, notifications, daily_backup_logs, youtube_seo, ai_chat_memory). Footer card: Production Workflow explainer (Configure Sources → Automated Scraping → AI Idea Generation → One-Click Approval).
 
 ### 02 — Ideas Engine (`/ideas-engine`)
 ![Ideas Engine](./docs/biography-screenshots/02-ideas-engine.png)
@@ -184,11 +184,11 @@ Bulk controls: DALL·E / **Gamma** / Replit toggle, **MEGA RUN**, **All OCR** + 
 
 ### 13 — Mega (`/mega`)
 ![Mega](./docs/biography-screenshots/13-mega-empty.png)
-Script picker + words/chunk slider + **Generate Chunks**. All-buttons grid: All Slides (Gamma+Oasis), All Audios (Cartesia+sonic-3-latest+voice id), All OCR, All Timestamps, All Annotations, Render All. **RUN ALL** chains Audios→Slides→OCR→TS→Annotations→Render.
+Header `MEGA · ONE-CLICK PIPELINE`, subtitle "Pick a script and run Chunks → Audio → Slides → OCR → Timestamps → Annotations → Render in one go." Select Script picker. Chunks card: `−` / words-per-chunk number input (default **180**) / `+` / **Generate Chunks** / `N chunks loaded` readout. ALL BUTTONS grid: **ALL SLIDES** (provider + Oasis theme), **ALL AUDIOS** (provider + model + voice id, prefilled `4987882a-488c-480a-ace8-f1127032a839`), **ALL OCR** (Google Vision on gamma slides), **ALL TIMESTAMPS** (word-level on audio), **ALL ANNOTATIONS** (GPT-4o aligns OCR → timestamps), **RENDER ALL** (per-chunk MP4 clips). Footer: `AUTO PIPELINE: Audios → Slides → OCR → Timestamps → Annotations → Render. Uses the model selections above. Mega-video merge stays manual.` plus pink **RUN ALL** button. Chunks & Previews panel below shows per-chunk cards once generated.
 
 ### 14 — Video Editor (`/video-editor`)
 ![Video Editor](./docs/biography-screenshots/14-video-editor.png)
-Loads the mega MP4 into a single-clip timeline with a zoomable waveform. Toolbar: **Undo / Redo / Reset FX / Plan JSON / Save (replace original) / Export quality picker**. Transport row: prev/next-frame, play, jump-to-IN/OUT, loop, playback-rate. Cut tools: **[ IN (i)**, **OUT (o) ]**, **Razor (b)**, **Delete IN→OUT**, **Delete between last 2 razors**, **Delete selection**. FX tab = preview-only Brightness / Contrast / Saturate / Hue / Blur / Grayscale / Sepia / Invert. Save sends cuts to Railway `/editor/apply-cuts` → ffmpeg re-encode (libx264/aac, `+faststart`) → upserts the same `mega_{source}.mp4` path (no duplicates). Export sends to `/editor/export` → re-encodes at low (600k) / medium (1800k) / high (4500k) bitrate, browser auto-downloads. Mobile-usable at 390 px (Rule 3).
+Header `ADVANCED · VIDEO EDITOR`, title `Video Editor`, subtitle "Razor • Waveform • Delete-between. Saves over the original — no duplicates." Toolbar row: **Undo / Redo / Reset FX / Plan JSON / Save (replace original) / Quality dropdown / Export**. `Final Rendered Video` picker below shows every `mega_{source}.mp4` in the project. Centre: 16:9 video stage (empty state: "Select a video to start editing"). Right rail tabs: **FX / Xform / Text / Info**. FX sliders (all 0–100 / 0–360 for hue): Brightness, Contrast, Saturate, Hue, Blur, Grayscale, Sepia, Invert + **Reset Filters**. Note under the panel: "filters are preview-only; Save only bakes razor cuts into the file." Transport row under the video: prev-frame / rewind / play / forward / next-frame, `MM:SS.cs / MM:SS.cs` time readout, loop toggle, playback-rate dropdown. Volume row + Snap / PIP / fullscreen icons. Below: zoomable waveform with `−` / `+` / `Fit` / zoom slider / `1.0x` label. Cut tools row: **[ IN (i)**, **OUT (o) ]**, **Razor (b)**, **Delete IN→OUT**, **Delete between last 2 razors**, **Delete selection**, with `IN MM:SS.cs · OUT MM:SS.cs · Final MM:SS.cs` readout. Tip line: "Click = seek · Shift+Drag = select region · Ctrl/Cmd+Wheel = zoom · Double-click = clear selection". Save sends cuts to Railway `/editor/apply-cuts` → ffmpeg `trim+atrim+concat` → upserts the same `mega_{source}.mp4` path (no duplicates, original overwritten in place). Export sends to `/editor/export` → re-encodes at Low (600k) / Medium (1800k) / High (4500k) bitrate showing estimated MB next to each option; browser auto-downloads. Polling via `app_metadata.editor:{script_id}:{slide_source}` and `editor_export:{script_id}:{slide_source}`. Mobile-usable at 390 px (Rule 3).
 
 ### 15 — YouTube (`/youtube`)
 ![YouTube](./docs/biography-screenshots/15-youtube-empty.png)
@@ -317,28 +317,28 @@ The Railway service is connected to repo `shaikyusuf789-pixel/sky-annotations-wo
 
 ---
 
-## 9. Recent Changes (v6.1 · 2026-06-06)
+## 9. Pipeline Defaults & Destructive Actions
 
-### 9.1 New defaults
-- **Audio (`/audio`)** — Provider now defaults to **Cartesia** with model `sonic-3-latest` and the operator's cloned voice ID `4987882a-488c-480a-ace8-f1127032a839` (Telugu). The Provider/Model/Voice dropdowns still let you pick ElevenLabs or Google AI Studio per chunk. File: `src/routes/_dashboard.audio.tsx`.
-- **Script Generator (`/script-generator`)** — Provider defaults to **Claude (Anthropic)**, Model `Claude Sonnet 4.5 (Recommended)`. File: `src/routes/_dashboard.script-generator.tsx`.
+### 9.1 Default providers
+- **Script Generator (`/script-generator`)** — defaults to **Claude (Anthropic)** with model `Claude Sonnet 4.5 (Recommended)`. Other providers (Sky Studio Gemini, OpenAI) remain selectable.
+- **Audio (`/audio`)** — defaults to **Cartesia** with model `sonic-3-latest` and the operator's cloned voice id `4987882a-488c-480a-ace8-f1127032a839` (Telugu). ElevenLabs and Google AI Studio remain selectable per chunk.
 
-![Audio — Cartesia default](./docs/biography-screenshots/35-audio-cartesia-default.png)
 ![Script Generator — Claude default](./docs/biography-screenshots/36-script-generator-claude-default.png)
+![Audio — Cartesia default](./docs/biography-screenshots/35-audio-cartesia-default.png)
 
-### 9.2 Global DELETE MEDIA button (`/dashboard`)
-A destructive red **DELETE MEDIA** button sits next to **Full Backup** on the dashboard header. It opens a confirm dialog and, on confirm, calls the `purgeAllMedia` server function (`src/lib/purge.functions.ts`) which:
+### 9.2 DELETE MEDIA (`/dashboard`)
+Destructive red **DELETE MEDIA** button sits next to **Full Backup** in the dashboard header. Opens a confirm dialog and, on confirm, calls `purgeAllMedia` (`src/lib/purge.functions.ts`):
 
-1. Recursively lists and deletes every object in the `audio-files`, `slides`, and `video-clips` Storage buckets (uses paginated `list()` to bypass the 1000-row cap).
+1. Recursively lists and deletes every object in `audio-files`, `slides`, and `video-clips` storage buckets (paginated `list()` bypasses the 1000-row cap).
 2. Clears `script_chunks.audio_url`, `slide_url`, `slide_id`, `slide_prompt`, and all per-stage `*_job_status` / `*_job_error` columns.
 3. Clears `scripts.final_audio_url`.
 4. Deletes all rows in `video_clips`.
 
-Script text, chunk text, ideas, uploads, and `user-uploads` bucket are **kept**. Operation is permanent and cannot be undone. Toast reports per-bucket deletion counts.
+Script text, chunk text, ideas, uploads, and the `user-uploads` bucket are **kept**. Permanent — no undo. Toast reports per-bucket deletion counts.
 
 ![Dashboard DELETE MEDIA button](./docs/biography-screenshots/33-dashboard-delete-media.png)
 ![DELETE MEDIA confirm dialog](./docs/biography-screenshots/34-delete-media-confirm.png)
 
 ---
 
-_Document version: v6.1 · Last refreshed by Lovable agent 2026-06-06. Adds Cartesia/Claude defaults and global DELETE MEDIA purge (screenshots 33–36)._
+_This biography is a living document — there are no versions. Whenever the UI changes, this file gets updated in place._
