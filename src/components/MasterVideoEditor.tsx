@@ -236,8 +236,8 @@ export function MasterVideoEditor({ videoUrl, title, onSave, onBack }: MasterVid
         {/* Main Content: Player & Timeline */}
         <div className="flex-1 flex flex-col bg-black">
           {/* Player Area */}
-          <div className="flex-1 relative flex items-center justify-center p-8 overflow-hidden">
-            <div className="relative aspect-video max-h-full max-w-full bg-[#111114] shadow-2xl rounded-lg overflow-hidden border border-white/5">
+          <div className="flex-1 relative flex items-center justify-center p-8 overflow-hidden min-h-0">
+            <div className="relative aspect-video h-full max-h-full max-w-full bg-[#111114] shadow-2xl rounded-lg overflow-hidden border border-white/5">
               <video 
                 ref={videoRef}
                 src={videoUrl}
