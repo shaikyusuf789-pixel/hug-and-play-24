@@ -910,7 +910,7 @@ function VideoEditorPage() {
                 <div>5. Click <b>Save</b> — original file is overwritten in storage.</div>
               </div>
               <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-amber-900">
-                Save runs ffmpeg in your browser and uploads the result back to the same storage path. The old file is replaced — no duplicates.
+                Save sends your cut list to the Railway worker, which re-encodes with ffmpeg and uploads the result back to the same storage path. The old file is replaced — no duplicates.
               </div>
               <div className="rounded-lg bg-slate-50 p-3 space-y-1">
                 <p className="font-bold mb-1">Shortcuts</p>
