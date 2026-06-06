@@ -464,8 +464,9 @@ function VideoEditorPage() {
       ]);
 
       setSaveMsg("Uploading replacement…");
-      const data = await ffmpeg.readFile("out.mp4");
-      const blob = new Blob([data as Uint8Array], { type: "video/mp4" });
+      const data = (await ffmpeg.readFile("out.mp4")) as Uint8Array;
+      const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+      const blob = new Blob([ab], { type: "video/mp4" });
 
       const { error: upErr } = await supabase.storage
         .from(selected.bucket)
