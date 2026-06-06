@@ -163,7 +163,7 @@ function Dashboard() {
                 className="h-12 gap-2 rounded-xl px-6 text-sm font-bold shadow-lg transition-all hover:scale-105 active:scale-95"
               >
                 {purging ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
-                Purge Media
+                DELETE MEDIA
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
