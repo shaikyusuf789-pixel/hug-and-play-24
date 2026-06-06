@@ -353,19 +353,90 @@ function MegaPage() {
     if (!scriptId) return;
     setBulkBusy("Render All");
     try {
-      const seedRows = chunks
-        .filter(c => !!aiMap[c.id])
-        .map(c => ({
-          script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index,
-          slide_source: slideSource, status: "rendering", error_msg: null,
-        }));
-      if (seedRows.length) {
-        await supabase.from("video_clips").upsert(seedRows, { onConflict: "script_id,chunk_id,slide_source" });
+      // Re-query annotations from DB so we don't depend on stale aiMap closure.
+      const { data: annRows } = await supabase
+        .from("clip_annotations")
+        .select("chunk_id")
+        .eq("script_id", scriptId)
+        .eq("slide_source", slideSource);
+      const annotated = new Set((annRows || []).map((r: any) => r.chunk_id));
+      const target = chunks.filter((c) => annotated.has(c.id));
+      if (!target.length) {
+        toast.warning("No annotated chunks to render");
+        return;
       }
-      const res = await workerPost("/clips/render-all", { script_id: scriptId, slide_source: slideSource });
-      toast.info(`Render queued ${res.queued ?? seedRows.length} chunks…`);
-      await refreshAll(scriptId, slideSource);
-      await pollUntilTable("video_clips", "Render All");
+
+      // SEQUENTIAL render — one chunk at a time. Parallel renders OOM the
+      // Railway worker (ffmpeg exit 187) and leave zombie 'rendering' rows.
+      let done = 0; let failed = 0;
+      const PER_CHUNK_TIMEOUT_MS = 6 * 60_000;
+      const ZOMBIE_MS = 3 * 60_000;
+
+      for (let i = 0; i < target.length; i++) {
+        if (scriptIdRef.current !== scriptId || slideSourceRef.current !== slideSource) break;
+        const c = target[i];
+        toast.info(`Render ${i + 1}/${target.length}…`);
+
+        await supabase.from("video_clips").upsert(
+          [{
+            script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index,
+            slide_source: slideSource, status: "rendering", error_msg: null,
+          }],
+          { onConflict: "script_id,chunk_id,slide_source" },
+        );
+
+        try {
+          await workerPost("/clips/render", {
+            script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index, slide_source: slideSource,
+          });
+        } catch (e: any) {
+          failed++;
+          await supabase.from("video_clips").upsert(
+            [{
+              script_id: scriptId, chunk_id: c.id, chunk_number: c.chunk_index,
+              slide_source: slideSource, status: "error", error_msg: `Worker call failed: ${e?.message || e}`,
+            }],
+            { onConflict: "script_id,chunk_id,slide_source" },
+          );
+          await refreshAll(scriptId, slideSource);
+          continue;
+        }
+
+        const started = Date.now();
+        let lastUpdated: string | null = null;
+        let lastChangeAt = Date.now();
+        while (Date.now() - started < PER_CHUNK_TIMEOUT_MS) {
+          await new Promise(r => setTimeout(r, 2500));
+          if (scriptIdRef.current !== scriptId || slideSourceRef.current !== slideSource) return;
+          const { data: row } = await supabase
+            .from("video_clips")
+            .select("status, updated_at, error_msg")
+            .eq("script_id", scriptId).eq("chunk_id", c.id).eq("slide_source", slideSource)
+            .maybeSingle();
+          await refreshAll(scriptId, slideSource);
+          if (!row) continue;
+          if (row.status === "done") { done++; break; }
+          if (row.status === "error") {
+            failed++;
+            toast.error(`Chunk ${c.chunk_index + 1} failed${row.error_msg ? ` — ${String(row.error_msg).slice(0, 80)}` : ""}`);
+            break;
+          }
+          if (row.updated_at !== lastUpdated) {
+            lastUpdated = row.updated_at as string;
+            lastChangeAt = Date.now();
+          } else if (Date.now() - lastChangeAt > ZOMBIE_MS) {
+            failed++;
+            await supabase.from("video_clips").update({
+              status: "error",
+              error_msg: "Worker stopped responding (zombie render — likely crashed). Click Render to retry.",
+            }).eq("script_id", scriptId).eq("chunk_id", c.id).eq("slide_source", slideSource);
+            toast.error(`Chunk ${c.chunk_index + 1} stalled — marked failed`);
+            break;
+          }
+        }
+      }
+      if (failed) toast.warning(`Render All: ${done} done, ${failed} failed — retry red chunks`);
+      else toast.success(`Render All: ${done}/${target.length} rendered`);
     } catch (e: any) { toast.error("Render failed: " + e.message); }
     finally { setBulkBusy(null); }
   };
