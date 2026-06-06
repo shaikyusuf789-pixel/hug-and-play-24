@@ -542,6 +542,45 @@ export type Database = {
         }
         Relationships: []
       }
+      thumbnail_library: {
+        Row: {
+          created_at: string
+          id: string
+          is_sky_style: boolean
+          lines: Json | null
+          model: string | null
+          prompt: string | null
+          script_id: string | null
+          source: string
+          tags: string[] | null
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_sky_style?: boolean
+          lines?: Json | null
+          model?: string | null
+          prompt?: string | null
+          script_id?: string | null
+          source?: string
+          tags?: string[] | null
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_sky_style?: boolean
+          lines?: Json | null
+          model?: string | null
+          prompt?: string | null
+          script_id?: string | null
+          source?: string
+          tags?: string[] | null
+          url?: string
+        }
+        Relationships: []
+      }
       video_clips: {
         Row: {
           chunk_id: string

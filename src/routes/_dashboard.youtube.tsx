@@ -62,6 +62,7 @@ function YoutubeSeoPage() {
   });
   const [thumbnailPrompt, setThumbnailPrompt] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [thumbnailModel, setThumbnailModel] = useState("openai/gpt-image-2");
 
   const { data: scriptsData } = useQuery({
     queryKey: ["done-scripts"],
@@ -155,19 +156,41 @@ function YoutubeSeoPage() {
     if (!thumbnailPrompt) return;
     setIsGeneratingImage(true);
     try {
-      const { data, error } = await supabase.functions.invoke("youtube-seo", {
-        body: { action: "thumbnail-image", prompt: thumbnailPrompt }
+      const { data, error } = await supabase.functions.invoke("generate-thumbnail", {
+        body: {
+          prompt: thumbnailPrompt,
+          model: thumbnailModel,
+          lines: thumbnailLines,
+          script_id: selectedScriptId || null,
+          source: "youtube_page",
+          size: "1792x1024",
+        },
       });
       if (error) throw error;
-      
+      if (data?.error) throw new Error(data.error);
       setThumbnailUrl(data.url);
-      toast.success("Thumbnail generated successfully!");
+      queryClient.invalidateQueries({ queryKey: ["thumbnail-refs"] });
+      toast.success(`Thumbnail generated (${data.refs_used || 0} Sky refs used)`);
     } catch (err: any) {
-      toast.error("Failed to generate image: " + err.message);
+      toast.error("Failed to generate image: " + (err?.message || err));
     } finally {
       setIsGeneratingImage(false);
     }
   };
+
+  // Sky-style reference strip (permanent thumbnail library)
+  const { data: refsData } = useQuery({
+    queryKey: ["thumbnail-refs"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("thumbnail_library")
+        .select("id, url, model, created_at")
+        .eq("is_sky_style", true)
+        .order("created_at", { ascending: false })
+        .limit(6);
+      return data || [];
+    },
+  });
 
   const handleSave = async () => {
     if (!selectedScriptId) return;
@@ -481,9 +504,31 @@ function YoutubeSeoPage() {
                           </div>
                         </div>
 
+                        <div className="space-y-2">
+                          <Label className="text-[10px] uppercase font-bold text-slate-400">Image Model</Label>
+                          <select
+                            value={thumbnailModel}
+                            onChange={(e) => setThumbnailModel(e.target.value)}
+                            className="w-full h-9 rounded-2xl border border-slate-200 bg-slate-50/30 text-xs px-3"
+                          >
+                            <optgroup label="OpenAI (uses your OPENAI_API_KEY)">
+                              <option value="openai/gpt-image-2">gpt-image-2 ⭐ flagship</option>
+                              <option value="openai/gpt-image-1">gpt-image-1</option>
+                              <option value="openai/gpt-image-1-mini">gpt-image-1-mini (cheap)</option>
+                              <option value="openai/dall-e-3">dall-e-3</option>
+                            </optgroup>
+                            <optgroup label="Google (uses your GOOGLE_API_KEY)">
+                              <option value="google/gemini-3-pro-image-preview">gemini-3-pro-image-preview ⭐</option>
+                              <option value="google/gemini-3.1-flash-image-preview">gemini-3.1-flash (Nano Banana 2)</option>
+                              <option value="google/gemini-2.5-flash-image">gemini-2.5-flash (Nano Banana)</option>
+                            </optgroup>
+                          </select>
+                          <p className="text-[10px] text-slate-400">Top 4 past Sky thumbnails are auto-attached as style reference.</p>
+                        </div>
+
                         <div className="space-y-4">
                           <div className="flex justify-between items-center">
-                            <Label className="text-[10px] uppercase font-bold text-slate-400">DALL·E 3 Prompt</Label>
+                            <Label className="text-[10px] uppercase font-bold text-slate-400">Image Prompt</Label>
                             <span className="text-[10px] text-slate-400">{thumbnailPrompt.length}/4000</span>
                           </div>
                           <Textarea 
@@ -597,6 +642,28 @@ function YoutubeSeoPage() {
                 </Card>
               </div>
             </div>
+
+
+
+            {refsData && refsData.length > 0 && (
+              <Card className="rounded-3xl border-slate-100 shadow-sm mt-6">
+                <CardHeader className="border-b bg-slate-50/50 px-6 py-3">
+                  <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    🎨 Sky Style Library — {refsData.length} reference{refsData.length === 1 ? "" : "s"} (auto-attached to next generation)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                    {refsData.map((r: any) => (
+                      <a key={r.id} href={r.url} target="_blank" rel="noreferrer"
+                         className="aspect-video rounded-lg overflow-hidden border border-slate-200 hover:ring-2 hover:ring-indigo-400 transition">
+                        <img src={r.url} alt="Sky thumbnail" className="w-full h-full object-cover" />
+                      </a>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       )}
