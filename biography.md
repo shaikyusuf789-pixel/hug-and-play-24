@@ -282,6 +282,15 @@ The Railway service is connected to repo `shaikyusuf789-pixel/sky-annotations-wo
 3. **Wait** ~60–120 s. Hit `https://<your-railway-domain>/health` → expect `{"ok":true}`.
 4. **Verify** by triggering a small job (e.g. `/merge/run` from the Annotations page) and watching Railway logs.
 
+### Proxy route (same-origin forwarding)
+Because `*.railway.app` domains are blocked by some browsers / extensions / DNS filters, the frontend does **not** call the Railway worker directly. Instead it hits a same-origin server route:
+
+- **File:** `src/routes/api/worker-proxy.ts` (TanStack Start server route)
+- **URL pattern:** `POST /api/worker-proxy?path=/clips/render` (or `/clips/render-all`, `/merge/run`, etc.)
+- **Behaviour:** forwards the request body + headers to `https://sky-annotations-worker-production.up.railway.app${path}`, then pipes the response back to the browser with CORS headers intact.
+- **Why:** same-origin requests bypass all external-domain blocks (uBlock, Brave Shields, Pi-hole, corporate proxies, Lovable preview iframe CSP). The worker contract stays unchanged.
+- **Wired in:** `src/routes/_dashboard.annotations.tsx` and `src/routes/_dashboard.mega.tsx` — `workerPost`/`workerGet` call `/api/worker-proxy?path=...` instead of `ANNOTATIONS_WORKER_URL`.
+
 ### Hard rules
 - Railway worker = **render + merge only**. Do not re-wire UI to `/ocr` or `/timestamps` — those legacy endpoints exist but the frontend calls Google Vision + ElevenLabs directly.
 - The Railway env must point at the same Supabase project (`eozteueesaemhcmbqcxt`). The retired ref `klhcrdacefntzqwqwiiu` must not be used.
