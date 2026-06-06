@@ -48,17 +48,26 @@ const SLIDE_SOURCES: { key: SlideSource; label: string; color: string }[] = [
   { key: "replit", label: "Replit", color: "violet" },
 ];
 
-async function workerPost(path: string, body: any) {
-  const res = await fetch(`${ANNOTATIONS_WORKER_URL}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const text = await res.text();
-  let json: any = null;
-  try { json = text ? JSON.parse(text) : null; } catch {}
-  if (!res.ok) throw new Error(json?.detail || text || `HTTP ${res.status}`);
-  return json;
+async function workerPost(path: string, body: any, attempt = 1) {
+  try {
+    const res = await fetch(`${ANNOTATIONS_WORKER_URL}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const text = await res.text();
+    let json: any = null;
+    try { json = text ? JSON.parse(text) : null; } catch {}
+    if (!res.ok) throw new Error(json?.detail || text || `HTTP ${res.status}`);
+    return json;
+  } catch (e: any) {
+    const isNetworkError = e instanceof TypeError || e.message?.includes("Failed to fetch");
+    if (isNetworkError && attempt === 1) {
+      await new Promise((r) => setTimeout(r, 800));
+      return workerPost(path, body, attempt + 1);
+    }
+    throw e;
+  }
 }
 
 async function workerGet(path: string) {
