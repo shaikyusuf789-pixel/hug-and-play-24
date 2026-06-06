@@ -186,17 +186,17 @@ function Dashboard() {
                   onClick={async (e) => {
                     e.preventDefault();
                     setPurging(true);
-                    const t = toast.loading("Purging all media…");
+                    const t = toast.loading("Deleting all media…");
                     try {
                       const res: any = await purgeFn();
                       const d = res?.deleted || {};
                       toast.success(
-                        `Purged: ${d["audio-files"] ?? 0} audio, ${d["slides"] ?? 0} slides, ${d["video-clips"] ?? 0} clips.`,
+                        `Deleted: ${d["audio-files"] ?? 0} audio, ${d["slides"] ?? 0} slides, ${d["video-clips"] ?? 0} clips.`,
                         { id: t },
                       );
                       qc.invalidateQueries();
                     } catch (err: any) {
-                      toast.error(`Purge failed: ${err?.message || err}`, { id: t });
+                      toast.error(`Delete failed: ${err?.message || err}`, { id: t });
                     } finally {
                       setPurging(false);
                     }
