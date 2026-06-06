@@ -466,83 +466,85 @@ function VideoEditorPage() {
 
   const resetAll = () => { pushHistory(); setFilters({ ...FILTER_DEFAULTS }); setRotate(0); setFlipH(false); setFlipV(false); setZoom(100); };
 
-  // ===== SAVE: ffmpeg.wasm → re-encode kept ranges → upload replacing original =====
+  // ===== SAVE: Railway worker → apply cuts → overwrite original in storage =====
   const saveEdited = async () => {
     if (!selected) return;
     if (!selected.bucket || !selected.path) { toast.error("Source URL not in Supabase storage — cannot overwrite"); return; }
+    if (cuts.length === 0) { toast.error("No cuts made — nothing to render"); return; }
     const ranges = keptRanges(cuts, duration);
     if (ranges.length === 0) { toast.error("Nothing kept — would produce empty video"); return; }
-    if (cuts.length === 0) { toast.error("No cuts made — nothing to render"); return; }
 
-    setSaving(true); setSaveProgress(0); setSaveMsg("Loading ffmpeg…");
+    // Derive slide_source from path like "{script_id}/mega_{source}.mp4"
+    const sourceMatch = selected.path.match(/mega_([^./]+)\.mp4$/i);
+    const slide_source = sourceMatch?.[1] || "gamma";
+
+    setSaving(true); setSaveProgress(5); setSaveMsg("Queuing job on Railway…");
 
     try {
-      const { FFmpeg } = await import("@ffmpeg/ffmpeg");
-      const { fetchFile, toBlobURL } = await import("@ffmpeg/util");
-      const ffmpeg = new FFmpeg();
-      ffmpeg.on("progress", ({ progress }) => setSaveProgress(Math.min(99, Math.round(progress * 100))));
-      ffmpeg.on("log", ({ message }) => { if (message) console.log("[ffmpeg]", message); });
+      const { ANNOTATIONS_WORKER_URL } = await import("@/lib/worker");
 
-      const base = "https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd";
-      await ffmpeg.load({
-        coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, "text/javascript"),
-        wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, "application/wasm"),
+      // Send ranges to REMOVE (cuts), not kept ranges. Worker computes the inverse.
+      const cutsPayload = cuts.map(c => [Number(c.start.toFixed(3)), Number(c.end.toFixed(3))]);
+      const res = await fetch(`${ANNOTATIONS_WORKER_URL}/editor/apply-cuts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          script_id: selected.script_id,
+          slide_source,
+          bucket: selected.bucket,
+          path: selected.path,
+          cuts: cutsPayload,
+        }),
       });
+      if (!res.ok) throw new Error(`Worker rejected job (${res.status}): ${await res.text()}`);
 
-      setSaveMsg("Downloading source video…");
-      await ffmpeg.writeFile("input.mp4", await fetchFile(selected.url));
+      setSaveProgress(15); setSaveMsg("Server is re-encoding video…");
 
-      setSaveMsg(`Rendering ${ranges.length} kept range(s)…`);
-      // Build trim+concat filter graph
-      const parts = ranges.map((r, i) =>
-        `[0:v]trim=start=${r.start.toFixed(3)}:end=${r.end.toFixed(3)},setpts=PTS-STARTPTS[v${i}];` +
-        `[0:a]atrim=start=${r.start.toFixed(3)}:end=${r.end.toFixed(3)},asetpts=PTS-STARTPTS[a${i}];`
-      ).join("");
-      const concatIns = ranges.map((_, i) => `[v${i}][a${i}]`).join("");
-      const filter = `${parts}${concatIns}concat=n=${ranges.length}:v=1:a=1[outv][outa]`;
+      // Poll status (Railway updates app_metadata as it progresses)
+      const metaKey = `editor:${selected.script_id}:${slide_source}`;
+      const deadline = Date.now() + 10 * 60 * 1000; // 10 min cap
+      let lastStatus = "queued";
+      let pct = 15;
+      while (Date.now() < deadline) {
+        await new Promise(r => setTimeout(r, 3000));
+        const { data: row } = await supabase
+          .from("app_metadata")
+          .select("value")
+          .eq("key", metaKey)
+          .maybeSingle();
+        const v = (row?.value as any) || {};
+        if (v.status && v.status !== lastStatus) {
+          lastStatus = v.status;
+          if (v.status === "running") setSaveMsg("Re-encoding (ffmpeg on Railway)…");
+        }
+        if (v.status === "running" && pct < 90) { pct += 5; setSaveProgress(pct); }
+        if (v.status === "done") {
+          setSaveProgress(100); setSaveMsg("Saved.");
+          toast.success("Edited video saved — original replaced.");
 
-      await ffmpeg.exec([
-        "-i", "input.mp4",
-        "-filter_complex", filter,
-        "-map", "[outv]", "-map", "[outa]",
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
-        "-c:a", "aac", "-b:a", "128k",
-        "-movflags", "+faststart",
-        "out.mp4",
-      ]);
+          // Bump merge metadata so master-video list reflects the change
+          const { data: existing } = await supabase
+            .from("app_metadata")
+            .select("value")
+            .eq("key", `merge:${selected.script_id}`)
+            .maybeSingle();
+          const newValue = { ...(existing?.value as any || {}), edited_at: new Date().toISOString(), edit_cuts: cuts.length };
+          await supabase
+            .from("app_metadata")
+            .update({ value: newValue, updated_at: new Date().toISOString() })
+            .eq("key", `merge:${selected.script_id}`);
 
-      setSaveMsg("Uploading replacement…");
-      const data = (await ffmpeg.readFile("out.mp4")) as Uint8Array;
-      const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
-      const blob = new Blob([ab], { type: "video/mp4" });
-
-      const { error: upErr } = await supabase.storage
-        .from(selected.bucket)
-        .upload(selected.path, blob, { upsert: true, contentType: "video/mp4", cacheControl: "0" });
-      if (upErr) throw upErr;
-
-      // bump app_metadata updated_at so list reflects change + add edited marker
-      const { data: existing } = await supabase
-        .from("app_metadata")
-        .select("value")
-        .eq("key", `merge:${selected.script_id}`)
-        .maybeSingle();
-      const newValue = { ...(existing?.value as any || {}), edited_at: new Date().toISOString(), edit_cuts: cuts.length };
-      await supabase
-        .from("app_metadata")
-        .update({ value: newValue, updated_at: new Date().toISOString() })
-        .eq("key", `merge:${selected.script_id}`);
-
-      setSaveProgress(100);
-      setSaveMsg("Saved.");
-      toast.success("Edited video saved — original replaced.");
-
-      // refresh video element with cache-buster
-      const newUrl = `${selected.url.split("?")[0]}?v=${Date.now()}`;
-      setVideos(prev => prev.map(v => v.script_id === selected.script_id ? { ...v, url: newUrl, updated_at: new Date().toISOString() } : v));
-      setCuts([]); setRazorPoints([]);
-
-      try { ffmpeg.terminate(); } catch {}
+          // Refresh preview with cache-buster
+          const newUrl = `${selected.url.split("?")[0]}?v=${Date.now()}`;
+          setVideos(prev => prev.map(x => x.script_id === selected.script_id ? { ...x, url: newUrl, updated_at: new Date().toISOString() } : x));
+          setCuts([]); setRazorPoints([]);
+          return;
+        }
+        if (v.status === "error") {
+          throw new Error(v.error || "Worker reported error");
+        }
+      }
+      throw new Error("Timed out waiting for Railway worker (10 min)");
     } catch (e: any) {
       console.error(e);
       toast.error(`Save failed: ${e?.message || e}`);
@@ -551,6 +553,7 @@ function VideoEditorPage() {
       setTimeout(() => { setSaveProgress(0); setSaveMsg(""); }, 1500);
     }
   };
+
 
   const exportEditPlan = () => {
     if (!selected) return;
