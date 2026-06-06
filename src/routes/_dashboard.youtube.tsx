@@ -504,9 +504,31 @@ function YoutubeSeoPage() {
                           </div>
                         </div>
 
+                        <div className="space-y-2">
+                          <Label className="text-[10px] uppercase font-bold text-slate-400">Image Model</Label>
+                          <select
+                            value={thumbnailModel}
+                            onChange={(e) => setThumbnailModel(e.target.value)}
+                            className="w-full h-9 rounded-2xl border border-slate-200 bg-slate-50/30 text-xs px-3"
+                          >
+                            <optgroup label="OpenAI (uses your OPENAI_API_KEY)">
+                              <option value="openai/gpt-image-2">gpt-image-2 ⭐ flagship</option>
+                              <option value="openai/gpt-image-1">gpt-image-1</option>
+                              <option value="openai/gpt-image-1-mini">gpt-image-1-mini (cheap)</option>
+                              <option value="openai/dall-e-3">dall-e-3</option>
+                            </optgroup>
+                            <optgroup label="Google (uses your GOOGLE_API_KEY)">
+                              <option value="google/gemini-3-pro-image-preview">gemini-3-pro-image-preview ⭐</option>
+                              <option value="google/gemini-3.1-flash-image-preview">gemini-3.1-flash (Nano Banana 2)</option>
+                              <option value="google/gemini-2.5-flash-image">gemini-2.5-flash (Nano Banana)</option>
+                            </optgroup>
+                          </select>
+                          <p className="text-[10px] text-slate-400">Top 4 past Sky thumbnails are auto-attached as style reference.</p>
+                        </div>
+
                         <div className="space-y-4">
                           <div className="flex justify-between items-center">
-                            <Label className="text-[10px] uppercase font-bold text-slate-400">DALL·E 3 Prompt</Label>
+                            <Label className="text-[10px] uppercase font-bold text-slate-400">Image Prompt</Label>
                             <span className="text-[10px] text-slate-400">{thumbnailPrompt.length}/4000</span>
                           </div>
                           <Textarea 
