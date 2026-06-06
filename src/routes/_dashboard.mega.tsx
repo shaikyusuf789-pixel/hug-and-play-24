@@ -115,7 +115,7 @@ function MegaPage() {
       const { data } = await supabase
         .from("scripts")
         .select("id,title,content,created_at,status")
-        .eq("status", "SCRIPT_DONE")
+        .in("status", ["SCRIPT_DONE", "FACT_CHECKED", "ENHANCED", "CORRECTED"])
         .not("content", "is", null)
         .order("created_at", { ascending: false })
         .limit(50);
