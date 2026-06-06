@@ -50,7 +50,7 @@ const SLIDE_SOURCES: { key: SlideSource; label: string; color: string }[] = [
 
 async function workerPost(path: string, body: any, attempt = 1) {
   try {
-    const res = await fetch(`${ANNOTATIONS_WORKER_URL}${path}`, {
+    const res = await fetch(`/api/worker-proxy?path=${encodeURIComponent(path)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -71,10 +71,11 @@ async function workerPost(path: string, body: any, attempt = 1) {
 }
 
 async function workerGet(path: string) {
-  const res = await fetch(`${ANNOTATIONS_WORKER_URL}${path}`);
+  const res = await fetch(`/api/worker-proxy?path=${encodeURIComponent(path)}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
+
 
 function AnnotationsPage() {
   const updateChunkFn = useServerFn(updateChunk);

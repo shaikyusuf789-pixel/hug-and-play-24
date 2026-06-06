@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiWorkerProxyRouteImport } from './routes/api/worker-proxy'
 import { Route as DashboardYoutubeRouteImport } from './routes/_dashboard.youtube'
 import { Route as DashboardVideoEditorRouteImport } from './routes/_dashboard.video-editor'
 import { Route as DashboardUploadsRouteImport } from './routes/_dashboard.uploads'
@@ -39,6 +40,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWorkerProxyRoute = ApiWorkerProxyRouteImport.update({
+  id: '/api/worker-proxy',
+  path: '/api/worker-proxy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardYoutubeRoute = DashboardYoutubeRouteImport.update({
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/uploads': typeof DashboardUploadsRoute
   '/video-editor': typeof DashboardVideoEditorRoute
   '/youtube': typeof DashboardYoutubeRoute
+  '/api/worker-proxy': typeof ApiWorkerProxyRoute
   '/api/public/hooks/auto-run-engine': typeof ApiPublicHooksAutoRunEngineRoute
 }
 export interface FileRoutesByTo {
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/uploads': typeof DashboardUploadsRoute
   '/video-editor': typeof DashboardVideoEditorRoute
   '/youtube': typeof DashboardYoutubeRoute
+  '/api/worker-proxy': typeof ApiWorkerProxyRoute
   '/api/public/hooks/auto-run-engine': typeof ApiPublicHooksAutoRunEngineRoute
 }
 export interface FileRoutesById {
@@ -213,6 +221,7 @@ export interface FileRoutesById {
   '/_dashboard/uploads': typeof DashboardUploadsRoute
   '/_dashboard/video-editor': typeof DashboardVideoEditorRoute
   '/_dashboard/youtube': typeof DashboardYoutubeRoute
+  '/api/worker-proxy': typeof ApiWorkerProxyRoute
   '/api/public/hooks/auto-run-engine': typeof ApiPublicHooksAutoRunEngineRoute
 }
 export interface FileRouteTypes {
@@ -238,6 +247,7 @@ export interface FileRouteTypes {
     | '/uploads'
     | '/video-editor'
     | '/youtube'
+    | '/api/worker-proxy'
     | '/api/public/hooks/auto-run-engine'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -261,6 +271,7 @@ export interface FileRouteTypes {
     | '/uploads'
     | '/video-editor'
     | '/youtube'
+    | '/api/worker-proxy'
     | '/api/public/hooks/auto-run-engine'
   id:
     | '__root__'
@@ -285,12 +296,14 @@ export interface FileRouteTypes {
     | '/_dashboard/uploads'
     | '/_dashboard/video-editor'
     | '/_dashboard/youtube'
+    | '/api/worker-proxy'
     | '/api/public/hooks/auto-run-engine'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  ApiWorkerProxyRoute: typeof ApiWorkerProxyRoute
   ApiPublicHooksAutoRunEngineRoute: typeof ApiPublicHooksAutoRunEngineRoute
 }
 
@@ -308,6 +321,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/worker-proxy': {
+      id: '/api/worker-proxy'
+      path: '/api/worker-proxy'
+      fullPath: '/api/worker-proxy'
+      preLoaderRoute: typeof ApiWorkerProxyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_dashboard/youtube': {
@@ -504,6 +524,7 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  ApiWorkerProxyRoute: ApiWorkerProxyRoute,
   ApiPublicHooksAutoRunEngineRoute: ApiPublicHooksAutoRunEngineRoute,
 }
 export const routeTree = rootRouteImport
