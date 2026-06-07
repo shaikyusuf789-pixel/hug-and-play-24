@@ -1084,8 +1084,9 @@ function ScriptGenerator() {
                   step={165}
                 />
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest pt-1">
-                  ~{(wordCount * 90 / 6000).toFixed(1).replace(/\.0$/, "")} minutes
+                  ~{(wordCount / 130).toFixed(1).replace(/\.0$/, "")} minutes
                 </p>
+
               </div>
 
               <div className="space-y-2">
