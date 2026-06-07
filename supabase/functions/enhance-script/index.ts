@@ -217,7 +217,7 @@ Cartesia emotion tags + Jerry's voice/style/fillers from the 2 reference transcr
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemInstruction }] },
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.6, maxOutputTokens: 16000 },
+        generationConfig: { temperature: 0.8, maxOutputTokens: 16000 },
       }),
     });
 
