@@ -37,6 +37,7 @@ async function callGamma(inputText: string, themeName: string, supabase: ReturnT
       inputText,
       textMode: "preserve",
       format: "presentation",
+      themeName,
       numCards: 1,
       cardSplit: "inputTextBreaks",
       exportAs: "png",

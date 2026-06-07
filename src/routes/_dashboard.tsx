@@ -1,4 +1,4 @@
-import { createFileRoute, useRouterState, Link, Outlet } from "@tanstack/react-router";
+import { createFileRoute, useRouterState, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { 
   LayoutDashboard, 
   Settings, 
@@ -15,7 +15,8 @@ import {
   Menu,
   Sparkles,
   Wand2,
-  Rocket
+  Rocket,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,11 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/_dashboard")({
+  beforeLoad: () => {
+    if (typeof window !== "undefined" && localStorage.getItem("sky_auth") !== "1") {
+      throw redirect({ to: "/login" });
+    }
+  },
   component: DashboardLayout,
 });
 
@@ -45,7 +51,13 @@ interface NavGroup {
 
 function DashboardLayout() {
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem("sky_auth");
+    navigate({ to: "/login" });
+  };
 
   const navGroups: NavGroup[] = [
     {
@@ -173,6 +185,9 @@ function DashboardLayout() {
           
           <div className="flex items-center gap-1.5 md:gap-3">
             <NotificationDrawer />
+            <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout" className="h-9 w-9 md:h-10 md:w-10 rounded-xl text-slate-400 hover:text-red-600">
+              <LogOut className="h-5 w-5" />
+            </Button>
             <Button variant="ghost" size="icon" className="h-9 w-9 md:h-10 md:w-10 rounded-xl text-slate-400 hover:text-slate-900 hidden xs:flex">
               <Settings className="h-5 w-5" />
             </Button>
