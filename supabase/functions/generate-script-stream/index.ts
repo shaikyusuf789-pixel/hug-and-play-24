@@ -590,11 +590,8 @@ serve(async (req) => {
         );
         controller.close();
 
-        // Fact-check in background (don't block the response).
-        // @ts-ignore EdgeRuntime is provided by Supabase
-        EdgeRuntime.waitUntil(
-          factCheckAndUpdate(supa, scriptId, finalText, factCheckModel, googleApiKey),
-        );
+        // Fact-check is now MANUAL — triggered via the "Fact Check" button
+        // in the UI. Do NOT auto-run here.
       },
     });
 
