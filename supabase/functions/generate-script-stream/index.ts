@@ -338,7 +338,11 @@ serve(async (req) => {
       targetWords,
       overrides,
     );
-    const title = body.title || body.topic || "sky academy Script";
+    // Initial placeholder title -- gets REPLACED with an AI-derived title
+    // after generation completes (see deriveTitleFromText below).
+    const rawTitle = (body.title || body.topic || "").trim();
+    const isPlaceholder = !rawTitle || /^untitled/i.test(rawTitle) || rawTitle.toLowerCase() === "sky academy script";
+    const title = isPlaceholder ? "Generating script…" : rawTitle;
 
     // PDF / transcript uploads without an existing idea: auto-create a
     // raw_content row in the Priority list so the script is selectable in
@@ -570,12 +574,39 @@ serve(async (req) => {
           return;
         }
 
+        // ---- Derive a real title from the AI output ----
+        // 1. If output is JSON segments -> use segments[0].title
+        // 2. Else use first 8 meaningful words of the script (Telugu/English)
+        const deriveTitle = (txt: string): string => {
+          try {
+            const arr = JSON.parse(txt);
+            if (Array.isArray(arr) && arr.length > 0) {
+              const t = String(arr[0]?.title || "").trim();
+              if (t) return t.slice(0, 120);
+            }
+          } catch (_) { /* not JSON */ }
+            const clean = txt.replace(/\s+/g, " ").trim();
+            const words = clean.split(" ").filter(Boolean).slice(0, 8).join(" ");
+            return (words || "Untitled Script").slice(0, 120);
+        };
+        const derivedTitle = deriveTitle(finalText);
+
         // Save the final script row.
         await supa.from("scripts").update({
+          title: derivedTitle,
           content: finalText,
           word_count: wc,
           status: "SCRIPT_DONE",
         }).eq("id", scriptId);
+
+        // Also update the auto-created idea row so the dropdown label matches.
+        if (effectiveIdeaId && createdNewIdea) {
+          await supa.from("raw_content").update({
+            original_title: derivedTitle,
+            proposed_title: derivedTitle,
+            status: "Script Done",
+          }).eq("id", effectiveIdeaId);
+        }
 
         controller.enqueue(
           encoder.encode(
@@ -585,6 +616,7 @@ serve(async (req) => {
               target_words: targetWords,
               stop_reason: lastStopReason,
               idea_id: effectiveIdeaId,
+              title: derivedTitle,
             })}\n\n`,
           ),
         );
