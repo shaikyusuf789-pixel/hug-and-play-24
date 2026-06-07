@@ -173,13 +173,22 @@ ENHANCED SCRIPT (numbers as words + RICH punctuation + HEAVY paragraph breaks + 
       });
     }
 
-    const enhancedScript = (data?.choices?.[0]?.message?.content ?? "").trim();
+    let enhancedScript = (data?.choices?.[0]?.message?.content ?? "").trim();
     if (!enhancedScript) {
       return new Response(JSON.stringify({ error: "Empty response from OpenAI" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Strip markdown chars that break TTS pronunciation (asterisks read as "asterisk", etc.)
+    enhancedScript = enhancedScript
+      .replace(/\*+/g, "")      // remove all asterisks
+      .replace(/`+/g, "")       // remove backticks
+      .replace(/_{2,}/g, "")    // remove double-underscores (markdown bold/italic)
+      .replace(/~+/g, "")       // remove tildes
+      .replace(/^#+\s*/gm, "")  // remove leading markdown hashes on any line
+      .replace(/\n{4,}/g, "\n\n\n"); // cap excessive blank lines
 
     return new Response(JSON.stringify({ enhancedScript }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
