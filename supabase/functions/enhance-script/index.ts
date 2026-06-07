@@ -69,29 +69,74 @@ Your job is to enhance the provided script by doing FIVE things:
    nostalgic, wistful, apologetic, hesitant, insecure, confused, resigned, anxious, panicked,
    alarmed, scared, neutral, proud, confident, distant, skeptical, contemplative, determined.
 
-5. **VOICE CLONE PASS — you MAY now slightly alter the original wording** to make the
-   narration sound like Jerry from the 2 reference transcripts above. Specifically:
-   - Insert Jerry's signature fillers and connectors at natural points: హలో ఎవ్రీ వన్,
-     అంటే ఏంటంటే, అన్నమాట, కదా, ఓకే, మిత్రులారా, చూడండి, ఇప్పుడు, సో, ఏంటంటే,
-     ఒకసారి చూసుకుందాము, ఏం జరిగింది అంటే, ఏం చేస్తారంటే.
-   - Mirror his rhythm: short clauses chained with semicolons / em-dashes, repeating a key
-     word for emphasis (e.g. "ఆధార్, ఆధార్ కి వెరిఫికేషన్…"), rhetorical questions
-     followed by the answer.
-   - Use Roman script for English loan words exactly like the transcripts
-     (e.g. "ఎగ్జామ్", "నోటిఫికేషన్", "బయోమెట్రిక్").
-   - HARD LIMITS — you may slightly reword, but you MUST NOT change any:
+5. **VOICE CLONE PASS — MANDATORY REWRITE, not optional sprinkling.** Every paragraph
+   MUST be rewritten in Jerry's natural code-mixed Telugu-English voice from the 2
+   transcripts above. **Just adding filler words to the original sentence = FAILURE.**
+   You must reshape sentence structure, swap bookish Telugu for natural code-mixed
+   English-loan equivalents, and mimic Jerry's rhythm.
+
+   STYLE CHECKLIST — every paragraph MUST satisfy:
+   - ✅ Bookish/literary Telugu words replaced with natural code-mixed English-loan
+        equivalents (English word in Roman script + Telugu suffix కి / తో / గా / లో /
+        చేస్తాను / అవుతుంది / చేద్దాం / చేసుకోండి).
+   - ✅ At least 1 short punchy clause (≤5 words).
+   - ✅ Sentence rhythm mirrors transcripts — NOT textbook Telugu.
+   - ✅ Jerry's signature connectors used naturally: హలో ఎవ్రీ వన్, అంటే ఏంటంటే,
+        అన్నమాట, కదా, ఓకే, మిత్రులారా, చూడండి, ఇప్పుడు, సో, ఏంటంటే, ఒకసారి
+        చూసుకుందాము, ఏం జరిగింది అంటే, ఏం చేస్తారంటే — ONLY at natural points,
+        never just bolted on.
+   - ✅ Rhetorical question → immediate answer pattern where it fits.
+   - ✅ Repetition for emphasis (e.g. "ఆధార్, ఆధార్ కి verification…").
+
+   ❌ WRONG (just bolting a filler onto the original):
+       Original: "ఈ పథకం చాలా ముఖ్యమైనది."
+       Bad:      "చూడండి, ఈ పథకం చాలా ముఖ్యమైనది."   ← lazy, bookish words intact
+   ✅ RIGHT (rewritten in Jerry's voice):
+       Good:     "చూడండి -- ఈ scheme చాలా important అన్నమాట. ఎందుకంటే…"
+
+   BOOKISH-TELUGU → NATURAL CODE-MIX (PATTERN, not a lookup table):
+   Do NOT keep formal/literary Telugu vocabulary. The PATTERN: take the bookish
+   Telugu word → swap it for the natural English loan word in Roman script → keep
+   ONLY the Telugu grammatical suffix (కి, తో, గా, లో, లు, అవుతుంది, చేస్తాను,
+   చేద్దాం, చేసుకోండి). Apply the SAME pattern to ANY similar bookish word you
+   encounter, even if not in these examples. Apply it AGGRESSIVELY across the
+   ENTIRE script — every paragraph, every occurrence, not once or twice.
+
+   Example pairs (pattern reference — extend to all similar cases):
+
+       క్షుణ్ణంగా చదవండి                       →  clearగా చదవండి
+       ఇవి, మీ ఎగ్జామ్ ప్రిపరేషన్ కి చాలా ఉపయోగపడతాయి
+                                              →  ఇవి, మీ exam preparationకి చాలా use avutayi
+       ఈ సమాచారం చాలా ఉపయోగపడుతుంది              →  ఈ information చాలా use avutundi
+       ఉదాహరణలతో వివరిస్తాను                     →  examplesతో explain chestanu
+       ఉదాహరణకి చెప్తాను                         →  exampleకి చెప్తాను
+       వివరణ ఇస్తాను                            →  explanation ఇస్తాను
+       ఇది ఒక ముఖ్యమైన అంశం                     →  ఇది ఒక important point
+       అవసరమైన సమాచారం అంతా ఇక్కడ ఉంది           →  అవసరమైన information అంతా ఇక్కడ ఉంది
+       పరీక్షకి సిద్ధం అవ్వండి                    →  examకి ready అవ్వండి
+       ఇప్పుడు ప్రారంభిద్దాం                      →  ఇప్పుడు start చేద్దాం
+       ఒకసారి పరిశీలిద్దాం                       →  ఒకసారి check చేద్దాం
+       దీని గురించి చర్చిద్దాం                    →  దీని గురించి discuss చేద్దాం
+       గమనించండి                                →  notice చేసుకోండి
+       అర్థం చేసుకోండి                           →  understand చేసుకోండి
+       దీనికి సంబంధించిన సమాచారం                  →  దీని గురించి information
+       మంచి ఉద్యోగాలు లభిస్తాయి                   →  మంచి jobs వస్తాయి
+       ఆన్‌లైన్‌లో దరఖాస్తు చేసుకోండి              →  onlineలో apply చేసుకోండి
+       ఎంపిక ప్రక్రియ ఇలా ఉంటుంది                →  selection process ఇలా ఉంటుంది
+
+   HARD LIMITS — rewrite freely, but you MUST NOT change any:
        * facts, statistics, numbers, dates, names, places, claims
        * meaning of any sentence
        * core information / order of ideas
-   Think of it as "Jerry would say the same thing, but in his own words."
+   Rewriting = same meaning in Jerry's voice. NOT a new script.
 
 DENSITY EXAMPLE:
 
-<emotion value="curious"/> మిత్రులారా -- ఇది ఒక చిన్న విషయం కాదు. చాలా పెద్ద విషయం!
+<emotion value="curious"/> మిత్రులారా -- ఇది చిన్న విషయం కాదు. చాలా పెద్ద విషయం అన్నమాట!
 
-<emotion value="amazed"/> ఆలోచించండి... కేవలం రెండు సంవత్సరాల్లో, ఈ కంపెనీ -- ఏకంగా twenty thousand crore rupees సంపాదించింది.
+<emotion value="amazed"/> ఆలోచించండి... కేవలం రెండు సంవత్సరాల్లో, ఈ company -- ఏకంగా twenty thousand crore rupees సంపాదించింది.
 
-<emotion value="determined"/> మరి మీరు? మీరు కూడా ఇలాంటి స్థాయికి చేరుకోవాలంటే -- ఒక్క విషయం గుర్తుపెట్టుకోండి.
+<emotion value="determined"/> మరి మీరు? మీరు కూడా ఈ levelకి చేరుకోవాలంటే -- ఒక్క విషయం గుర్తుపెట్టుకోండి, ఓకే?
 
 NUMBER-TO-WORDS RULES (apply to digits, Telugu numerals, AND Telugu number words):
 
@@ -163,7 +208,7 @@ Cartesia emotion tags + Jerry's voice/style/fillers from the 2 reference transcr
 
     const systemInstruction = "You are a Telugu narration tool that (a) rewrites every number — including digits, Telugu numerals, and Telugu number WORDS like రెండు వేల ఇరవై ఆరు — into context-aware spoken English words, (b) adds rich punctuation, paragraph breaks, and inline Cartesia <emotion value=\"name\"/> tags using only the 60 allowed emotions, and (c) slightly reshapes wording to mimic Jerry's narration style from the 2 reference transcripts (fillers, connectors, rhythm) WITHOUT changing any facts, numbers, names, or meaning.";
 
-    const model = "gemini-2.5-flash";
+    const model = "gemini-3-pro-preview";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
     const response = await fetch(url, {
@@ -172,7 +217,7 @@ Cartesia emotion tags + Jerry's voice/style/fillers from the 2 reference transcr
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemInstruction }] },
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.6, maxOutputTokens: 16000 },
+        generationConfig: { temperature: 0.8, maxOutputTokens: 16000 },
       }),
     });
 
