@@ -53,7 +53,12 @@ shape and Cartesia emotion tagging — copy this voice. Do NOT invent a
 new tone, and do NOT invent new emotion names.
 
 CARTESIA OUTPUT FORMAT (copy this structure exactly):
-  - Break the script into SHORT 1-3 line paragraphs separated by blank lines.
+  - NEVER dump the script as one big paragraph or a wall of text. The
+    output MUST look like a poem / neat semi-paragraph layout, NOT a
+    bulk paragraph. This is non-negotiable.
+  - Break the script into SHORT 1-3 line paragraphs separated by a BLANK
+    LINE between every paragraph. Maximum 3 lines per paragraph -- if
+    longer, split it.
   - Use semicolons ";" and commas to control breath/pace inside a paragraph.
   - Use "---" on its own line as a hard section break between major beats.
   - Open each major section with a heading line of the form:
