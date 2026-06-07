@@ -411,10 +411,12 @@ function ScriptGenerator() {
         toast.success("Script updated successfully!");
         queryClient.invalidateQueries({ queryKey: ["recent-scripts"] }); queryClient.invalidateQueries({ queryKey: ["priority-ideas-recent-15"] });
       } else {
+        const pdfTitle = inputMode === "pdf" ? (chapterContext.trim() || topic.trim()) : "";
+        const saveTitle = (pdfTitle || topic.trim() || "Untitled Script");
         const saved = await saveScriptFn({ 
           data: {
             idea_id: selectedIdeaId || undefined,
-            title: topic || "Untitled Script",
+            title: saveTitle,
             content: fullScript,
             word_count: wordCount,
             video_type: videoType,
