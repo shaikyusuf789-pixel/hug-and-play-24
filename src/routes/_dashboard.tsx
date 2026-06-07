@@ -185,6 +185,9 @@ function DashboardLayout() {
           
           <div className="flex items-center gap-1.5 md:gap-3">
             <NotificationDrawer />
+            <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout" className="h-9 w-9 md:h-10 md:w-10 rounded-xl text-slate-400 hover:text-red-600">
+              <LogOut className="h-5 w-5" />
+            </Button>
             <Button variant="ghost" size="icon" className="h-9 w-9 md:h-10 md:w-10 rounded-xl text-slate-400 hover:text-slate-900 hidden xs:flex">
               <Settings className="h-5 w-5" />
             </Button>
