@@ -616,10 +616,13 @@ serve(async (req) => {
             return (words || "Untitled Script").slice(0, 120);
         };
         const derivedTitle = deriveTitle(finalText);
+        // If user provided a real title (PDF chapter context / topic), KEEP IT.
+        // Only fall back to AI-derived title when the placeholder was used.
+        const finalTitle = isPlaceholder ? derivedTitle : rawTitle;
 
         // Save the final script row.
         await supa.from("scripts").update({
-          title: derivedTitle,
+          title: finalTitle,
           content: finalText,
           word_count: wc,
           status: "SCRIPT_DONE",
@@ -628,8 +631,8 @@ serve(async (req) => {
         // Also update the auto-created idea row so the dropdown label matches.
         if (effectiveIdeaId && createdNewIdea) {
           await supa.from("raw_content").update({
-            original_title: derivedTitle,
-            proposed_title: derivedTitle,
+            original_title: finalTitle,
+            proposed_title: finalTitle,
             status: "Script Done",
           }).eq("id", effectiveIdeaId);
         }
