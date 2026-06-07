@@ -298,8 +298,9 @@ BRAND SAFETY (CRITICAL):
   This script is exclusively for the sky academy YouTube channel.
 
 MANDATORY READING ORDER before you write a single character:
-  Step 1: Read every alphabet and every word of all 4 STYLE REFERENCE
-          transcripts below. No skipping.
+  Step 1: Read every alphabet and every word of BOTH STYLE REFERENCE
+          transcripts below. No skipping. Applies to every mode
+          (topic, transcript, pdf, priority) -- no exemptions.
   Step 2: Read the SKY DNA block for content/format rules.
   Step 3: Then -- and only then -- start generating the script.
 `;
