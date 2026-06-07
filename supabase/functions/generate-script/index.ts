@@ -297,7 +297,7 @@ serve(async (req) => {
       model,
       system: systemPrompt,
       user: userPrompt,
-      temperature: 0.2,
+      temperature: 0.5,
       responseMimeType: "application/json",
     });
     const script = extractScriptText(content);
