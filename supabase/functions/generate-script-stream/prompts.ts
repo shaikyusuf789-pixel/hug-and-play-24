@@ -452,6 +452,8 @@ function buildSystem(
 You are an expert Telugu video script writer for sky academy.
 ${taskLine}
 
+${buildStyleReferenceInstructions(overrides)}
+
 ${PRIORITY_NOTE}
 
 ${dna}
@@ -464,8 +466,6 @@ CRITICAL RULES:
 3. ALL Telugu words must be in Telugu Unicode script. NEVER Roman transliteration.
 4. Each segment MUST be 150-180 words.
 5. Output must be a complete, valid JSON array.
-
-${buildStyleReferenceInstructions(overrides)}
 
 ${OUTPUT_FORMAT}
 `.trim();
