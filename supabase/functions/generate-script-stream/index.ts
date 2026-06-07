@@ -645,7 +645,7 @@ serve(async (req) => {
               target_words: targetWords,
               stop_reason: lastStopReason,
               idea_id: effectiveIdeaId,
-              title: derivedTitle,
+              title: finalTitle,
             })}\n\n`,
           ),
         );
