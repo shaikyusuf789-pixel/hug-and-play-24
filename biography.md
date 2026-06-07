@@ -350,4 +350,30 @@ Script text, chunk text, ideas, uploads, and the `user-uploads` bucket are **kep
 
 ---
 
+## 10. Recent Changes (Jerry update log)
+
+### 10.1 Script Generator — Claude models + PDF/Book parity
+- **Claude models refreshed** (`supabase/functions/_shared/anthropic.ts`, `generate-script-stream/index.ts`): selectable list now includes **Claude Sonnet 4.6** and **Claude Opus 4.8** alongside Sonnet 4.5. Streaming + non-streaming paths both honour the selected model id.
+- **PDF/Book mode = Idea-card parity**: a script generated from a PDF/Book upload now behaves exactly like a script generated from a priority Idea card.
+  - The **"Topic / Chapter Context"** input is now used as the script **title**. It is stored on `scripts.title` and shown in every dropdown that lists scripts (Chunks, Audio, Slides, Annotations, Mega, Video Editor).
+  - The **Edit** action is available on PDF/Book scripts (`src/routes/_dashboard.script-generator.tsx`) — previously only ideas-engine scripts had it.
+
+### 10.2 Enhance Engine — context-aware number → words
+`supabase/functions/enhance-script/index.ts` now rewrites every number in the script based on **context**, not a single rule:
+- **Model / serial numbers** (aircraft, exam codes, product SKUs): digit-group reading — e.g. `H125` → "H one twenty five" (no "hundred"), `Airbus A320` → "Airbus A three twenty".
+- **Years**: `2026` → "two thousand twenty six", `1999` → "nineteen ninety nine".
+- **Plain cardinals / quantities**: standard wording — e.g. `250 km` → "two hundred fifty kilometres".
+- **Exam strings** like `SSC CGL 2026` → "SSC CGL two thousand twenty six".
+The prompt instructs the LLM to detect the surrounding context (aircraft, year, exam, money, distance, count) before choosing the reading style.
+
+### 10.3 Intelligent Chunking Engine
+`src/lib/api/process-chunks.functions.ts` no longer mechanically slices by word count. New behaviour:
+- Calls **Google Gemini `gemini-2.0-flash` directly** (env `GOOGLE_API_KEY`, not Lovable AI Gateway) with `responseMimeType: "application/json"`.
+- Prompt prioritises **idea boundaries** (topic shifts, scene changes, natural Telugu pauses like "ఇప్పుడు / ఇక / కానీ / అయితే / మరో విషయం") over hitting the exact target. The slider value (e.g. 120 / 180) is a **hint**, with ±30–50 word tolerance.
+- **Round-trip integrity check**: re-joined chunks are compared against the original (whitespace/punctuation-stripped). If character delta > 2 %, the engine falls back to the deterministic splitter so no text is ever lost.
+- Returns `{ chunks, stats }` for UI display. `normalizeSkyAcademy` pre-processing is preserved.
+
+---
+
 _This biography is a living document — there are no versions. Whenever the UI changes, this file gets updated in place._
+
