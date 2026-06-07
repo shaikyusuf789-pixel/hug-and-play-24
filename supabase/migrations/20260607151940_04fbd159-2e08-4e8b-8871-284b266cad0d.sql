@@ -1,0 +1,1 @@
+DELETE FROM public.app_settings WHERE key IN ('training:transcript_3','training:transcript_4');
