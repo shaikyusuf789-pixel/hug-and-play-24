@@ -541,7 +541,7 @@ function ScriptGenerator() {
             specialInstructions,
             model,
             idea_id: selectedIdeaId || null,
-            title: topic || "Untitled Script",
+            title: inputMode === "pdf" ? (chapterContext.trim() || topic.trim() || "Untitled Script") : (topic.trim() || "Untitled Script"),
           }),
         },
       );
