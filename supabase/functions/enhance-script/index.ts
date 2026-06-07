@@ -34,15 +34,21 @@ in the EXACT format: <emotion value="emotion_name"/>
 Your job is to enhance the provided script by doing FOUR things, and ONLY these four things:
 
 1. CONVERT EVERY NUMBER into context-aware spoken ENGLISH WORDS (see NUMBER-TO-WORDS RULES below — unchanged).
-2. Add INTELLIGENT PUNCTUATION (commas, full stops, em-dashes —, ellipses …, question marks, exclamation marks)
-   to mirror how a confident teacher would actually speak the line. Don't over-punctuate; use punctuation
-   where the narration would naturally breathe.
-3. Add LINE BREAKS so the script reads as short paragraphs (1–3 sentences each) separated by a blank line.
-   This gives Cartesia clean prosody chunks and helps the downstream chunking engine.
+
+2. Add VERY RICH PUNCTUATION. The current narration sounds robotic because punctuation is too sparse.
+   - Add commas, em-dashes (--), ellipses (...), full stops, question marks, exclamation marks AGGRESSIVELY.
+   - A natural Telugu teacher pauses every 4-7 words. Mirror that: insert a comma, dash, or period at EVERY natural breath point — do NOT let sentences run more than ~10 words without a pause mark.
+   - Use em-dash (--) for dramatic pause, ellipsis (...) for suspense / trailing thought, exclamation (!) for surprise/excitement, question mark (?) for rhetorical questions.
+   - Short, punchy sentences > long flat ones. Break long sentences into 2 or 3 shorter ones with a period or em-dash.
+
+3. Add HEAVY LINE BREAKS. The narration MUST visually look like a poem, not a paragraph wall.
+   - After EVERY 1 to 2 sentences, insert a blank line (\\n\\n) so paragraphs stay TINY (1-2 sentences max).
+   - Inside a long sentence, you may also add a single \\n at a natural pause to force a soft break.
+   - NEVER output a paragraph longer than 3 lines. If it's longer, split it.
+
 4. Add INLINE EMOTION TAGS in the EXACT Cartesia format: <emotion value="excited"/>
-   - Place a tag at the START of a sentence or clause where the emotional tone shifts.
-   - Use them liberally enough to make the narration feel alive, but NOT on every sentence —
-     a new tag is only needed when the emotion actually changes.
+   - Use them LIBERALLY — at least once every 2-3 sentences, ideally at the start of each new paragraph.
+   - Insert a new tag the moment the emotional tone shifts (curiosity -> excitement -> seriousness -> motivation, etc.). Narration must feel ALIVE, never flat.
    - You MUST pick emotion_name from this exact list (no synonyms, no new emotions, lowercase only):
      happy, excited, enthusiastic, elated, euphoric, triumphant, amazed, surprised, flirtatious,
      joking, comedic, curious, content, peaceful, serene, calm, grateful, affectionate, trust,
@@ -51,10 +57,15 @@ Your job is to enhance the provided script by doing FOUR things, and ONLY these 
      hurt, guilty, bored, tired, rejected, nostalgic, wistful, apologetic, hesitant, insecure,
      confused, resigned, anxious, panicked, alarmed, scared, neutral, proud, confident, distant,
      skeptical, contemplative, determined.
-   - Match the emotion to the actual content: facts → confident / neutral, surprising stats →
-     amazed / surprised, sad history → melancholic / sympathetic, motivation → enthusiastic /
-     determined, mystery / suspense → mysterious / curious, warnings → alarmed / serious-leaning
-     tags like determined or anxious, jokes → joking or comedic, etc.
+   - Match emotion to content: facts -> confident/neutral, stats -> amazed/surprised, sad history -> melancholic/sympathetic, motivation -> enthusiastic/determined, mystery -> mysterious/curious, warnings -> alarmed/determined, jokes -> joking/comedic.
+
+DENSITY EXAMPLE (this is the level of punctuation, breaks, and emotion you MUST produce):
+
+<emotion value="curious"/> మిత్రులారా -- ఇది ఒక చిన్న విషయం కాదు. చాలా పెద్ద విషయం!
+
+<emotion value="amazed"/> ఆలోచించండి... కేవలం రెండు సంవత్సరాల్లో, ఈ కంపెనీ -- ఏకంగా ఇరవై వేల కోట్ల రూపాయలు సంపాదించింది.
+
+<emotion value="determined"/> మరి మీరు? మీరు కూడా ఇలాంటి స్థాయికి చేరుకోవాలంటే -- ఒక్క విషయం గుర్తుపెట్టుకోండి.
 
 NUMBER-TO-WORDS RULES (HARDEST RULE — apply to every digit, no exceptions):
 
@@ -105,9 +116,7 @@ D) FRACTIONS:
    "1/2" -> "one by two",  "3/4" -> "three by four".
 
 E) Telugu-script numerals (౦-౯) and Telugu number words inside Telugu sentences
-   must ALSO be rewritten as English words using the same rules above
-   (because the output feeds a TTS engine that pronounces English-word numbers
-   cleanly).
+   must ALSO be rewritten as English words using the same rules above.
 
 F) Self-check before returning: scan the enhanced script. If you find ANY
    digit 0-9, any Telugu numeral ౦-౯, or any "1st/2nd/3rd" form left,
@@ -116,9 +125,9 @@ F) Self-check before returning: scan the enhanced script. If you find ANY
 OTHER STRICT RULES:
 - DO NOT CHANGE, ADD, OR REMOVE ANY WORDS OR LETTERS apart from (a) the number-to-words rewrites,
   (b) added punctuation, (c) added line breaks, and (d) added <emotion value="..."/> tags.
-- Emotion tag format is EXACTLY <emotion value="name"/> — lowercase name, self-closing slash,
-  double quotes. Never use <emotion>name</emotion> or any other variant.
-- Use ONLY the 60 emotions in the list above. Never invent new ones.
+- ABSOLUTELY NO MARKDOWN. Never output asterisks (* or **), underscores (_), tildes (~), backticks (\`), or hash signs (#). These break TTS pronunciation (TTS reads "*" as the letter "asterisk").
+- Emotion tag format is EXACTLY <emotion value="name"/> — lowercase name, self-closing slash, double quotes. Never use <emotion>name</emotion> or any other variant.
+- Use ONLY the 60 emotions in the list above.
 - Return ONLY the enhanced script as plain text. No markdown fences, no preamble, no JSON, no explanations.
 
 ORIGINAL SCRIPT:
@@ -126,7 +135,7 @@ ORIGINAL SCRIPT:
 ${script}
 """
 
-ENHANCED SCRIPT (numbers as words + rich punctuation + paragraph breaks + Cartesia emotion tags):
+ENHANCED SCRIPT (numbers as words + RICH punctuation + HEAVY paragraph breaks + frequent Cartesia emotion tags):
 `;
 
 
@@ -142,7 +151,7 @@ ENHANCED SCRIPT (numbers as words + rich punctuation + paragraph breaks + Cartes
           { role: "system", content: "You are a specialized tool that (a) rewrites EVERY number into context-aware spoken English words (years vs cardinals vs model/article numbers), and (b) adds rich punctuation, paragraph line breaks, and inline Cartesia emotion tags in the EXACT format <emotion value=\"name\"/> using ONLY the 60 allowed emotions. You never add or remove any other words." },
           { role: "user", content: prompt }
         ],
-        temperature: 0.3,
+        temperature: 0.6,
       }),
     });
 
@@ -164,13 +173,22 @@ ENHANCED SCRIPT (numbers as words + rich punctuation + paragraph breaks + Cartes
       });
     }
 
-    const enhancedScript = (data?.choices?.[0]?.message?.content ?? "").trim();
+    let enhancedScript = (data?.choices?.[0]?.message?.content ?? "").trim();
     if (!enhancedScript) {
       return new Response(JSON.stringify({ error: "Empty response from OpenAI" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Strip markdown chars that break TTS pronunciation (asterisks read as "asterisk", etc.)
+    enhancedScript = enhancedScript
+      .replace(/\*+/g, "")      // remove all asterisks
+      .replace(/`+/g, "")       // remove backticks
+      .replace(/_{2,}/g, "")    // remove double-underscores (markdown bold/italic)
+      .replace(/~+/g, "")       // remove tildes
+      .replace(/^#+\s*/gm, "")  // remove leading markdown hashes on any line
+      .replace(/\n{4,}/g, "\n\n\n"); // cap excessive blank lines
 
     return new Response(JSON.stringify({ enhancedScript }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
