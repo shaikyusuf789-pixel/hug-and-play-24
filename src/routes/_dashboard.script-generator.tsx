@@ -411,10 +411,12 @@ function ScriptGenerator() {
         toast.success("Script updated successfully!");
         queryClient.invalidateQueries({ queryKey: ["recent-scripts"] }); queryClient.invalidateQueries({ queryKey: ["priority-ideas-recent-15"] });
       } else {
+        const pdfTitle = inputMode === "pdf" ? (chapterContext.trim() || topic.trim()) : "";
+        const saveTitle = (pdfTitle || topic.trim() || "Untitled Script");
         const saved = await saveScriptFn({ 
           data: {
             idea_id: selectedIdeaId || undefined,
-            title: topic || "Untitled Script",
+            title: saveTitle,
             content: fullScript,
             word_count: wordCount,
             video_type: videoType,
@@ -501,6 +503,10 @@ function ScriptGenerator() {
       toast.error(`Please enter the ${inputMode} content`);
       return;
     }
+    if (inputMode === "pdf" && !chapterContext.trim()) {
+      toast.error("Please enter a Topic / Chapter name — it will be used as the script title.");
+      return;
+    }
 
     setIsGenerating(true);
     setIsFromHistory(false);
@@ -535,7 +541,7 @@ function ScriptGenerator() {
             specialInstructions,
             model,
             idea_id: selectedIdeaId || null,
-            title: topic || "Untitled Script",
+            title: inputMode === "pdf" ? (chapterContext.trim() || topic.trim() || "Untitled Script") : (topic.trim() || "Untitled Script"),
           }),
         },
       );
