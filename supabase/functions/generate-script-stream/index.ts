@@ -340,14 +340,38 @@ serve(async (req) => {
     );
     const title = body.title || body.topic || "sky academy Script";
 
+    // PDF / transcript uploads without an existing idea: auto-create a
+    // raw_content row in the Priority list so the script is selectable in
+    // downstream phases (audio, chunks, annotations, etc).
+    let effectiveIdeaId: string | null = body.idea_id ?? null;
+    let createdNewIdea = false;
+    if (!effectiveIdeaId && (inputMode === "pdf" || inputMode === "transcript")) {
+      const { data: newIdea, error: ideaErr } = await supa
+        .from("raw_content")
+        .insert({
+          original_title: title,
+          status: "Priority",
+          video_url: `${inputMode}://${(title || "upload").slice(0, 80)}`,
+          processing_step: `${inputMode}_upload`,
+        })
+        .select("id")
+        .single();
+      if (ideaErr) {
+        console.error("[generate-script-stream] auto-create idea failed", ideaErr);
+      } else if (newIdea?.id) {
+        effectiveIdeaId = newIdea.id as string;
+        createdNewIdea = true;
+      }
+    }
+
     // Delete any prior scripts for this idea so regeneration truly replaces.
-    if (body.idea_id) {
-      await supa.from("scripts").delete().eq("idea_id", body.idea_id);
+    if (effectiveIdeaId) {
+      await supa.from("scripts").delete().eq("idea_id", effectiveIdeaId);
     }
 
     // Insert placeholder row up-front so the client gets a script_id early.
     const { data: row, error: insErr } = await supa.from("scripts").insert({
-      idea_id: body.idea_id ?? null,
+      idea_id: effectiveIdeaId,
       title,
       content: "",
       word_count: 0,
@@ -365,6 +389,7 @@ serve(async (req) => {
       );
     }
     const scriptId = row.id as string;
+
 
     // Open AI gateway in streaming mode (Anthropic or Gemini).
     const aiRes = useClaude
