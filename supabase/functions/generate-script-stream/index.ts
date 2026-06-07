@@ -415,6 +415,24 @@ serve(async (req) => {
 
         let full = "";
         let lastStopReason: string | null = null;
+        let lastCheckpoint = 0;
+
+        // Persist partial content to DB every ~400 chars so the script
+        // survives crashes / browser closes / network drops. Without this,
+        // an aborted stream leaves an empty STREAMING row that is invisible
+        // in chunks/audio dropdowns.
+        const checkpoint = async (force = false) => {
+          if (!force && full.length - lastCheckpoint < 400) return;
+          lastCheckpoint = full.length;
+          try {
+            await supa.from("scripts").update({
+              content: full,
+              word_count: countWords(full),
+            }).eq("id", scriptId);
+          } catch (e) {
+            console.error("[generate-script-stream] checkpoint failed", e);
+          }
+        };
 
         // Drain one SSE response into `full`, streaming tokens to client.
         // Returns the final stop_reason (Claude only) or null.
@@ -446,6 +464,7 @@ serve(async (req) => {
                         `event: token\ndata: ${JSON.stringify({ t: delta })}\n\n`,
                       ),
                     );
+                    await checkpoint();
                   }
                   if (useClaude) {
                     const sr = extractAnthropicStopReason(j);
@@ -457,6 +476,13 @@ serve(async (req) => {
               }
             }
           } catch (e) {
+            // Flush whatever we have + mark FAILED so the row is not stuck
+            // in STREAMING with empty content (invisible to chunks/audio).
+            await checkpoint(true);
+            await supa.from("scripts").update({
+              status: "FAILED",
+              script_error: `stream interrupted: ${String((e as Error)?.message ?? e).slice(0, 300)}`,
+            }).eq("id", scriptId);
             controller.enqueue(
               encoder.encode(
                 `event: error\ndata: ${JSON.stringify({ message: String((e as Error)?.message ?? e) })}\n\n`,
