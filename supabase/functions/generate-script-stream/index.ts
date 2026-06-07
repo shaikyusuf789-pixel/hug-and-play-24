@@ -10,10 +10,13 @@ import { extractGeminiText, geminiGenerateJson, geminiStreamResponse, normalizeG
 import {
   anthropicStreamResponse,
   extractAnthropicDelta,
+  extractAnthropicStopReason,
   isClaudeModel,
   normalizeClaudeModel,
   requireAnthropicApiKey,
+  type AnthropicMessage,
 } from "../_shared/anthropic.ts";
+
 import {
   DNA_GENERAL,
   DNA_SUBJECTIVE,
