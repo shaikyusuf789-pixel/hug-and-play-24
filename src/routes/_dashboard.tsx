@@ -1,4 +1,4 @@
-import { createFileRoute, useRouterState, Link, Outlet } from "@tanstack/react-router";
+import { createFileRoute, useRouterState, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { 
   LayoutDashboard, 
   Settings, 
@@ -15,7 +15,8 @@ import {
   Menu,
   Sparkles,
   Wand2,
-  Rocket
+  Rocket,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,11 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/_dashboard")({
+  beforeLoad: () => {
+    if (typeof window !== "undefined" && localStorage.getItem("sky_auth") !== "1") {
+      throw redirect({ to: "/login" });
+    }
+  },
   component: DashboardLayout,
 });
 
