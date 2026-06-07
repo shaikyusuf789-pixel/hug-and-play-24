@@ -51,7 +51,13 @@ interface NavGroup {
 
 function DashboardLayout() {
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem("sky_auth");
+    navigate({ to: "/login" });
+  };
 
   const navGroups: NavGroup[] = [
     {
