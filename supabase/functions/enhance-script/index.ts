@@ -139,10 +139,10 @@ ENHANCED SCRIPT (numbers as words + rich punctuation + paragraph breaks + Cartes
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are a specialized tool that (a) rewrites EVERY number into context-aware spoken English words (years vs cardinals vs model/article numbers), and (b) adds punctuation, line breaks, and <emotion value='...'/> tags. You never add or remove any other words." },
+          { role: "system", content: "You are a specialized tool that (a) rewrites EVERY number into context-aware spoken English words (years vs cardinals vs model/article numbers), and (b) adds rich punctuation, paragraph line breaks, and inline Cartesia emotion tags in the EXACT format <emotion value=\"name\"/> using ONLY the 60 allowed emotions. You never add or remove any other words." },
           { role: "user", content: prompt }
         ],
-        temperature: 0.1,
+        temperature: 0.3,
       }),
     });
 
