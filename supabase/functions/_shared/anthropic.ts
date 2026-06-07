@@ -16,20 +16,28 @@ export function requireAnthropicApiKey(): string {
 
 // Map friendly / shorthand model ids to current Anthropic API model ids.
 // Accepts both aliases (e.g. "claude-sonnet-4-5") and dated ids.
-export function normalizeClaudeModel(model: string | undefined, fallback = "claude-sonnet-4-5"): string {
+export function normalizeClaudeModel(model: string | undefined, fallback = "claude-sonnet-4-6"): string {
   const raw = (model || fallback).trim();
   if (!raw) return fallback;
-  // Common aliases used in our UI:
+  // Common aliases used in our UI. Anthropic's CURRENT latest (per
+  // docs.claude.com): Opus 4.8, Sonnet 4.6, Haiku 4.5.
   const map: Record<string, string> = {
-    "claude-sonnet-4-6": "claude-sonnet-4-5", // user-friendly "4.6" -> latest sonnet
-    "claude-sonnet-4.6": "claude-sonnet-4-5",
+    // Latest generation -- pass through as-is.
+    "claude-opus-4-8": "claude-opus-4-8",
+    "claude-opus-4.8": "claude-opus-4-8",
+    "claude-sonnet-4-6": "claude-sonnet-4-6",
+    "claude-sonnet-4.6": "claude-sonnet-4-6",
+    "claude-haiku-4-5": "claude-haiku-4-5",
+    "claude-haiku-4.5": "claude-haiku-4-5",
+    // Previous generation.
+    "claude-sonnet-4-5": "claude-sonnet-4-5",
     "claude-sonnet-4.5": "claude-sonnet-4-5",
-    "claude-sonnet-4": "claude-sonnet-4-20250514",
-    "claude-opus-4": "claude-opus-4-20250514",
     "claude-opus-4-1": "claude-opus-4-1-20250805",
     "claude-opus-4.1": "claude-opus-4-1-20250805",
-    "claude-3-7-sonnet": "claude-sonnet-4-5",
-    "claude-3.7-sonnet": "claude-sonnet-4-5",
+    "claude-sonnet-4": "claude-sonnet-4-20250514",
+    "claude-opus-4": "claude-opus-4-20250514",
+    "claude-3-7-sonnet": "claude-sonnet-4-6",
+    "claude-3.7-sonnet": "claude-sonnet-4-6",
     "claude-3-5-sonnet": "claude-3-5-sonnet-20241022",
     "claude-3.5-sonnet": "claude-3-5-sonnet-20241022",
     "claude-3-5-haiku": "claude-3-5-haiku-20241022",
