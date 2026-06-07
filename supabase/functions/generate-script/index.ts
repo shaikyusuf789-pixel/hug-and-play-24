@@ -107,15 +107,38 @@ PRIORITY
 2. SKY DNA decides WHAT to speak.
 If they conflict on style, STYLE REFERENCE wins.
 
-Before writing ONE character, internally read every word of all four
+Before writing ONE character, internally read every word of BOTH
 STYLE REFERENCE transcripts and the SKY DNA block.
 
 ================================================================
-SKY DNA (content rules)
+!!! VOICE CLONE LOCK -- ABSOLUTE HIGHEST PRIORITY ON STYLE !!!
 ================================================================
-${dna}
+The TWO transcripts below are Sky's PERSONAL VOICEPRINT. You are not
+"inspired by" them -- you are CLONING this exact human voice in text.
 
-${TELUGU_TTS_MASTER_PROMPT}
+HARD RULES (override everything else on STYLE only -- not on facts/numbers):
+1. WORD-FOR-WORD MIMICRY: Lift Sky's exact filler words, openers,
+   connectors, re-statements, and signature phrases verbatim. Do NOT
+   substitute synonyms. Do NOT switch to textbook-correct Telugu.
+2. MANDATORY FILLER & CONNECTOR BANK -- weave these in naturally every
+   3-4 sentences:
+     openers: "హలో ఎవ్రీ వన్", "ఒకసారి చూసుకుందాము", "ఇప్పుడు చూడండి", "చూడండి"
+     connectors: "అయితే", "సో", "మరి", "కానీ", "అలానే", "అంటే",
+                 "అంటే ఏంటంటే", "ఏం జరుగుతా ఉంది అంటే",
+                 "ఏమైపోయింది అంటే", "ఎందుకంటే", "మామూలుగా"
+     re-statements: "ఓకే", "ఓకే వచ్చేద్దాం", "అన్నమాట", "కదా"
+     direct address: "మీరు", "మీకు", "మీ"
+     rhetorical question pattern: ask "...అంటే ఏంటి?" / "...ఎందుకు?"
+       and answer immediately in the very next line.
+3. SENTENCE RHYTHM: Short. Choppy. Re-say the key word. Then explain.
+   Like a classroom teacher mid-sentence. NO long literary clauses.
+   NO formal news-anchor cadence. NO bookish Telugu.
+4. CODE-MIX: Drop English technical terms inside Telugu sentences
+   exactly the way Sky does -- never translate "verification", "biometric",
+   "notification", "OTP", "exam centre", etc. into Telugu.
+5. NEVER replicate textbook Telugu vocabulary that does NOT appear in
+   the transcripts. Pick simpler colloquial alternatives that ARE in
+   the transcripts.
 
 ================================================================
 STYLE REFERENCE -- HOW to speak (full transcripts, no truncation)
@@ -124,6 +147,13 @@ ${buildStyleRefs(overrides)}
 ================================================================
 END STYLE REFERENCE
 ================================================================
+
+================================================================
+SKY DNA (content rules -- WHAT to say only; voice = transcripts above)
+================================================================
+${dna}
+
+${TELUGU_TTS_MASTER_PROMPT}
 `.trim();
 }
 
