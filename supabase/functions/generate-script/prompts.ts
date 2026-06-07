@@ -62,6 +62,7 @@ HARD RULES (override everything else on STYLE only -- not on facts/numbers):
 
 function buildStyleReferenceInstructions(overrides?: TrainingOverrides) {
   return `
+${VOICE_CLONE_LOCK}
 ================================================================
 STYLE REFERENCE -- HIGHEST PRIORITY (HOW to speak)
 ================================================================
