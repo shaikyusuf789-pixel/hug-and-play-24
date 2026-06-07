@@ -28,10 +28,12 @@ function buildStyleReferenceInstructions(overrides?: TrainingOverrides) {
 ================================================================
 STYLE REFERENCE -- HIGHEST PRIORITY (HOW to speak)
 ================================================================
-Below are FOUR real sky academy video transcripts (full text, no truncation).
-Before writing a single line, READ EVERY ALPHABET AND EVERY WORD of all four
-transcripts. No skipping, no skimming, no exemptions. Internally study them
-and mimic EXACTLY:
+Below are TWO canonical sky academy reference transcripts (full text, Cartesia-formatted).
+These TWO transcripts are MANDATORY READING for EVERY script-generation mode --
+topic, transcript-rewrite, PDF/book, priority, and any future mode. No mode
+is exempt. Before writing a single line, READ EVERY ALPHABET AND EVERY WORD
+of both transcripts. No skipping, no skimming. Internally study them and
+mimic EXACTLY:
 
   - Telugu word choice and code-mixing (English technical terms inside
     Telugu sentences, exactly the way the SKY anchor uses them).
@@ -45,9 +47,33 @@ and mimic EXACTLY:
   - Teacher-in-classroom pacing: slow, repeat the key word, then
     explain with a small example.
 
-These 4 transcripts OVERRIDE any tonal hint that may appear elsewhere.
-For language, styling, word formation, filler words and toning -- copy
-this voice. Do NOT invent a new tone.
+These TWO transcripts OVERRIDE any tonal hint that may appear elsewhere.
+For language, styling, word formation, filler words, toning, paragraph
+shape and Cartesia emotion tagging -- copy this voice. Do NOT invent a
+new tone, and do NOT invent new emotion names.
+
+CARTESIA OUTPUT FORMAT (copy this structure exactly):
+  - Break the script into SHORT 1-3 line paragraphs separated by blank lines.
+  - Use semicolons ";" and commas to control breath/pace inside a paragraph.
+  - Use "---" on its own line as a hard section break between major beats.
+  - Open each major section with a heading line of the form:
+        # <emotion value="EMOTION_NAME"/> Short Section Title
+    where EMOTION_NAME is one of: happy, excited, enthusiastic, elated,
+    euphoric, triumphant, amazed, surprised, flirtatious, joking/comedic,
+    curious, content, peaceful, serene, calm, grateful, affectionate,
+    trust, sympathetic, anticipation, mysterious, angry, mad, outraged,
+    frustrated, agitated, threatened, disgusted, contempt, envious,
+    sarcastic, ironic, sad, dejected, melancholic, disappointed, hurt,
+    guilty, bored, tired, rejected, nostalgic, wistful, apologetic,
+    hesitant, insecure, confused, resigned, anxious, panicked, alarmed,
+    scared, neutral, proud, confident, distant, skeptical, contemplative,
+    determined.
+  - Inside a section, insert inline <emotion value="NAME"/> tags ONLY at
+    real tone shifts (never one per sentence). Use ONLY the 60 emotions
+    listed above -- never invent new names.
+  - Output must feed Cartesia TTS cleanly: no markdown bold/italic, no
+    bullet symbols, no emojis, no English transliteration of Telugu words.
+
 
 ${buildStyleReferenceBlock(overrides)}
 ================================================================
@@ -272,8 +298,9 @@ BRAND SAFETY (CRITICAL):
   This script is exclusively for the sky academy YouTube channel.
 
 MANDATORY READING ORDER before you write a single character:
-  Step 1: Read every alphabet and every word of all 4 STYLE REFERENCE
-          transcripts below. No skipping.
+  Step 1: Read every alphabet and every word of BOTH STYLE REFERENCE
+          transcripts below. No skipping. Applies to every mode
+          (topic, transcript, pdf, priority) -- no exemptions.
   Step 2: Read the SKY DNA block for content/format rules.
   Step 3: Then -- and only then -- start generating the script.
 `;

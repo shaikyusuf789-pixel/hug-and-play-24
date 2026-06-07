@@ -233,7 +233,7 @@ RESPONSE FORMAT (CRITICAL):
         return JSON.stringify({ count: data?.length || 0, refs: data || [] });
       }
       if (name === "list_training_docs") {
-        const KEYS = ["training:transcript_1", "training:transcript_2", "training:transcript_3", "training:transcript_4", "training:sky_dna_general", "training:sky_dna_subjective"];
+        const KEYS = ["training:transcript_1", "training:transcript_2", "training:sky_dna_general", "training:sky_dna_subjective"];
         const { data } = await supabase.from("app_settings").select("key, updated_at").in("key", KEYS);
         return JSON.stringify(data);
       }
