@@ -15,9 +15,35 @@ function readPngDimensions(bytes: Uint8Array) {
   return { width: view.getUint32(16), height: view.getUint32(20) }
 }
 
+let themeCache: { map: Map<string, string>; expiresAt: number } | null = null
+
+async function resolveThemeId(apiKey: string, themeName: string): Promise<string | null> {
+  const now = Date.now()
+  if (!themeCache || themeCache.expiresAt < now) {
+    const res = await fetch("https://public-api.gamma.app/v1.0/themes", {
+      headers: { "X-API-KEY": apiKey },
+    })
+    if (!res.ok) {
+      const t = await res.text()
+      throw new Error(`Gamma themes fetch failed (${res.status}): ${t}`)
+    }
+    const body = await res.json()
+    const list: Array<{ id: string; name: string }> = body.themes || body.data || (Array.isArray(body) ? body : [])
+    const map = new Map<string, string>()
+    for (const t of list) {
+      if (t?.id && t?.name) map.set(t.name.toLowerCase().trim(), t.id)
+    }
+    themeCache = { map, expiresAt: now + 10 * 60 * 1000 }
+  }
+  return themeCache.map.get(themeName.toLowerCase().trim()) ?? null
+}
+
 async function callGamma(inputText: string, themeName: string, supabase: ReturnType<typeof createClient>, scriptId: string, chunkIndex: number) {
   const apiKey = Deno.env.get("GAMMA_API_KEY")
   if (!apiKey) throw new Error("GAMMA_API_KEY is not configured")
+
+  const themeId = await resolveThemeId(apiKey, themeName)
+  if (!themeId) console.warn(`Gamma theme "${themeName}" not found; using default.`)
 
   const strictInstructions = [
     "PRESERVE MODE — the input text is FINAL COPY. Reproduce every word EXACTLY as provided. Do NOT rewrite, paraphrase, summarize, condense, expand, translate, reorder, add, or remove ANY word, bullet, punctuation, or line break.",
@@ -26,6 +52,20 @@ async function callGamma(inputText: string, themeName: string, supabase: ReturnT
     `Visual style: apply the ${themeName} theme. Include one relevant AI-generated image that fits the slide topic.`,
   ].join(" ")
 
+  const payload: Record<string, unknown> = {
+    inputText,
+    textMode: "preserve",
+    format: "presentation",
+    numCards: 1,
+    cardSplit: "inputTextBreaks",
+    exportAs: "png",
+    textOptions: { amount: "brief", language: "en" },
+    additionalInstructions: strictInstructions,
+    cardOptions: { dimensions: "16x9" },
+    imageOptions: { source: "aiGenerated", model: "imagen-3-pro", style: "photorealistic" },
+  }
+  if (themeId) payload.themeId = themeId
+
   // Kick off generation — textMode "preserve" forces Gamma to keep input text verbatim.
   const startRes = await fetch(GAMMA_API, {
     method: "POST",
@@ -33,22 +73,7 @@ async function callGamma(inputText: string, themeName: string, supabase: ReturnT
       "X-API-KEY": apiKey,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      inputText,
-      textMode: "preserve",
-      format: "presentation",
-      themeName,
-      numCards: 1,
-      cardSplit: "inputTextBreaks",
-      exportAs: "png",
-      textOptions: {
-        amount: "brief",
-        language: "en",
-      },
-      additionalInstructions: strictInstructions,
-      cardOptions: { dimensions: "16x9" },
-      imageOptions: { source: "aiGenerated", model: "imagen-3-pro", style: "photorealistic" },
-    }),
+    body: JSON.stringify(payload),
   })
 
   if (!startRes.ok) {
