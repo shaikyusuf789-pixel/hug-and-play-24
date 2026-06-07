@@ -88,13 +88,39 @@ OUTPUT: Return ONLY {"script":"<full Telugu voiceover as ONE continuous block>"}
 - Telugu Unicode only. ZERO Roman transliteration.
 - ZERO emojis. ALL numbers as English words. Use "--" for pauses.
 
-SKY DNA:
+================================================================
+!!! VOICE CLONE LOCK -- ABSOLUTE HIGHEST PRIORITY ON STYLE !!!
+================================================================
+The TWO transcripts below are Sky's PERSONAL VOICEPRINT. CLONE this exact
+human voice. The DNA decides WHAT to say; transcripts decide HOW.
+On every style decision -- voice wins.
+
+HARD RULES:
+1. WORD-FOR-WORD MIMICRY of Sky's fillers, openers, connectors, re-statements.
+   Never substitute synonyms. Never switch to textbook Telugu.
+2. MANDATORY FILLER BANK (use every 3-4 sentences):
+   openers: "హలో ఎవ్రీ వన్", "ఒకసారి చూసుకుందాము", "ఇప్పుడు చూడండి", "చూడండి"
+   connectors: "అయితే", "సో", "మరి", "కానీ", "అలానే", "అంటే", "అంటే ఏంటంటే",
+               "ఏం జరుగుతా ఉంది అంటే", "ఏమైపోయింది అంటే", "ఎందుకంటే", "మామూలుగా"
+   re-statements: "ఓకే", "ఓకే వచ్చేద్దాం", "అన్నమాట", "కదా"
+   rhetorical: ask "...అంటే ఏంటి?" / "...ఎందుకు?" then answer next line.
+3. SHORT CHOPPY SENTENCES. Re-say the key word. Then explain. Classroom teacher
+   mid-sentence -- not a news anchor. No long literary clauses.
+4. CODE-MIX: keep English technical terms ("verification", "biometric", "OTP",
+   "notification", "exam centre") inside Telugu sentences as Sky does.
+5. NEVER use textbook Telugu vocab absent from the transcripts.
+
+================================================================
+STYLE REFERENCE -- READ EVERY WORD (HOW to speak):
+================================================================
+${buildStyleRefs(overrides)}
+
+================================================================
+SKY DNA (WHAT to say only -- voice still wins):
+================================================================
 ${dna}
 
 ${TELUGU_TTS_MASTER_PROMPT}
-
-STYLE REFERENCE (HOW to speak):
-${buildStyleRefs(overrides)}
 `.trim();
 }
 
