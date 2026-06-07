@@ -781,8 +781,25 @@ function ScriptGenerator() {
                         </>
                       ) : provider === "google" ? (
                         <>
-                          <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                          <optgroup label="Gemini 3.x (Preview)">
+                            <option value="gemini-3-pro-preview">Gemini 3 Pro Preview</option>
+                            <option value="gemini-3-flash-preview">Gemini 3 Flash Preview</option>
+                            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro Preview</option>
+                            <option value="gemini-3.1-flash-lite-preview">Gemini 3.1 Flash Lite Preview</option>
+                            <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                          </optgroup>
+                          <optgroup label="Gemini 2.x">
+                            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
+                            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                          </optgroup>
+                          <optgroup label="Gemini 1.x (Legacy)">
+                            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                            <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                          </optgroup>
                         </>
+
                       ) : (
                         <>
                           <option value="gpt-4o">GPT-4o</option>
