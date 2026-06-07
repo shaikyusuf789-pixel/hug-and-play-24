@@ -39,21 +39,27 @@ export function normalizeClaudeModel(model: string | undefined, fallback = "clau
   return map[raw] ?? raw;
 }
 
+export type AnthropicMessage = { role: "user" | "assistant"; content: string };
+
 export type AnthropicTextOptions = {
   model?: string;
   system?: string;
-  user: string;
+  user?: string;
+  messages?: AnthropicMessage[]; // if provided, overrides `user`
   temperature?: number;
   maxTokens?: number;
 };
 
 function buildBody(opts: AnthropicTextOptions, stream: boolean) {
+  const messages: AnthropicMessage[] = opts.messages && opts.messages.length > 0
+    ? opts.messages
+    : [{ role: "user", content: opts.user || "" }];
   return {
     model: normalizeClaudeModel(opts.model),
     max_tokens: opts.maxTokens ?? 8192,
     temperature: opts.temperature ?? 0.2,
     ...(opts.system ? { system: opts.system } : {}),
-    messages: [{ role: "user", content: opts.user }],
+    messages,
     stream,
   };
 }
@@ -70,6 +76,7 @@ export async function anthropicStreamResponse(apiKey: string, opts: AnthropicTex
   });
 }
 
+
 // Extract text delta from a single Anthropic SSE `data:` JSON payload.
 // Returns "" for non-text events (message_start, ping, content_block_start, etc.).
 export function extractAnthropicDelta(payload: any): string {
@@ -79,3 +86,14 @@ export function extractAnthropicDelta(payload: any): string {
   }
   return "";
 }
+
+// Extract stop_reason from Anthropic's `message_delta` SSE event (sent near end of stream).
+export function extractAnthropicStopReason(payload: any): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  if (payload.type === "message_delta" && payload.delta?.stop_reason) {
+    return String(payload.delta.stop_reason);
+  }
+  if (payload.type === "message_stop" && payload["amazon-bedrock-invocationMetrics"]) return null;
+  return null;
+}
+

@@ -10,10 +10,13 @@ import { extractGeminiText, geminiGenerateJson, geminiStreamResponse, normalizeG
 import {
   anthropicStreamResponse,
   extractAnthropicDelta,
+  extractAnthropicStopReason,
   isClaudeModel,
   normalizeClaudeModel,
   requireAnthropicApiKey,
+  type AnthropicMessage,
 } from "../_shared/anthropic.ts";
+
 import {
   DNA_GENERAL,
   DNA_SUBJECTIVE,
@@ -337,14 +340,38 @@ serve(async (req) => {
     );
     const title = body.title || body.topic || "sky academy Script";
 
+    // PDF / transcript uploads without an existing idea: auto-create a
+    // raw_content row in the Priority list so the script is selectable in
+    // downstream phases (audio, chunks, annotations, etc).
+    let effectiveIdeaId: string | null = body.idea_id ?? null;
+    let createdNewIdea = false;
+    if (!effectiveIdeaId && (inputMode === "pdf" || inputMode === "transcript")) {
+      const { data: newIdea, error: ideaErr } = await supa
+        .from("raw_content")
+        .insert({
+          original_title: title,
+          status: "Priority",
+          video_url: `${inputMode}://${(title || "upload").slice(0, 80)}`,
+          processing_step: `${inputMode}_upload`,
+        })
+        .select("id")
+        .single();
+      if (ideaErr) {
+        console.error("[generate-script-stream] auto-create idea failed", ideaErr);
+      } else if (newIdea?.id) {
+        effectiveIdeaId = newIdea.id as string;
+        createdNewIdea = true;
+      }
+    }
+
     // Delete any prior scripts for this idea so regeneration truly replaces.
-    if (body.idea_id) {
-      await supa.from("scripts").delete().eq("idea_id", body.idea_id);
+    if (effectiveIdeaId) {
+      await supa.from("scripts").delete().eq("idea_id", effectiveIdeaId);
     }
 
     // Insert placeholder row up-front so the client gets a script_id early.
     const { data: row, error: insErr } = await supa.from("scripts").insert({
-      idea_id: body.idea_id ?? null,
+      idea_id: effectiveIdeaId,
       title,
       content: "",
       word_count: 0,
@@ -363,106 +390,165 @@ serve(async (req) => {
     }
     const scriptId = row.id as string;
 
-    // Open AI gateway in streaming mode (Anthropic or Gemini).
-    const aiRes = useClaude
-      ? await anthropicStreamResponse(anthropicApiKey, {
-          model,
-          system: systemPrompt,
-          user: userPrompt,
-          temperature: 0.2,
-          maxTokens: Math.min(32000, Math.max(4096, targetWords * 8)),
-        })
-      : await geminiStreamResponse(googleApiKey, {
-          model,
-          system: systemPrompt,
-          user: userPrompt,
-          temperature: 0.2,
-        });
-
-    if (!aiRes.ok || !aiRes.body) {
-      const t = await aiRes.text().catch(() => "");
-      const providerLabel = useClaude ? "Anthropic" : "Google";
-      await supa.from("scripts").update({
-        status: "FAILED",
-        script_error: `${providerLabel} ${aiRes.status}: ${t.slice(0, 500)}`,
-      }).eq("id", scriptId);
-      return new Response(
-        JSON.stringify({
-          error: `${providerLabel} AI error`,
-          status: aiRes.status,
-          detail: t.slice(0, 500),
-        }),
-        {
-          status: 502,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
+    const MIN_WORDS = Math.max(50, targetWords - 50);
+    const MAX_CONTINUATIONS = 3;
 
     const stream = new ReadableStream({
       async start(controller) {
-        // Send initial meta event so the client knows the script_id.
+        // Send initial meta event so the client knows the script_id + idea_id.
         controller.enqueue(
           encoder.encode(
-            `event: meta\ndata: ${
-              JSON.stringify({ script_id: scriptId, title })
-            }\n\n`,
+            `event: meta\ndata: ${JSON.stringify({
+              script_id: scriptId,
+              title,
+              idea_id: effectiveIdeaId,
+              created_new_idea: createdNewIdea,
+            })}\n\n`,
           ),
         );
 
         let full = "";
-        let buffer = "";
-        const reader = aiRes.body!.getReader();
-        try {
-          while (true) {
-            const { value, done } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-            // Gemini SSE: lines starting with "data: "
-            const lines = buffer.split("\n");
-            buffer = lines.pop() || "";
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (!trimmed.startsWith("data:")) continue;
-              const payload = trimmed.slice(5).trim();
-              if (!payload || payload === "[DONE]") continue;
-              try {
-                const j = JSON.parse(payload);
-                const delta: string = useClaude
-                  ? extractAnthropicDelta(j)
-                  : extractGeminiText(j);
-                if (delta) {
-                  full += delta;
-                  controller.enqueue(
-                    encoder.encode(
-                      `event: token\ndata: ${JSON.stringify({ t: delta })}\n\n`,
-                    ),
-                  );
+        let lastStopReason: string | null = null;
+
+        // Drain one SSE response into `full`, streaming tokens to client.
+        // Returns the final stop_reason (Claude only) or null.
+        const drainResponse = async (resp: Response): Promise<string | null> => {
+          let buffer = "";
+          let stopReason: string | null = null;
+          const reader = resp.body!.getReader();
+          try {
+            while (true) {
+              const { value, done } = await reader.read();
+              if (done) break;
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split("\n");
+              buffer = lines.pop() || "";
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed.startsWith("data:")) continue;
+                const payload = trimmed.slice(5).trim();
+                if (!payload || payload === "[DONE]") continue;
+                try {
+                  const j = JSON.parse(payload);
+                  const delta: string = useClaude
+                    ? extractAnthropicDelta(j)
+                    : extractGeminiText(j);
+                  if (delta) {
+                    full += delta;
+                    controller.enqueue(
+                      encoder.encode(
+                        `event: token\ndata: ${JSON.stringify({ t: delta })}\n\n`,
+                      ),
+                    );
+                  }
+                  if (useClaude) {
+                    const sr = extractAnthropicStopReason(j);
+                    if (sr) stopReason = sr;
+                  }
+                } catch (_) {
+                  // ignore malformed chunk
                 }
-              } catch (_) {
-                // ignore malformed chunk
               }
             }
+          } catch (e) {
+            controller.enqueue(
+              encoder.encode(
+                `event: error\ndata: ${JSON.stringify({ message: String((e as Error)?.message ?? e) })}\n\n`,
+              ),
+            );
           }
-        } catch (e) {
+          return stopReason;
+        };
+
+        // ----- First pass -----
+        const firstRes = useClaude
+          ? await anthropicStreamResponse(anthropicApiKey, {
+              model,
+              system: systemPrompt,
+              user: userPrompt,
+              temperature: 0.2,
+              maxTokens: Math.min(32000, Math.max(4096, targetWords * 8)),
+            })
+          : await geminiStreamResponse(googleApiKey, {
+              model,
+              system: systemPrompt,
+              user: userPrompt,
+              temperature: 0.2,
+            });
+
+        if (!firstRes.ok || !firstRes.body) {
+          const t = await firstRes.text().catch(() => "");
+          const providerLabel = useClaude ? "Anthropic" : "Google";
+          await supa.from("scripts").update({
+            status: "FAILED",
+            script_error: `${providerLabel} ${firstRes.status}: ${t.slice(0, 500)}`,
+          }).eq("id", scriptId);
           controller.enqueue(
             encoder.encode(
-              `event: error\ndata: ${
-                JSON.stringify({ message: String((e as Error)?.message ?? e) })
-              }\n\n`,
+              `event: error\ndata: ${JSON.stringify({
+                message: `${providerLabel} AI error ${firstRes.status}: ${t.slice(0, 200)}`,
+              })}\n\n`,
             ),
           );
+          controller.close();
+          return;
+        }
+
+        lastStopReason = await drainResponse(firstRes);
+        console.log(`[generate-script-stream] first pass done: ${countWords(full)} words, stop_reason=${lastStopReason}`);
+
+        // ----- Continuation loop (Claude only) -----
+        // If Claude stopped short, prefill the previous output as an assistant
+        // message and ask it to keep writing. Anthropic supports message
+        // continuation natively. Up to MAX_CONTINUATIONS attempts.
+        if (useClaude) {
+          for (let attempt = 1; attempt <= MAX_CONTINUATIONS; attempt++) {
+            const currentWords = countWords(full);
+            if (currentWords >= MIN_WORDS) break;
+            const needed = Math.max(200, targetWords - currentWords);
+            console.log(`[generate-script-stream] continuation ${attempt}: have ${currentWords}, need >= ${MIN_WORDS}, requesting +${needed}`);
+
+            const contMessages: AnthropicMessage[] = [
+              { role: "user", content: userPrompt },
+              { role: "assistant", content: full.trimEnd() },
+              {
+                role: "user",
+                content:
+                  `CONTINUE the Telugu script from EXACTLY where you stopped. ` +
+                  `Do NOT repeat any previous sentence. Do NOT summarize or close yet. ` +
+                  `Write AT LEAST ${needed} more Telugu words on the SAME topic, ` +
+                  `following the same DNA/style. Keep going until the total reaches ` +
+                  `at least ${targetWords} words. PLAIN TEXT Telugu only -- no JSON, no preamble.`,
+              },
+            ];
+
+            const contRes = await anthropicStreamResponse(anthropicApiKey, {
+              model,
+              system: systemPrompt,
+              messages: contMessages,
+              temperature: 0.2,
+              maxTokens: Math.min(32000, Math.max(4096, needed * 8)),
+            });
+            if (!contRes.ok || !contRes.body) {
+              const t = await contRes.text().catch(() => "");
+              console.error(`[generate-script-stream] continuation ${attempt} failed: ${contRes.status} ${t.slice(0, 200)}`);
+              break;
+            }
+            // Inject a soft space so words don't fuse across continuations.
+            if (full && !/\s$/.test(full)) {
+              full += " ";
+              controller.enqueue(encoder.encode(`event: token\ndata: ${JSON.stringify({ t: " " })}\n\n`));
+            }
+            lastStopReason = await drainResponse(contRes);
+            console.log(`[generate-script-stream] continuation ${attempt} done: total ${countWords(full)} words, stop_reason=${lastStopReason}`);
+          }
         }
 
         // Strip any accidental JSON envelope the model emitted.
         let finalText = full.trim();
-        finalText = finalText.replace(/^```(?:json)?\s*/i, "").replace(
-          /```\s*$/i,
-          "",
-        );
+        finalText = finalText.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "");
         try {
           const obj = JSON.parse(finalText);
           if (typeof obj?.script === "string") finalText = obj.script.trim();
@@ -471,17 +557,13 @@ serve(async (req) => {
         const wc = countWords(finalText);
 
         if (!finalText || wc === 0) {
-          // Stream produced nothing usable -- delete the placeholder row so
-          // the priority dropdown / preview don't load an empty script later.
           await supa.from("scripts").update({
             status: "FAILED",
             script_error: "Empty stream output",
           }).eq("id", scriptId);
           controller.enqueue(
             encoder.encode(
-              `event: error\ndata: ${
-                JSON.stringify({ message: "Empty script returned by model" })
-              }\n\n`,
+              `event: error\ndata: ${JSON.stringify({ message: "Empty script returned by model" })}\n\n`,
             ),
           );
           controller.close();
@@ -495,12 +577,15 @@ serve(async (req) => {
           status: "SCRIPT_DONE",
         }).eq("id", scriptId);
 
-        // Tell the client we're done streaming and kick off fact-check.
         controller.enqueue(
           encoder.encode(
-            `event: done\ndata: ${
-              JSON.stringify({ script_id: scriptId, word_count: wc })
-            }\n\n`,
+            `event: done\ndata: ${JSON.stringify({
+              script_id: scriptId,
+              word_count: wc,
+              target_words: targetWords,
+              stop_reason: lastStopReason,
+              idea_id: effectiveIdeaId,
+            })}\n\n`,
           ),
         );
         controller.close();
@@ -508,16 +593,11 @@ serve(async (req) => {
         // Fact-check in background (don't block the response).
         // @ts-ignore EdgeRuntime is provided by Supabase
         EdgeRuntime.waitUntil(
-          factCheckAndUpdate(
-            supa,
-            scriptId,
-            finalText,
-            factCheckModel,
-            googleApiKey,
-          ),
+          factCheckAndUpdate(supa, scriptId, finalText, factCheckModel, googleApiKey),
         );
       },
     });
+
 
     return new Response(stream, {
       headers: {

@@ -578,7 +578,16 @@ function ScriptGenerator() {
                 setExistingScriptId(scriptId);
                 setIsExistingScript(true);
               }
+              // If the edge function auto-created a new idea (PDF/transcript upload),
+              // link this generator's selection to it so downstream phases see it.
+              if (payload.idea_id && !selectedIdeaId) {
+                setSelectedIdeaId(payload.idea_id);
+                if (payload.created_new_idea) {
+                  toast.success("Saved as new idea in Priority list ✓");
+                }
+              }
             } else if (eventName === "token") {
+
               accumulated += payload.t || "";
               setScriptText(accumulated);
             } else if (eventName === "done") {
@@ -1084,8 +1093,9 @@ function ScriptGenerator() {
                   step={165}
                 />
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest pt-1">
-                  ~{(wordCount * 90 / 6000).toFixed(1).replace(/\.0$/, "")} minutes
+                  ~{(wordCount / 130).toFixed(1).replace(/\.0$/, "")} minutes
                 </p>
+
               </div>
 
               <div className="space-y-2">
