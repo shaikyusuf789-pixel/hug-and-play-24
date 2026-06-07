@@ -140,25 +140,24 @@ ENHANCED SCRIPT (numbers as words + RICH punctuation + HEAVY paragraph breaks + 
 `;
 
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const systemInstruction = "You are a specialized tool that (a) rewrites EVERY number into context-aware spoken English words (years vs cardinals vs model/article numbers), and (b) adds rich punctuation, paragraph line breaks, and inline Cartesia emotion tags in the EXACT format <emotion value=\"name\"/> using ONLY the 60 allowed emotions. You never add or remove any other words.";
+
+    const model = "gemini-2.5-flash";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+    const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: "You are a specialized tool that (a) rewrites EVERY number into context-aware spoken English words (years vs cardinals vs model/article numbers), and (b) adds rich punctuation, paragraph line breaks, and inline Cartesia emotion tags in the EXACT format <emotion value=\"name\"/> using ONLY the 60 allowed emotions. You never add or remove any other words." },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.6,
+        systemInstruction: { parts: [{ text: systemInstruction }] },
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.6, maxOutputTokens: 16000 },
       }),
     });
 
     const raw = await response.text();
     if (!response.ok) {
-      return new Response(JSON.stringify({ error: `OpenAI ${response.status}: ${raw.slice(0, 500)}` }), {
+      return new Response(JSON.stringify({ error: `Google Gemini ${response.status}: ${raw.slice(0, 500)}` }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -168,19 +167,22 @@ ENHANCED SCRIPT (numbers as words + RICH punctuation + HEAVY paragraph breaks + 
     try {
       data = JSON.parse(raw);
     } catch {
-      return new Response(JSON.stringify({ error: `Non-JSON response from OpenAI: ${raw.slice(0, 300)}` }), {
+      return new Response(JSON.stringify({ error: `Non-JSON response from Gemini: ${raw.slice(0, 300)}` }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    let enhancedScript = (data?.choices?.[0]?.message?.content ?? "").trim();
+    let enhancedScript = ((data?.candidates?.[0]?.content?.parts ?? [])
+      .map((p: any) => (typeof p?.text === "string" ? p.text : ""))
+      .join("") || "").trim();
     if (!enhancedScript) {
-      return new Response(JSON.stringify({ error: "Empty response from OpenAI" }), {
+      return new Response(JSON.stringify({ error: "Empty response from Gemini" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
 
     // Strip markdown chars that break TTS pronunciation (asterisks read as "asterisk", etc.)
     enhancedScript = enhancedScript
