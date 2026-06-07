@@ -15,10 +15,10 @@ export function normalizeGeminiModel(model: string | undefined, fallback = "gemi
     return "gemini-2.5-flash-lite";
   }
   if (lower.startsWith("gpt-") || lower.includes("openai")) return "gemini-2.5-pro";
-  if (lower === "gemini-3-pro-preview" || lower === "gemini-3-flash-preview") return "gemini-2.5-pro";
-  if (lower.startsWith("gemini-")) return raw;
+  if (lower.startsWith("gemini-") || lower.startsWith("google/")) return raw.replace(/^google\//, "");
 
   return fallback;
+
 }
 
 export function requireGoogleApiKey() {
