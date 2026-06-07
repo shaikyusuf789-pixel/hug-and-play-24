@@ -720,7 +720,7 @@ function ScriptGenerator() {
                         if (newProvider === "lovable-gemini") {
                           setModel("google/gemini-3.1-pro-preview");
                         } else if (newProvider === "anthropic") {
-                          setModel("claude-sonnet-4-5");
+                          setModel("claude-sonnet-4-6");
                         } else if (newProvider === "poe") {
                           setModel("claude-3-5-sonnet");
                         } else if (newProvider === "google") {
@@ -752,15 +752,17 @@ function ScriptGenerator() {
                       ) : provider === "anthropic" ? (
                         <>
                           <optgroup label="Claude 4.x (Latest)">
-                            <option value="claude-sonnet-4-5">Claude Sonnet 4.5 (Recommended)</option>
-                            <option value="claude-opus-4-1">Claude Opus 4.1 (Most Capable)</option>
-                            <option value="claude-opus-4">Claude Opus 4</option>
+                            <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (Recommended)</option>
+                            <option value="claude-opus-4-8">Claude Opus 4.8 (Most Capable)</option>
+                            <option value="claude-haiku-4-5">Claude Haiku 4.5 (Fastest)</option>
+                            <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
+                            <option value="claude-opus-4-1">Claude Opus 4.1</option>
                             <option value="claude-sonnet-4">Claude Sonnet 4</option>
+                            <option value="claude-opus-4">Claude Opus 4</option>
                           </optgroup>
                           <optgroup label="Claude 3.x">
-                            <option value="claude-3-7-sonnet">Claude 3.7 Sonnet</option>
                             <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
-                            <option value="claude-3-5-haiku">Claude 3.5 Haiku (Fastest)</option>
+                            <option value="claude-3-5-haiku">Claude 3.5 Haiku</option>
                             <option value="claude-3-opus">Claude 3 Opus</option>
                           </optgroup>
                         </>
