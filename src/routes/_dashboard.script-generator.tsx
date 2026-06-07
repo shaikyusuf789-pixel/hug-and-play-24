@@ -619,46 +619,7 @@ function ScriptGenerator() {
           .eq("id", selectedIdeaId);
       }
       queryClient.invalidateQueries({ queryKey: ["recent-scripts"] }); queryClient.invalidateQueries({ queryKey: ["priority-ideas-recent-15"] });
-      toast.success("Script generated ✓ — fact-checking in background…");
-
-      // Poll for fact-check completion (runs in background on the server).
-      if (scriptId) {
-        setIsFactChecking(true);
-        const deadline = Date.now() + 3 * 60 * 1000;
-        (async () => {
-          try {
-            while (Date.now() < deadline) {
-              await new Promise((r) => setTimeout(r, 4000));
-              const { data: row } = await supabase
-                .from("scripts")
-                .select("status, fact_check_findings")
-                .eq("id", scriptId!)
-                .single();
-              if (
-                row?.status === "FACT_CHECKED" ||
-                row?.status === "FACT_CHECK_FAILED"
-              ) {
-                const fcf: any = row.fact_check_findings;
-                const findings: FactFinding[] = Array.isArray(fcf?.findings)
-                  ? fcf.findings
-                  : Array.isArray(fcf)
-                    ? fcf
-                    : [];
-                setFactFindings(findings);
-                setFactCheckRan(true);
-                toast.info(
-                  findings.length === 0
-                    ? "Fact-check: no issues ✓"
-                    : `Fact-check: ${findings.length} issue(s) flagged`,
-                );
-                break;
-              }
-            }
-          } finally {
-            setIsFactChecking(false);
-          }
-        })();
-      }
+      toast.success("Script generated ✓ — saved to Priority list. Run Fact Check manually when ready.");
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to generate script");
