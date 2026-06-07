@@ -503,6 +503,10 @@ function ScriptGenerator() {
       toast.error(`Please enter the ${inputMode} content`);
       return;
     }
+    if (inputMode === "pdf" && !chapterContext.trim()) {
+      toast.error("Please enter a Topic / Chapter name — it will be used as the script title.");
+      return;
+    }
 
     setIsGenerating(true);
     setIsFromHistory(false);
