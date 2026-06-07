@@ -18,13 +18,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    const apiKey = Deno.env.get("OPENAI_API_KEY");
+    const apiKey = Deno.env.get("GOOGLE_API_KEY");
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: "OPENAI_API_KEY not configured" }), {
+      return new Response(JSON.stringify({ error: "GOOGLE_API_KEY not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
 
     const prompt = `
 You are a "Script Enhancer" for an educational YouTube channel called "Sky Academy".
