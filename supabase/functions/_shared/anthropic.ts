@@ -86,3 +86,14 @@ export function extractAnthropicDelta(payload: any): string {
   }
   return "";
 }
+
+// Extract stop_reason from Anthropic's `message_delta` SSE event (sent near end of stream).
+export function extractAnthropicStopReason(payload: any): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  if (payload.type === "message_delta" && payload.delta?.stop_reason) {
+    return String(payload.delta.stop_reason);
+  }
+  if (payload.type === "message_stop" && payload["amazon-bedrock-invocationMetrics"]) return null;
+  return null;
+}
+
