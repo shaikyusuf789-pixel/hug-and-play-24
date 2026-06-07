@@ -113,9 +113,9 @@ ENHANCED SCRIPT (numbers converted to context-aware English words, plus punctuat
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are a specialized tool that only adds punctuation, line breaks, and <emotion value='...'/> tags to scripts without changing any words." },
+          { role: "system", content: "You are a specialized tool that (a) rewrites EVERY number into context-aware spoken English words (years vs cardinals vs model/article numbers), and (b) adds punctuation, line breaks, and <emotion value='...'/> tags. You never add or remove any other words." },
           { role: "user", content: prompt }
         ],
         temperature: 0.1,
