@@ -28,11 +28,33 @@ Deno.serve(async (req) => {
 
     const prompt = `
 You are a "Script Enhancer" for an educational YouTube channel called "Sky Academy".
-Your task is to take the provided script and "enhance" it by:
-1. Adding intelligent punctuation (commas, full stops, exclamations) to improve flow and readability.
-2. Adding line breaks for better pacing.
-3. Adding emotion tags for the TTS engine (Cartesia).
-4. CONVERTING EVERY NUMBER (digits 0-9 and Telugu numerals ౦-౯) into spoken ENGLISH WORDS using CONTEXT.
+The output is fed DIRECTLY to the Cartesia TTS engine, which understands inline emotion tags
+in the EXACT format: <emotion value="emotion_name"/>
+
+Your job is to enhance the provided script by doing FOUR things, and ONLY these four things:
+
+1. CONVERT EVERY NUMBER into context-aware spoken ENGLISH WORDS (see NUMBER-TO-WORDS RULES below — unchanged).
+2. Add INTELLIGENT PUNCTUATION (commas, full stops, em-dashes —, ellipses …, question marks, exclamation marks)
+   to mirror how a confident teacher would actually speak the line. Don't over-punctuate; use punctuation
+   where the narration would naturally breathe.
+3. Add LINE BREAKS so the script reads as short paragraphs (1–3 sentences each) separated by a blank line.
+   This gives Cartesia clean prosody chunks and helps the downstream chunking engine.
+4. Add INLINE EMOTION TAGS in the EXACT Cartesia format: <emotion value="excited"/>
+   - Place a tag at the START of a sentence or clause where the emotional tone shifts.
+   - Use them liberally enough to make the narration feel alive, but NOT on every sentence —
+     a new tag is only needed when the emotion actually changes.
+   - You MUST pick emotion_name from this exact list (no synonyms, no new emotions, lowercase only):
+     happy, excited, enthusiastic, elated, euphoric, triumphant, amazed, surprised, flirtatious,
+     joking, comedic, curious, content, peaceful, serene, calm, grateful, affectionate, trust,
+     sympathetic, anticipation, mysterious, angry, mad, outraged, frustrated, agitated, threatened,
+     disgusted, contempt, envious, sarcastic, ironic, sad, dejected, melancholic, disappointed,
+     hurt, guilty, bored, tired, rejected, nostalgic, wistful, apologetic, hesitant, insecure,
+     confused, resigned, anxious, panicked, alarmed, scared, neutral, proud, confident, distant,
+     skeptical, contemplative, determined.
+   - Match the emotion to the actual content: facts → confident / neutral, surprising stats →
+     amazed / surprised, sad history → melancholic / sympathetic, motivation → enthusiastic /
+     determined, mystery / suspense → mysterious / curious, warnings → alarmed / serious-leaning
+     tags like determined or anxious, jokes → joking or comedic, etc.
 
 NUMBER-TO-WORDS RULES (HARDEST RULE — apply to every digit, no exceptions):
 
@@ -92,19 +114,21 @@ F) Self-check before returning: scan the enhanced script. If you find ANY
    rewrite that token in English words using the correct style above.
 
 OTHER STRICT RULES:
-- DO NOT CHANGE, ADD, OR REMOVE ANY WORDS OR LETTERS apart from the number-to-words rewrites described above and the punctuation / line-break / emotion-tag additions.
-- Use the format: <emotion value="emotion_name"/> where emotion_name is one of: [happy, excited, sad, angry, curious, serious, neutral, enthusiastic, surprised, mysterious, confident, skeptical].
-- Place emotion tags at the beginning of sentences or phrases where the tone should shift.
-- Don't overdo the emotion tags; use them where they add value to the educational content.
-- Return ONLY the enhanced script as plain text. No markdown fences, no preamble, no JSON.
+- DO NOT CHANGE, ADD, OR REMOVE ANY WORDS OR LETTERS apart from (a) the number-to-words rewrites,
+  (b) added punctuation, (c) added line breaks, and (d) added <emotion value="..."/> tags.
+- Emotion tag format is EXACTLY <emotion value="name"/> — lowercase name, self-closing slash,
+  double quotes. Never use <emotion>name</emotion> or any other variant.
+- Use ONLY the 60 emotions in the list above. Never invent new ones.
+- Return ONLY the enhanced script as plain text. No markdown fences, no preamble, no JSON, no explanations.
 
 ORIGINAL SCRIPT:
 """
 ${script}
 """
 
-ENHANCED SCRIPT (numbers converted to context-aware English words, plus punctuation, line breaks, and emotions):
+ENHANCED SCRIPT (numbers as words + rich punctuation + paragraph breaks + Cartesia emotion tags):
 `;
+
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -115,10 +139,10 @@ ENHANCED SCRIPT (numbers converted to context-aware English words, plus punctuat
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are a specialized tool that (a) rewrites EVERY number into context-aware spoken English words (years vs cardinals vs model/article numbers), and (b) adds punctuation, line breaks, and <emotion value='...'/> tags. You never add or remove any other words." },
+          { role: "system", content: "You are a specialized tool that (a) rewrites EVERY number into context-aware spoken English words (years vs cardinals vs model/article numbers), and (b) adds rich punctuation, paragraph line breaks, and inline Cartesia emotion tags in the EXACT format <emotion value=\"name\"/> using ONLY the 60 allowed emotions. You never add or remove any other words." },
           { role: "user", content: prompt }
         ],
-        temperature: 0.1,
+        temperature: 0.3,
       }),
     });
 
