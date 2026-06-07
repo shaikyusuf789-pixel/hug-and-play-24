@@ -534,11 +534,50 @@ serve(async (req) => {
         // message and ask it to keep writing. Anthropic supports message
         // continuation natively. Up to MAX_CONTINUATIONS attempts.
         if (useClaude) {
+          // Drift detector: ratio of ASCII letters in the tail of the script.
+          // Telugu Unicode is U+0C00-U+0C7F; legitimate English tokens are rare.
+          const romanDriftRatio = (s: string): number => {
+            const tail = s.slice(-600);
+            if (!tail) return 0;
+            const letters = tail.match(/[A-Za-z]/g)?.length ?? 0;
+            const nonSpace = tail.replace(/\s+/g, "").length || 1;
+            return letters / nonSpace;
+          };
+
+          const STYLE_LOCK = [
+            "================================================================",
+            "STYLE LOCK -- READ BEFORE WRITING THE NEXT TOKEN",
+            "================================================================",
+            "1. TELUGU UNICODE ONLY. ZERO Roman/English transliteration of Telugu words.",
+            "   FORBIDDEN: writing Telugu words in English letters (e.g. 'missile launched by personnel').",
+            "   FORBIDDEN: copying English sentences from the SOURCE MATERIAL verbatim.",
+            "2. REWRITE every source fact in sky academy Telugu teaching voice -- never paste source text.",
+            "3. Every 2-3 sentences MUST include an <emotion value=\"...\"/> tag.",
+            "4. Use \\n\\n paragraph breaks every 1-2 sentences. NO bulk dumps.",
+            "5. All numbers as English words (Telugu speaker pronouncing English number words is OK).",
+            "6. Use '--' for natural pauses. NO markdown, NO asterisks, NO bullets, NO headings.",
+            "7. Follow the SKY DNA + STYLE REFERENCE transcripts from the system prompt -- they decide HOW you speak.",
+            "================================================================",
+          ].join("\n");
+
+          let driftWarning = "";
+
           for (let attempt = 1; attempt <= MAX_CONTINUATIONS; attempt++) {
             const currentWords = countWords(full);
             if (currentWords >= MIN_WORDS) break;
             const needed = Math.max(200, targetWords - currentWords);
-            console.log(`[generate-script-stream] continuation ${attempt}: have ${currentWords}, need >= ${MIN_WORDS}, requesting +${needed}`);
+            const drift = romanDriftRatio(full);
+            console.log(`[generate-script-stream] continuation ${attempt}: have ${currentWords}, need >= ${MIN_WORDS}, requesting +${needed}, drift=${drift.toFixed(2)}`);
+
+            if (drift > 0.3) {
+              driftWarning =
+                `\n\nDRIFT DETECTED: the last paragraph contains too many English/Roman letters ` +
+                `(${Math.round(drift * 100)}% Roman). You have drifted away from Telugu. ` +
+                `BEFORE continuing, internally REWRITE the last paragraph in pure Telugu Unicode in your head, ` +
+                `then continue ONLY in Telugu Unicode. Do NOT output any more English sentences.`;
+            } else {
+              driftWarning = "";
+            }
 
             const contMessages: AnthropicMessage[] = [
               { role: "user", content: userPrompt },
@@ -546,20 +585,24 @@ serve(async (req) => {
               {
                 role: "user",
                 content:
-                  `CONTINUE the Telugu script from EXACTLY where you stopped. ` +
+                  STYLE_LOCK +
+                  `\n\nCONTINUE the Telugu script from EXACTLY where you stopped. ` +
                   `Do NOT repeat any previous sentence. Do NOT summarize or close yet. ` +
                   `Write AT LEAST ${needed} more Telugu words on the SAME topic, ` +
-                  `following the same DNA/style. Keep going until the total reaches ` +
-                  `at least ${targetWords} words. PLAIN TEXT Telugu only -- no JSON, no preamble.`,
+                  `following the SKY DNA + STYLE REFERENCE transcripts (re-read them from the system prompt). ` +
+                  `Keep going until the total reaches at least ${targetWords} words. ` +
+                  `PLAIN TEXT Telugu Unicode only -- no JSON, no preamble, no English sentences.` +
+                  driftWarning,
               },
             ];
 
+            // Shorter continuations re-anchor the style more often.
             const contRes = await anthropicStreamResponse(anthropicApiKey, {
               model,
               system: systemPrompt,
               messages: contMessages,
               temperature: 0.2,
-              maxTokens: Math.min(32000, Math.max(4096, needed * 8)),
+              maxTokens: Math.min(16000, Math.max(2048, needed * 4)),
             });
             if (!contRes.ok || !contRes.body) {
               const t = await contRes.text().catch(() => "");
@@ -572,7 +615,7 @@ serve(async (req) => {
               controller.enqueue(encoder.encode(`event: token\ndata: ${JSON.stringify({ t: " " })}\n\n`));
             }
             lastStopReason = await drainResponse(contRes);
-            console.log(`[generate-script-stream] continuation ${attempt} done: total ${countWords(full)} words, stop_reason=${lastStopReason}`);
+            console.log(`[generate-script-stream] continuation ${attempt} done: total ${countWords(full)} words, stop_reason=${lastStopReason}, drift=${romanDriftRatio(full).toFixed(2)}`);
           }
         }
 
