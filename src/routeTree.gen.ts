@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiWorkerProxyRouteImport } from './routes/api/worker-proxy'
@@ -33,6 +34,11 @@ import { Route as DashboardAudioRouteImport } from './routes/_dashboard.audio'
 import { Route as DashboardAnnotationsRouteImport } from './routes/_dashboard.annotations'
 import { Route as ApiPublicHooksAutoRunEngineRouteImport } from './routes/api/public/hooks/auto-run-engine'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/_dashboard',
   getParentRoute: () => rootRouteImport,
@@ -152,6 +158,7 @@ const ApiPublicHooksAutoRunEngineRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/annotations': typeof DashboardAnnotationsRoute
   '/audio': typeof DashboardAudioRoute
   '/chunks': typeof DashboardChunksRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/annotations': typeof DashboardAnnotationsRoute
   '/audio': typeof DashboardAudioRoute
   '/chunks': typeof DashboardChunksRoute
@@ -202,6 +210,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_dashboard': typeof DashboardRouteWithChildren
+  '/login': typeof LoginRoute
   '/_dashboard/annotations': typeof DashboardAnnotationsRoute
   '/_dashboard/audio': typeof DashboardAudioRoute
   '/_dashboard/chunks': typeof DashboardChunksRoute
@@ -228,6 +237,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
     | '/annotations'
     | '/audio'
     | '/chunks'
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
     | '/annotations'
     | '/audio'
     | '/chunks'
@@ -277,6 +288,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_dashboard'
+    | '/login'
     | '/_dashboard/annotations'
     | '/_dashboard/audio'
     | '/_dashboard/chunks'
@@ -303,12 +315,20 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  LoginRoute: typeof LoginRoute
   ApiWorkerProxyRoute: typeof ApiWorkerProxyRoute
   ApiPublicHooksAutoRunEngineRoute: typeof ApiPublicHooksAutoRunEngineRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_dashboard': {
       id: '/_dashboard'
       path: ''
@@ -524,6 +544,7 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  LoginRoute: LoginRoute,
   ApiWorkerProxyRoute: ApiWorkerProxyRoute,
   ApiPublicHooksAutoRunEngineRoute: ApiPublicHooksAutoRunEngineRoute,
 }
