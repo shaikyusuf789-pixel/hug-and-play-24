@@ -353,25 +353,40 @@ Script text, chunk text, ideas, uploads, and the `user-uploads` bucket are **kep
 ## 10. Recent Changes (Jerry update log)
 
 ### 10.1 Script Generator — Claude models + PDF/Book parity
-- **Claude models refreshed** (`supabase/functions/_shared/anthropic.ts`, `generate-script-stream/index.ts`): selectable list now includes **Claude Sonnet 4.6** and **Claude Opus 4.8** alongside Sonnet 4.5. Streaming + non-streaming paths both honour the selected model id.
-- **PDF/Book mode = Idea-card parity**: a script generated from a PDF/Book upload now behaves exactly like a script generated from a priority Idea card.
-  - The **"Topic / Chapter Context"** input is now used as the script **title**. It is stored on `scripts.title` and shown in every dropdown that lists scripts (Chunks, Audio, Slides, Annotations, Mega, Video Editor).
-  - The **Edit** action is available on PDF/Book scripts (`src/routes/_dashboard.script-generator.tsx`) — previously only ideas-engine scripts had it.
+- **Claude models refreshed** (`supabase/functions/_shared/anthropic.ts`, `generate-script-stream/index.ts`): selectable list includes **Claude Sonnet 4.6** and **Claude Opus 4.8** alongside Sonnet 4.5. Streaming + non-streaming paths both honour the selected model id.
+- **PDF/Book mode = Idea-card parity**: a script generated from a PDF/Book upload behaves exactly like a script generated from a priority Idea card. The **"Topic / Chapter Context"** input is used as the script **title** (`scripts.title`) and shown in every downstream dropdown. The **Edit** action is available on PDF/Book scripts (`src/routes/_dashboard.script-generator.tsx`).
 
-### 10.2 Enhance Engine — context-aware number → words
-`supabase/functions/enhance-script/index.ts` now rewrites every number in the script based on **context**, not a single rule:
-- **Model / serial numbers** (aircraft, exam codes, product SKUs): digit-group reading — e.g. `H125` → "H one twenty five" (no "hundred"), `Airbus A320` → "Airbus A three twenty".
-- **Years**: `2026` → "two thousand twenty six", `1999` → "nineteen ninety nine".
-- **Plain cardinals / quantities**: standard wording — e.g. `250 km` → "two hundred fifty kilometres".
-- **Exam strings** like `SSC CGL 2026` → "SSC CGL two thousand twenty six".
-The prompt instructs the LLM to detect the surrounding context (aircraft, year, exam, money, distance, count) before choosing the reading style.
+### 10.2 Enhance Engine — context-aware number → words + asterisk strip + GPT-4o punctuation
+`supabase/functions/enhance-script/index.ts`:
+- **Numbers → words by context**: model/serial numbers (`H125` → "H one twenty five"), years (`2026` → "two thousand twenty six"), plain cardinals (`250 km` → "two hundred fifty kilometres"), exam strings (`SSC CGL 2026` → "SSC CGL two thousand twenty six"). LLM detects surrounding context (aircraft, year, exam, money, distance, count) before choosing the reading style.
+- **Asterisk strip**: the punctuation enhancer now removes all `*` characters from the output. Asterisks were making TTS spell words letter-by-letter instead of reading them as words.
+- **Punctuation marker upgraded to GPT-4o** (was a weaker default). Mandate: heavy punctuation, frequent commas/periods/em-dashes, and **explicit `\n\n` paragraph breaks every 1–2 sentences**, plus `\n` line breaks for emotional beats so the TTS engine doesn't read paragraphs as a single fast bot dump. Line breaks now visible in `/chunks` and the enhancer preview.
 
 ### 10.3 Intelligent Chunking Engine
-`src/lib/api/process-chunks.functions.ts` no longer mechanically slices by word count. New behaviour:
+`src/lib/api/process-chunks.functions.ts` no longer mechanically slices by word count:
 - Calls **Google Gemini `gemini-2.0-flash` directly** (env `GOOGLE_API_KEY`, not Lovable AI Gateway) with `responseMimeType: "application/json"`.
-- Prompt prioritises **idea boundaries** (topic shifts, scene changes, natural Telugu pauses like "ఇప్పుడు / ఇక / కానీ / అయితే / మరో విషయం") over hitting the exact target. The slider value (e.g. 120 / 180) is a **hint**, with ±30–50 word tolerance.
+- Prompt prioritises **idea boundaries** (topic shifts, scene changes, natural Telugu pauses like "ఇప్పుడు / ఇక / కానీ / అయితే / మరో విషయం") over hitting the exact target. The slider (e.g. 120 / 180) is a **hint** with ±30–50 word tolerance.
 - **Round-trip integrity check**: re-joined chunks are compared against the original (whitespace/punctuation-stripped). If character delta > 2 %, the engine falls back to the deterministic splitter so no text is ever lost.
-- Returns `{ chunks, stats }` for UI display. `normalizeSkyAcademy` pre-processing is preserved.
+- Returns `{ chunks, stats }`. `normalizeSkyAcademy` pre-processing is preserved.
+
+### 10.4 Script Generator — neat formatting (no bulk paragraphs)
+All three script paths (`generate-script`, `generate-script-async`, `generate-script-stream` + their `prompts.ts`) now instruct the model to output scripts in **neat lines and short semi-paragraphs**, with `\n\n` breaks every 1–2 sentences and `\n` line breaks for emotional beats. No single-paragraph bulk dumps. Narration style stays anchored to the user's transcripts.
+
+### 10.5 Stream drift guard (Claude continuations)
+`supabase/functions/generate-script-stream/index.ts` adds a **drift detector** for long Claude streams:
+- `romanDriftRatio()` measures ASCII-letter ratio in the last 600 chars. If > 30 %, the next continuation message gets a **"DRIFT DETECTED"** warning forcing the model to internally rewrite the last paragraph in pure Telugu Unicode before continuing.
+- A **`STYLE_LOCK`** block (14 rules) is prepended to every continuation: no Roman/English transliteration, no verbatim source copy, mandatory `<emotion value="..."/>` every 2–3 sentences, `\n\n` paragraph breaks every 1–2 sentences, no markdown/asterisks/bullets.
+- Continuation `maxTokens` lowered (`16000 / max(2048, needed*4)`) so style re-anchors more frequently.
+
+### 10.6 Voice Clone Lock — transcripts win over DNA
+All script paths (`generate-script`, `generate-script-async`, `generate-script-stream` + `prompts.ts`) reordered so the **2 style transcripts** are placed at the **top** of the system prompt, above SKY DNA and the TELUGU TTS master prompt. Priority: **TRANSCRIPTS → DNA → TTS**.
+- New **`VOICE_CLONE_LOCK`** block mandates word-for-word mimicry of the user's fillers/connectors and forbids substituting colloquialisms with formal synonyms. DNA = WHAT to say; TRANSCRIPTS = HOW to say.
+- **Filler & connector bank** injected as mandatory vocabulary every 3–4 sentences: `హలో ఎవ్రీ వన్`, `అయితే`, `సో`, `మరి`, `అంటే ఏంటంటే`, `ఓకే వచ్చేద్దాం`, `అన్నమాట`, `కదా`, `చూడండి`, `ఇప్పుడు`.
+- English technical terms (e.g. "OTP", "verification", "biometric") stay in Roman script inside the Telugu flow.
+- `temperature` raised `0.2 → 0.5` for more natural stylistic variation.
+- The transcript loader uses dynamic mapping and correctly reads **exactly 2 transcripts** (`TRANSCRIPT1`, `TRANSCRIPT2`). Stale comments referencing 4 transcripts are ignored.
+
+
 
 ---
 
