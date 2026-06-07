@@ -37,13 +37,38 @@ function chooseBoundary(words: string[], start: number, idealEnd: number, minEnd
   return best;
 }
 
+// Tokenize while preserving original whitespace (including newlines).
+// Each token = { word, sep } where sep is the whitespace that FOLLOWED the word
+// in the original text (empty string for the final token).
+function tokenizeWithSeparators(text: string): { word: string; sep: string }[] {
+  const tokens: { word: string; sep: string }[] = [];
+  const re = /(\S+)(\s*)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    tokens.push({ word: m[1], sep: m[2] });
+  }
+  return tokens;
+}
+
+function joinTokens(tokens: { word: string; sep: string }[], start: number, end: number): string {
+  let out = "";
+  for (let i = start; i < end; i += 1) {
+    out += tokens[i].word;
+    // Use original separator, except trim trailing whitespace at chunk boundary.
+    if (i < end - 1) out += tokens[i].sep;
+  }
+  return out;
+}
+
 // Deterministic fallback (used if AI fails or round-trip check fails).
+// Preserves original line breaks/whitespace within each chunk.
 function chunkDeterministically(scriptContent: string, target: number, min: number, max: number): string[] {
-  const normalized = scriptContent.replace(/\s+/g, " ").trim();
-  if (!normalized) return [];
-  const words = normalized.split(/\s+/).filter(Boolean);
+  const trimmed = scriptContent.trim();
+  if (!trimmed) return [];
+  const tokens = tokenizeWithSeparators(trimmed);
+  const words = tokens.map((t) => t.word);
   const chunkCount = chooseChunkCount(words.length, target, min, max);
-  if (chunkCount <= 1) return [normalized];
+  if (chunkCount <= 1) return [joinTokens(tokens, 0, tokens.length)];
 
   const chunks: string[] = [];
   let start = 0;
@@ -58,11 +83,11 @@ function chunkDeterministically(scriptContent: string, target: number, min: numb
     const boundedMinEnd = Math.max(minEnd, start + Math.min(min, idealSize));
     const boundedMaxEnd = Math.max(boundedMinEnd, Math.min(maxEnd, start + Math.max(max, idealSize)));
     const end = chooseBoundary(words, start, idealEnd, boundedMinEnd, boundedMaxEnd);
-    chunks.push(words.slice(start, end).join(" "));
+    chunks.push(joinTokens(tokens, start, end));
     start = end;
   }
-  chunks.push(words.slice(start).join(" "));
-  return chunks.filter(Boolean);
+  chunks.push(joinTokens(tokens, start, tokens.length));
+  return chunks.filter((c) => c.trim().length > 0);
 }
 
 // Normalize text for round-trip comparison: strip all whitespace + punctuation noise.
@@ -83,9 +108,9 @@ RULES (priority order):
 1. Each chunk must be ONE complete idea / topic beat / mini-scene. Never cut mid-thought, mid-sentence, mid-example, mid-quote, or mid-list.
 2. Target ~${target} words per chunk. Going ${target - 50}–${target + 50} words is perfectly fine if the idea needs it. Intelligent boundary > exact word count.
 3. Prefer breaks at: topic shifts, paragraph breaks, transition words (ఇప్పుడు, ఇక, కానీ, అయితే, మరో విషయం, so, now, but, however, next), or natural narrative pauses.
-4. PRESERVE THE SCRIPT VERBATIM. Do not add, remove, paraphrase, translate, or reorder a single word. Concatenating all chunks (with single spaces) must equal the input.
+4. PRESERVE THE SCRIPT VERBATIM, including ALL line breaks and paragraph spacing inside each chunk. Do not add, remove, paraphrase, translate, or reorder a single word. Keep newlines (\\n) exactly where they appear in the original. Concatenating all chunks must reproduce the input word-for-word (whitespace may differ only at chunk boundaries).
 
-Return ONLY a JSON object: {"chunks": ["chunk 1 text...", "chunk 2 text...", ...]}. No prose, no markdown fences.
+Return ONLY a JSON object: {"chunks": ["chunk 1 text...", "chunk 2 text...", ...]}. Use \\n inside strings to encode newlines. No prose, no markdown fences.
 
 SCRIPT:
 """
