@@ -131,31 +131,23 @@ function SlideMaker() {
   const generateGammaSlide = async (chunkId: string) => {
     setProcessingId(`${chunkId}-slide`);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-slides", {
-        body: { chunkId, action: "generate-slide", themeName: gammaTheme },
-      });
+      const { error: queueError } = await supabase
+        .from("script_chunks")
+        .update({ slide_job_status: "queued", slide_job_theme: gammaTheme, slide_job_error: null })
+        .eq("id", chunkId);
+      if (queueError) throw queueError;
 
-      if (error) throw error;
-      if (data?.slide_url) {
-        setChunks(prev => prev.map(c => c.id === chunkId ? {
-          ...c,
-          slide_url: data.slide_url,
-          status: "slide_generated",
-          annotations: {
-            ...(c.annotations || {}),
-            gamma: {
-              ...((c.annotations as any)?.gamma || {}),
-              preview_url: data.preview_url,
-              dimensions: data.dimensions,
-              requested_dimensions: "16x9",
-              verified_16x9: Boolean(data.dimensions),
-            },
-          },
-        } : c));
-      }
-      toast.success(data?.dimensions ? `Gamma slide generated in ${data.dimensions.width}×${data.dimensions.height}` : "Gamma slide generated!");
+      setChunks(prev => prev.map(c => c.id === chunkId ? {
+        ...c,
+        slide_job_status: "queued",
+        slide_job_theme: gammaTheme,
+        slide_job_error: null,
+      } : c));
+
+      supabase.functions.invoke("process-queue", { body: { scriptId: selectedScriptId } }).catch(() => {});
+      toast.success("Slide queued — it will appear automatically when Gamma finishes.");
     } catch (error: any) {
-      toast.error("Gamma generation failed: " + error.message);
+      toast.error("Slide queue failed: " + error.message);
     } finally {
       setProcessingId(null);
     }
