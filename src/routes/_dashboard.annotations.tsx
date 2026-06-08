@@ -462,6 +462,8 @@ function AnnotationsPage() {
         if (kind === "ts")   return !tsMap[c.id];
         if (kind === "ai")   return !aiMap[c.id];
         if (kind === "clip") {
+          // Must have annotations before we can render — skip silently otherwise.
+          if (!aiMap[c.id]) return false;
           const v = clipMap[c.id];
           return !v || !v.file_url || (v.status && v.status !== "done");
         }
@@ -471,7 +473,11 @@ function AnnotationsPage() {
         toast.info(`${label}: nothing to do — all chunks already have output`);
         return;
       }
-      toast.info(`${label}: processing ${pending.length} missing chunk(s)…`);
+      const skipped = kind === "clip"
+        ? chunks.filter((c) => !aiMap[c.id] && (!clipMap[c.id]?.file_url || clipMap[c.id]?.status !== "done")).length
+        : 0;
+      const skipNote = skipped ? ` (skipped ${skipped} without annotations)` : "";
+      toast.info(`${label}: processing ${pending.length} chunk(s) one at a time${skipNote}…`);
       let ok = 0, fail = 0;
       for (const c of pending) {
         try {
