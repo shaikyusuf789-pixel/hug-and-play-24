@@ -1,4 +1,4 @@
-import { TRANSCRIPT1, TRANSCRIPT2 } from "./transcripts.ts";
+import { TRANSCRIPT1, TRANSCRIPT2, TRANSCRIPT3 } from "./transcripts.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,6 +43,9 @@ ${TRANSCRIPT1}
 
 --- TRANSCRIPT 2 ---
 ${TRANSCRIPT2}
+
+--- TRANSCRIPT 3 ---
+${TRANSCRIPT3}
 
 ================================================================
 

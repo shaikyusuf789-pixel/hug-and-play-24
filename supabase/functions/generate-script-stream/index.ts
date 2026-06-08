@@ -97,15 +97,15 @@ THREE-LAYER RULE (DO NOT VIOLATE -- READ TWICE)
 1. WHAT to speak  -> comes ONLY from the USER INPUT below
      (TOPIC / TITLE, CHAPTER / IDEA CONTEXT, SOURCE MATERIAL,
       SPECIAL INSTRUCTIONS). This is the idea-engine output.
-2. HOW to speak   -> comes ONLY from the 4 STYLE REFERENCE
-     transcripts (tone, Telugu+English code-mix, fillers,
-     pauses, rhythm, teacher voice).
+2. HOW to speak   -> comes ONLY from the 3 STYLE REFERENCE
+     transcripts (tone, Telugu+English code-mix, pauses,
+     rhythm, teacher voice).
 3. WHERE to place which point -> comes ONLY from the SKY DNA
      block (structure, ordering, promo placement, CTAs,
-     PYQ/MCQ slots, motivation %).
+     PYQ/MCQ slots).
 
 HARD CONTENT BOUNDARY (most common failure -- avoid):
-- The 4 reference transcripts are NOT a source of facts, topics,
+- The 3 reference transcripts are NOT a source of facts, topics,
   examples, names, dates, exams, departments or domain words.
   They are voice samples only.
 - NEVER lift content from the transcripts. Do NOT mention
