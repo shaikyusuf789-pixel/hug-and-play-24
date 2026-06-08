@@ -164,11 +164,25 @@ serve(async (req) => {
   }
 
   try {
-    const { chunkId, action, themeName } = await req.json()
+    const { chunkId, action, themeName, _diag } = await req.json()
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const supabaseKey = getSupabaseServiceKey()
     const supabase = createClient(supabaseUrl, supabaseKey)
+
+    if (_diag) {
+      const keyPrefix = supabaseKey.slice(0, 14)
+      const keyLen = supabaseKey.length
+      const { data: probe, error: probeErr } = await supabase
+        .from('script_chunks').select('id').eq('id', chunkId).maybeSingle()
+      return new Response(JSON.stringify({
+        url: supabaseUrl, keyPrefix, keyLen,
+        hasSRK: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+        hasCustom: !!Deno.env.get('CUSTOM_SUPABASE_SERVICE_ROLE_KEY'),
+        hasSecretKeys: !!Deno.env.get('SUPABASE_SECRET_KEYS'),
+        probe, probeErr: probeErr?.message,
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
 
     const { data: chunk, error: fetchError } = await supabase
       .from('script_chunks')
@@ -176,7 +190,7 @@ serve(async (req) => {
       .eq('id', chunkId)
       .single()
 
-    if (fetchError || !chunk) throw new Error('Chunk not found')
+    if (fetchError || !chunk) throw new Error(`Chunk not found: ${fetchError?.message || 'no row'}`)
 
     if (action === 'generate-prompt') {
       const promptResult = await geminiGenerateText(requireGoogleApiKey(), {
