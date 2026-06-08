@@ -9,24 +9,30 @@ const corsHeaders = {
 }
 
 const GAMMA_API = "https://public-api.gamma.app/v1.0/generations"
+const CURRENT_PUBLISHABLE_KEY = "sb_publishable_BJbO0kFxuujPXn0dsqId-A_PCX-f5gv"
 
 function getPublishableKey(req: Request): string {
-  const headerKey = req.headers.get("apikey")?.trim()
-  if (headerKey) return headerKey
-
   for (const name of ["SUPABASE_PUBLISHABLE_KEY", "SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEYS"]) {
     const raw = Deno.env.get(name)?.trim()
     const key = raw?.match(/sb_publishable_[A-Za-z0-9_-]+/)?.[0] ?? raw
-    if (key) return key
+    if (key?.startsWith("sb_publishable_")) return key
   }
 
-  throw new Error("No publishable backend key available for slide generation")
+  const headerKey = req.headers.get("apikey")?.trim()
+  if (headerKey?.startsWith("sb_publishable_")) return headerKey
+
+  return CURRENT_PUBLISHABLE_KEY
+}
+
+function getUserAuthorization(req: Request): Record<string, string> {
+  const authorization = req.headers.get("authorization") ?? ""
+  const token = authorization.match(/^Bearer\s+(.+)$/i)?.[1]
+  return token && token.split(".").length === 3 ? { Authorization: authorization } : {}
 }
 
 function createRequestSupabase(req: Request, url: string): ReturnType<typeof createClient> {
-  const authorization = req.headers.get("authorization") ?? ""
   return createClient(url, getPublishableKey(req), {
-    global: { headers: authorization ? { Authorization: authorization } : {} },
+    global: { headers: getUserAuthorization(req) },
   })
 }
 
