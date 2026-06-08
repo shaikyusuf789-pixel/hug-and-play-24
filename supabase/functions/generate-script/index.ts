@@ -188,7 +188,7 @@ serve(async (req) => {
     }
 
     // Pull any boss-edited training overrides.
-    const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const supa = createClient(Deno.env.get("SUPABASE_URL")!, (Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!);
     const overrideKeys = [
       "training:transcript_1",
       "training:transcript_2",
