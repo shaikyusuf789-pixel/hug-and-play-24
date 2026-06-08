@@ -507,42 +507,87 @@ serve(async (req) => {
           return stopReason;
         };
 
+        const drainLovableGemini = async (): Promise<string | null> => {
+          const gateway = createLovableAiGatewayProvider(lovableApiKey, getLovableAiGatewayRunId(req));
+          const result = streamText({
+            model: gateway(model),
+            system: systemPrompt,
+            prompt: fullUserPrompt,
+            temperature: 0.5,
+            maxOutputTokens: 32000,
+          });
+
+          for await (const delta of result.textStream) {
+            if (!delta) continue;
+            full += delta;
+            controller.enqueue(
+              encoder.encode(
+                `event: token\ndata: ${JSON.stringify({ t: delta })}\n\n`,
+              ),
+            );
+            await checkpoint();
+          }
+          await checkpoint(true);
+          return null;
+        };
+
         // ----- First pass -----
-        const firstRes = useClaude
-          ? await anthropicStreamResponse(anthropicApiKey, {
-              model,
-              system: systemPrompt,
-              user: fullUserPrompt,
-              temperature: 0.2,
-              maxTokens: Math.min(32000, Math.max(4096, targetWords * 8)),
-            })
-          : await geminiStreamResponse(googleApiKey, {
-              model,
-              system: systemPrompt,
-              user: fullUserPrompt,
-              temperature: 0.5,
-              maxOutputTokens: 32000,
-            });
+        if (useLovableGemini) {
+          try {
+            lastStopReason = await drainLovableGemini();
+          } catch (e) {
+            const message = String((e as Error)?.message ?? e);
+            await supa.from("scripts").update({
+              status: "FAILED",
+              script_error: `Lovable AI: ${message.slice(0, 500)}`,
+            }).eq("id", scriptId);
+            controller.enqueue(
+              encoder.encode(
+                `event: error\ndata: ${JSON.stringify({
+                  message: `Lovable AI error: ${message.slice(0, 200)}`,
+                })}\n\n`,
+              ),
+            );
+            controller.close();
+            return;
+          }
+        } else {
+          const firstRes = useClaude
+            ? await anthropicStreamResponse(anthropicApiKey, {
+                model,
+                system: systemPrompt,
+                user: fullUserPrompt,
+                temperature: 0.2,
+                maxTokens: Math.min(32000, Math.max(4096, targetWords * 8)),
+              })
+            : await geminiStreamResponse(googleApiKey, {
+                model,
+                system: systemPrompt,
+                user: fullUserPrompt,
+                temperature: 0.5,
+                maxOutputTokens: 32000,
+              });
 
-        if (!firstRes.ok || !firstRes.body) {
-          const t = await firstRes.text().catch(() => "");
-          const providerLabel = useClaude ? "Anthropic" : "Google";
-          await supa.from("scripts").update({
-            status: "FAILED",
-            script_error: `${providerLabel} ${firstRes.status}: ${t.slice(0, 500)}`,
-          }).eq("id", scriptId);
-          controller.enqueue(
-            encoder.encode(
-              `event: error\ndata: ${JSON.stringify({
-                message: `${providerLabel} AI error ${firstRes.status}: ${t.slice(0, 200)}`,
-              })}\n\n`,
-            ),
-          );
-          controller.close();
-          return;
+          if (!firstRes.ok || !firstRes.body) {
+            const t = await firstRes.text().catch(() => "");
+            const providerLabel = useClaude ? "Anthropic" : "Google";
+            await supa.from("scripts").update({
+              status: "FAILED",
+              script_error: `${providerLabel} ${firstRes.status}: ${t.slice(0, 500)}`,
+            }).eq("id", scriptId);
+            controller.enqueue(
+              encoder.encode(
+                `event: error\ndata: ${JSON.stringify({
+                  message: `${providerLabel} AI error ${firstRes.status}: ${t.slice(0, 200)}`,
+                })}\n\n`,
+              ),
+            );
+            controller.close();
+            return;
+          }
+
+          lastStopReason = await drainResponse(firstRes);
         }
-
-        lastStopReason = await drainResponse(firstRes);
         console.log(`[generate-script-stream] first pass done: ${countWords(full)} words, stop_reason=${lastStopReason}`);
 
         // ----- Continuation loop (Claude only) -----
