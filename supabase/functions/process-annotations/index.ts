@@ -220,6 +220,8 @@ Return JSON: { "annotations": [ { type, target_text, match_text, bbox }, ... ] }
     const stage1_content = JSON.parse(data1.choices[0].message.content || "{}");
     const proposed = stage1_content.annotations || [];
     console.log(`[AI] Stage 1 proposed ${proposed.length} annotations.`);
+    console.log(`[Debug] ts_words count: ${ts_words.length}, first 3:`, JSON.stringify(ts_words.slice(0, 3)));
+    console.log(`[Debug] Stage 1 sample:`, JSON.stringify(proposed.slice(0, 2)));
 
     if (proposed.length === 0) {
       return new Response(JSON.stringify({ ok: true, annotation_count: 0 }), {
