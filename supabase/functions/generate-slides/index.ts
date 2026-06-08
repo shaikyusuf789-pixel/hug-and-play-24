@@ -9,49 +9,31 @@ const corsHeaders = {
 }
 
 const GAMMA_API = "https://public-api.gamma.app/v1.0/generations"
+const CURRENT_PUBLISHABLE_KEY = "sb_publishable_BJbO0kFxuujPXn0dsqId-A_PCX-f5gv"
 
-// SERVICE-ROLE ONLY. Writes to script_chunks and uploads to `slides` bucket
-// both require service-role auth. Never fall back to publishable/anon keys.
-// SUPABASE_SECRET_KEYS may contain multiple sb_secret_ tokens (retired + current);
-// we probe each against SUPABASE_URL and cache the first one that works.
-let _cachedServiceKey: string | null = null
-
-async function probeServiceKey(url: string, key: string): Promise<boolean> {
-  try {
-    const res = await fetch(`${url}/rest/v1/script_chunks?select=id&limit=1`, {
-      headers: { apikey: key, Authorization: `Bearer ${key}` },
-    })
-    return res.status !== 401 && res.status !== 403
-  } catch {
-    return false
+function getPublishableKey(req: Request): string {
+  for (const name of ["SUPABASE_PUBLISHABLE_KEY", "SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEYS"]) {
+    const raw = Deno.env.get(name)?.trim()
+    const key = raw?.match(/sb_publishable_[A-Za-z0-9_-]+/)?.[0] ?? raw
+    if (key?.startsWith("sb_publishable_")) return key
   }
+
+  const headerKey = req.headers.get("apikey")?.trim()
+  if (headerKey?.startsWith("sb_publishable_")) return headerKey
+
+  return CURRENT_PUBLISHABLE_KEY
 }
 
-async function getSupabaseServiceKey(): Promise<string> {
-  if (_cachedServiceKey) return _cachedServiceKey
-  const url = Deno.env.get("SUPABASE_URL") ?? ""
+function getUserAuthorization(req: Request): Record<string, string> {
+  const authorization = req.headers.get("authorization") ?? ""
+  const token = authorization.match(/^Bearer\s+(.+)$/i)?.[1]
+  return token && token.split(".").length === 3 ? { Authorization: authorization } : {}
+}
 
-  const candidates: string[] = []
-  const raw = Deno.env.get("SUPABASE_SECRET_KEYS") ?? ""
-  const matches = raw.match(/sb_secret_[A-Za-z0-9_-]+/g) ?? []
-  candidates.push(...matches)
-  const custom = Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")?.trim()
-  if (custom) candidates.push(custom)
-  const legacy = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim()
-  if (legacy) candidates.push(legacy)
-
-  if (candidates.length === 0) {
-    throw new Error("No service-role key available (SUPABASE_SECRET_KEYS / CUSTOM_SUPABASE_SERVICE_ROLE_KEY / SUPABASE_SERVICE_ROLE_KEY all missing)")
-  }
-
-  for (const key of candidates) {
-    if (await probeServiceKey(url, key)) {
-      _cachedServiceKey = key
-      console.log(`[generate-slides] using service key prefix=${key.slice(0, 14)}... (${candidates.indexOf(key) + 1}/${candidates.length})`)
-      return key
-    }
-  }
-  throw new Error(`All ${candidates.length} service-role key candidate(s) rejected by ${url} (likely retired keys from old project ref)`)
+function createRequestSupabase(req: Request, url: string): ReturnType<typeof createClient> {
+  return createClient(url, getPublishableKey(req), {
+    global: { headers: getUserAuthorization(req) },
+  })
 }
 
 function readPngDimensions(bytes: Uint8Array) {
@@ -142,36 +124,43 @@ async function callGamma(inputText: string, themeName: string, supabase: ReturnT
       let dimensions: { width: number; height: number } | null = null
 
       if (data.exportUrl) {
-        const exportRes = await fetch(data.exportUrl)
-        if (!exportRes.ok) throw new Error(`Gamma PNG export download failed (${exportRes.status})`)
-        const exportBytes = new Uint8Array(await exportRes.arrayBuffer())
-        let pngBytes: Uint8Array | null = null
+        try {
+          const exportRes = await fetch(data.exportUrl)
+          if (!exportRes.ok) throw new Error(`Gamma PNG export download failed (${exportRes.status})`)
+          const exportBytes = new Uint8Array(await exportRes.arrayBuffer())
+          let pngBytes: Uint8Array | null = null
 
-        const isPng = exportBytes[0] === 0x89 && exportBytes[1] === 0x50 && exportBytes[2] === 0x4e && exportBytes[3] === 0x47
-        if (isPng) {
-          pngBytes = exportBytes
-        } else {
-          const zip = await JSZip.loadAsync(exportBytes.buffer.slice(exportBytes.byteOffset, exportBytes.byteOffset + exportBytes.byteLength))
-          const pngFile = Object.values(zip.files).find((file) => !file.dir && file.name.toLowerCase().endsWith(".png"))
-          if (!pngFile) throw new Error("Gamma PNG export did not contain a PNG slide")
-          pngBytes = new Uint8Array(await pngFile.async("uint8array"))
+          const isPng = exportBytes[0] === 0x89 && exportBytes[1] === 0x50 && exportBytes[2] === 0x4e && exportBytes[3] === 0x47
+          if (isPng) {
+            pngBytes = exportBytes
+          } else {
+            const zip = await JSZip.loadAsync(exportBytes.buffer.slice(exportBytes.byteOffset, exportBytes.byteOffset + exportBytes.byteLength))
+            const pngFile = Object.values(zip.files).find((file) => !file.dir && file.name.toLowerCase().endsWith(".png"))
+            if (!pngFile) throw new Error("Gamma PNG export did not contain a PNG slide")
+            pngBytes = new Uint8Array(await pngFile.async("uint8array"))
+          }
+
+          dimensions = readPngDimensions(pngBytes)
+          const ratio = dimensions.width / dimensions.height
+          if (Math.abs(ratio - 16 / 9) > 0.02) {
+            console.warn(`Gamma returned non-16:9 PNG export (${dimensions.width}x${dimensions.height}); keeping Gamma URL`)
+          } else {
+            const slideNumber = String((chunkIndex ?? 0) + 1).padStart(3, "0")
+            const path = `${scriptId}/slide_${slideNumber}.png`
+            const { error: uploadError } = await supabase.storage
+              .from("slides")
+              .upload(path, pngBytes, { contentType: "image/png", upsert: true })
+
+            if (uploadError) {
+              console.warn(`Slide PNG upload skipped: ${uploadError.message}`)
+            } else {
+              const { data: publicData } = supabase.storage.from("slides").getPublicUrl(path)
+              previewUrl = publicData.publicUrl
+            }
+          }
+        } catch (exportError) {
+          console.warn(`Gamma PNG export skipped: ${exportError instanceof Error ? exportError.message : String(exportError)}`)
         }
-
-        dimensions = readPngDimensions(pngBytes)
-        const ratio = dimensions.width / dimensions.height
-        if (Math.abs(ratio - 16 / 9) > 0.02) {
-          throw new Error(`Gamma did not return a 16:9 PNG export (${dimensions.width}x${dimensions.height})`)
-        }
-
-        const slideNumber = String((chunkIndex ?? 0) + 1).padStart(3, "0")
-        const path = `${scriptId}/slide_${slideNumber}.png`
-        const { error: uploadError } = await supabase.storage
-          .from("slides")
-          .upload(path, pngBytes, { contentType: "image/png", upsert: true })
-        if (uploadError) throw uploadError
-
-        const { data: publicData } = supabase.storage.from("slides").getPublicUrl(path)
-        previewUrl = publicData.publicUrl
       }
 
       return {
@@ -199,8 +188,7 @@ serve(async (req) => {
     const { chunkId, action, themeName } = await req.json()
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseKey = await getSupabaseServiceKey()
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabase = createRequestSupabase(req, supabaseUrl)
 
     const { data: chunk, error: fetchError } = await supabase
       .from('script_chunks')

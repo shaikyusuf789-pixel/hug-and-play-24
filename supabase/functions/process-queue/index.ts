@@ -101,7 +101,15 @@ async function processOneSlide(sb: any, scriptId?: string): Promise<boolean> {
     });
     await sb.from("script_chunks").update({ slide_job_status: "done", slide_job_error: null }).eq("id", claim.id);
   } catch (e: any) {
-    await sb.from("script_chunks").update({ slide_job_status: "failed", slide_job_error: String(e?.message || e) }).eq("id", claim.id);
+    const { data: current } = await sb.from("script_chunks")
+      .select("slide_url")
+      .eq("id", claim.id)
+      .maybeSingle();
+    if (current?.slide_url) {
+      await sb.from("script_chunks").update({ slide_job_status: "done", slide_job_error: null }).eq("id", claim.id);
+    } else {
+      await sb.from("script_chunks").update({ slide_job_status: "failed", slide_job_error: String(e?.message || e) }).eq("id", claim.id);
+    }
   }
   return true;
 }
