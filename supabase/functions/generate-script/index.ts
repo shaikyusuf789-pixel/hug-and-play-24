@@ -37,6 +37,26 @@ function buildStyleRefs(overrides?: TrainingOverrides) {
   ).join("\n\n");
 }
 
+export function buildStyleBlock(overrides?: TrainingOverrides) {
+  return `
+================================================================
+!!! VOICE CLONE LOCK -- READ EVERY WORD BEFORE WRITING !!!
+================================================================
+The THREE transcripts below are Sky's PERSONAL VOICEPRINT.
+You are CLONING this exact human voice in text.
+HOW to speak (tone, code-mix, rhythm, fillers, teacher pacing)
+MUST be copied from these 3 samples. They are NOT a source of facts.
+
+================================================================
+STYLE REFERENCE -- HOW to speak (full transcripts):
+================================================================
+${buildStyleRefs(overrides)}
+================================================================
+END STYLE REFERENCE -- mimic the voice above, not the topics.
+================================================================
+`.trim();
+}
+
 function buildSystemPrompt(
   videoType: "GENERAL" | "SUBJECTIVE",
   inputMode: "topic" | "transcript" | "pdf" | "idea",
@@ -60,65 +80,25 @@ function buildSystemPrompt(
 You are an expert Telugu video script writer for sky academy.
 ${taskLine}
 
-================================================================
-ABSOLUTE WORD-COUNT TARGET (HARDEST CONSTRAINT)
-================================================================
-- The final script MUST be approximately ${targetWords} Telugu words.
-- Acceptable range: ${min} to ${max} words. NEVER outside this band.
-- Count words as whitespace-separated tokens of the Telugu script.
-- If the source material (topic / transcript / PDF) is too short to
-  reach ${min} words, you MUST expand using your own general knowledge:
-  relevant exam context, real-world examples
-  Indian polity / history / current affairs links, study tips, PYQ
-  references, analogies, and sky academy-style anecdotes. NEVER stop
-  short. NEVER pad with filler or repetition just to hit the count --
-  add genuinely useful teaching content instead.
-- If the source is too long, condense without losing meaning so the
-  final length still falls inside ${min}-${max} words.
+ABSOLUTE WORD-COUNT TARGET: approximately ${targetWords} Telugu words.
+Acceptable range: ${min} to ${max} words. Never below ${min}, never above ${max}.
+If source is too short, expand with relevant exam context / examples / PYQs on the SAME topic.
+If source is too long, condense without losing meaning.
 
-================================================================
-OUTPUT FORMAT (STRICT)
-================================================================
-Return ONLY a valid JSON object, no markdown, no preamble, no fences:
-{
-  "script": "<the full Telugu voiceover as ONE continuous block of text>"
-}
-Rules for "script":
-- ONE continuous text. Do NOT split into segments, chapters, headings,
-  bullet points, or numbered sections.
-- Use natural paragraph breaks (\\n\\n) where the anchor would pause.
-- Telugu Unicode only. ZERO Roman transliteration of Telugu words.
-- ZERO emojis.
-- ALL numbers written as English words.
-- Use "--" (double dash) for natural pauses.
+OUTPUT FORMAT (STRICT):
+Return ONLY a valid JSON object, no markdown, no fences:
+{ "script": "<full Telugu voiceover as ONE continuous block>" }
+- ONE continuous text. Natural paragraph breaks (\\n\\n).
+- Telugu Unicode only. ZERO Roman transliteration.
+- ZERO emojis. ALL numbers as English words. Use "--" for pauses.
 
-================================================================
-PRIORITY
-================================================================
-1. STYLE REFERENCE transcripts decide HOW to speak.
-2. SKY DNA decides WHAT to speak.
-If they conflict on style, STYLE REFERENCE wins.
+PRIORITY:
+1. STYLE REFERENCE transcripts (in the user message) decide HOW to speak.
+2. SKY DNA below decides WHERE to place which point.
+3. USER INPUT (in the user message) decides WHAT to speak about.
+If style and DNA conflict on voice, STYLE REFERENCE wins.
 
-Before writing ONE character, internally read every word of BOTH
-STYLE REFERENCE transcripts and the SKY DNA block.
-
-================================================================
-!!! VOICE CLONE LOCK -- ABSOLUTE HIGHEST PRIORITY ON STYLE !!!
-================================================================
-The THREE transcripts below are Sky's PERSONAL VOICEPRINT. You are not
-"inspired by" them -- you are CLONING this exact human voice in text.
-
-================================================================
-STYLE REFERENCE -- HOW to speak (full transcripts, no truncation)
-================================================================
-${buildStyleRefs(overrides)}
-================================================================
-END STYLE REFERENCE
-================================================================
-
-================================================================
-SKY DNA (content rules -- WHAT to say only; voice = transcripts above)
-================================================================
+SKY DNA (WHERE / structure):
 ${dna}
 
 ${TELUGU_TTS_MASTER_PROMPT}
