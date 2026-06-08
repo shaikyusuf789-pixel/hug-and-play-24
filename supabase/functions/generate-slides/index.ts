@@ -10,22 +10,48 @@ const corsHeaders = {
 
 const GAMMA_API = "https://public-api.gamma.app/v1.0/generations"
 
-function getSupabaseServiceKey() {
-  // SERVICE-ROLE ONLY. This function writes to script_chunks and uploads to the
-  // `slides` storage bucket — both require service-role auth. Never fall back to
-  // publishable/anon keys here: anon cannot upload to `slides`, which surfaces as
-  // "new row violates row-level security policy".
-  // Priority: 1) sb_secret_ from SUPABASE_SECRET_KEYS  2) CUSTOM_SUPABASE_SERVICE_ROLE_KEY  3) legacy SUPABASE_SERVICE_ROLE_KEY
-  const secretKey = Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0]
-  if (secretKey) return secretKey
+// SERVICE-ROLE ONLY. Writes to script_chunks and uploads to `slides` bucket
+// both require service-role auth. Never fall back to publishable/anon keys.
+// SUPABASE_SECRET_KEYS may contain multiple sb_secret_ tokens (retired + current);
+// we probe each against SUPABASE_URL and cache the first one that works.
+let _cachedServiceKey: string | null = null
 
+async function probeServiceKey(url: string, key: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${url}/rest/v1/script_chunks?select=id&limit=1`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    })
+    return res.status !== 401 && res.status !== 403
+  } catch {
+    return false
+  }
+}
+
+async function getSupabaseServiceKey(): Promise<string> {
+  if (_cachedServiceKey) return _cachedServiceKey
+  const url = Deno.env.get("SUPABASE_URL") ?? ""
+
+  const candidates: string[] = []
+  const raw = Deno.env.get("SUPABASE_SECRET_KEYS") ?? ""
+  const matches = raw.match(/sb_secret_[A-Za-z0-9_-]+/g) ?? []
+  candidates.push(...matches)
   const custom = Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")?.trim()
-  if (custom) return custom
-
+  if (custom) candidates.push(custom)
   const legacy = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim()
-  if (legacy) return legacy
+  if (legacy) candidates.push(legacy)
 
-  throw new Error("No service-role key available (SUPABASE_SECRET_KEYS / CUSTOM_SUPABASE_SERVICE_ROLE_KEY / SUPABASE_SERVICE_ROLE_KEY all missing)")
+  if (candidates.length === 0) {
+    throw new Error("No service-role key available (SUPABASE_SECRET_KEYS / CUSTOM_SUPABASE_SERVICE_ROLE_KEY / SUPABASE_SERVICE_ROLE_KEY all missing)")
+  }
+
+  for (const key of candidates) {
+    if (await probeServiceKey(url, key)) {
+      _cachedServiceKey = key
+      console.log(`[generate-slides] using service key prefix=${key.slice(0, 14)}... (${candidates.indexOf(key) + 1}/${candidates.length})`)
+      return key
+    }
+  }
+  throw new Error(`All ${candidates.length} service-role key candidate(s) rejected by ${url} (likely retired keys from old project ref)`)
 }
 
 function readPngDimensions(bytes: Uint8Array) {
@@ -173,7 +199,7 @@ serve(async (req) => {
     const { chunkId, action, themeName } = await req.json()
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseKey = getSupabaseServiceKey()
+    const supabaseKey = await getSupabaseServiceKey()
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     const { data: chunk, error: fetchError } = await supabase
