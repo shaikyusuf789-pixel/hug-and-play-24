@@ -174,8 +174,12 @@ Cartesia emotion tags, facts unchanged):
       });
     }
 
-    // Strip markdown chars that break TTS pronunciation
+    // Strip markdown chars that break TTS pronunciation,
+    // and replace forbidden double-dashes / em-dashes with a comma + ellipsis
+    // so any stragglers don't create the long dragging Cartesia pause.
     enhancedScript = enhancedScript
+      .replace(/\s*--+\s*/g, ", ")
+      .replace(/\s*—\s*/g, ", ")
       .replace(/\*+/g, "")
       .replace(/`+/g, "")
       .replace(/_{2,}/g, "")
