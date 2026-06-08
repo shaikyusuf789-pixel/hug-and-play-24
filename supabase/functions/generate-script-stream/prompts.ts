@@ -15,12 +15,10 @@ export type TrainingOverrides = {
 };
 
 function buildStyleReferenceBlock(overrides?: TrainingOverrides) {
-  return SKY_STYLE_TRANSCRIPTS
-  .map(
+  return SKY_STYLE_TRANSCRIPTS.map(
     (t, i) =>
       `--- REFERENCE TRANSCRIPT ${i + 1}: ${t.name} ---\n${overrides?.transcripts?.[i] || t.text}\n--- END REFERENCE ${i + 1} ---`,
-  )
-  .join("\n\n");
+  ).join("\n\n");
 }
 
 const VOICE_CLONE_LOCK = `
@@ -30,31 +28,7 @@ const VOICE_CLONE_LOCK = `
 The TWO transcripts below are Sky's PERSONAL VOICEPRINT. You are not
 "inspired by" them -- you are CLONING this exact human voice in text.
 
-HARD RULES (override everything else on STYLE only -- not on facts/numbers):
-1. WORD-FOR-WORD MIMICRY: Lift Sky's exact filler words, openers,
-   connectors, re-statements, and signature phrases verbatim. Do NOT
-   substitute synonyms. Do NOT switch to textbook-correct Telugu.
-   If textbook-Telugu and Sky-style differ, ALWAYS pick Sky-style.
-2. MANDATORY FILLER & CONNECTOR BANK -- weave these in naturally every
-   3-4 sentences (pick from transcripts; this list is a starter):
-     openers: "హలో ఎవ్రీ వన్", "ఒకసారి చూసుకుందాము",
-              "ఇప్పుడు చూడండి", "చూడండి"
-     connectors: "అయితే", "సో", "మరి", "కానీ", "అలానే",
-                 "అంటే", "అంటే ఏంటంటే", "ఏం జరుగుతా ఉంది అంటే",
-                 "ఏమైపోయింది అంటే", "ఎందుకంటే", "మామూలుగా"
-     re-statements: "ఓకే", "ఓకే వచ్చేద్దాం", "అన్నమాట", "కదా"
-     direct address: "మీరు", "మీకు", "మీ"
-     rhetorical question pattern: ask "...అంటే ఏంటి?" / "...ఎందుకు?"
-       and answer immediately in the very next line.
-3. SENTENCE RHYTHM: Short. Choppy. Re-say the key word. Then explain.
-   Like a classroom teacher mid-sentence. NO long literary clauses.
-   NO formal news-anchor cadence. NO bookish Telugu.
-4. CODE-MIX: Drop English technical terms inside Telugu sentences
-   exactly the way Sky does -- never translate "verification",
-   "biometric", "notification", "OTP", "exam centre", etc. into Telugu.
-5. NEVER replicate textbook Telugu vocabulary that does NOT appear in
-   the transcripts. If a word is not in Sky's natural register, pick a
-   simpler colloquial alternative that IS in the transcripts.
+
 6. The DNA block decides WHAT to say. This VOICE CLONE LOCK decides
    HOW to say it. On every style decision -- voice wins.
 ================================================================
@@ -346,7 +320,6 @@ END SPECIAL INSTRUCTIONS
 ================================================================
 `;
 
-
 export const DNA_GENERAL = `
 ${SPECIAL_INSTRUCTIONS}
 
@@ -395,7 +368,6 @@ ${REPLICA_RULES}
 ${PROMOTIONS_BLOCK}
 `;
 
-
 const PRIORITY_NOTE = `
 THREE-LAYER RULE (DO NOT VIOLATE):
   1. WHAT to speak  -> ONLY from USER INPUT (topic, chapter/idea
@@ -439,16 +411,9 @@ MANDATORY READING ORDER before you write a single character:
   Step 4: Then -- and only then -- start generating.
 `;
 
-
-function buildSystem(
-  taskLine: string,
-  videoType: "GENERAL" | "SUBJECTIVE",
-  overrides?: TrainingOverrides,
-) {
+function buildSystem(taskLine: string, videoType: "GENERAL" | "SUBJECTIVE", overrides?: TrainingOverrides) {
   const dnaDefault = videoType === "SUBJECTIVE" ? DNA_SUBJECTIVE : DNA_GENERAL;
-  const dna =
-    (videoType === "SUBJECTIVE" ? overrides?.dna_subjective : overrides?.dna_general) ||
-    dnaDefault;
+  const dna = (videoType === "SUBJECTIVE" ? overrides?.dna_subjective : overrides?.dna_general) || dnaDefault;
   return `
 You are an expert Telugu video script writer for sky academy.
 ${taskLine}
@@ -497,4 +462,3 @@ export function systemPromptFor(
     overrides,
   );
 }
-
