@@ -10,14 +10,19 @@ const corsHeaders = {
 const BUCKET = "audio-files";
 
 function getSupabaseServiceKey() {
-  // Prefer direct service-role env vars (active sb_secret_... lives here).
-  // SUPABASE_SECRET_KEYS may contain stale/rotated values, so only use as last resort.
-  const direct = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim()
-    || Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")?.trim();
-  if (direct) return direct;
+  // Project has legacy JWT keys disabled. Active key is sb_secret_... in CUSTOM_SUPABASE_SERVICE_ROLE_KEY.
+  // Prefer new-format sb_secret_ keys first; fall back to SUPABASE_SERVICE_ROLE_KEY only if it is also new-format.
+  const custom = Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")?.trim();
+  if (custom?.startsWith("sb_secret_")) return custom;
 
   const fromSecrets = Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0];
-  return fromSecrets || "";
+  if (fromSecrets) return fromSecrets;
+
+  const srk = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim();
+  if (srk?.startsWith("sb_secret_")) return srk;
+
+  // Last resort (will likely be a disabled legacy JWT, but better than empty)
+  return custom || srk || "";
 }
 
 Deno.serve(async (req) => {
