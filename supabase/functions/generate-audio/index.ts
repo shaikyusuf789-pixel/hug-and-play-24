@@ -10,18 +10,12 @@ const corsHeaders = {
 const BUCKET = "audio-files";
 
 function getSupabaseServiceKey() {
-  const secretKey = Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0];
-  if (secretKey) return secretKey;
+  const fromSecrets = Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0];
+  if (fromSecrets) return fromSecrets;
 
-  for (const name of ["SUPABASE_PUBLISHABLE_KEY", "SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEYS"]) {
-    const raw = Deno.env.get(name)?.trim();
-    const key = raw?.match(/sb_publishable_[A-Za-z0-9_-]+/)?.[0] ?? raw;
-    if (key?.startsWith("sb_publishable_")) return key;
-  }
-
-  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
-    ?? Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")
-    ?? "";
+  const direct = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim()
+    || Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")?.trim();
+  return direct || "";
 }
 
 Deno.serve(async (req) => {
