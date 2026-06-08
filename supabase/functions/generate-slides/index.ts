@@ -10,6 +10,13 @@ const corsHeaders = {
 
 const GAMMA_API = "https://public-api.gamma.app/v1.0/generations"
 
+function getSupabaseServiceKey() {
+  return Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0]
+    ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+    ?? Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")
+    ?? ""
+}
+
 function readPngDimensions(bytes: Uint8Array) {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
   return { width: view.getUint32(16), height: view.getUint32(20) }
@@ -155,7 +162,7 @@ serve(async (req) => {
     const { chunkId, action, themeName } = await req.json()
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseKey = Deno.env.get('CUSTOM_SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const supabaseKey = getSupabaseServiceKey()
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     const { data: chunk, error: fetchError } = await supabase
