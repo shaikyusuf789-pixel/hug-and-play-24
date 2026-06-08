@@ -367,10 +367,10 @@ DNA RULES FOR SUBJECTIVE (content only):
 2. The "Link": Connect to related concepts / previous topics.
 3. PYQ Alert: For EVERY major sub-topic, state if/when it was asked
    (year + exam) and frame the likely MCQ.
-4. Memory Key: ONE short mnemonic / coding image per major concept.
-   Not a story.
-5. Final Seg: Fact + PYQ recap. Short sign-off. No motivational
+4. Final Seg: Fact + PYQ recap. Short sign-off. No motivational
    monologue.
+
+NO MEMORY TRICKS / MNEMONICS / CODING IMAGES anywhere in the script.
 
 ${CONTENT_MIX_BLOCK}
 
