@@ -68,6 +68,33 @@ function buildStyleRefs(overrides?: TrainingOverrides) {
     .join("\n\n");
 }
 
+export function buildStyleBlock(overrides?: TrainingOverrides) {
+  return `
+================================================================
+!!! VOICE CLONE LOCK -- READ EVERY WORD BEFORE WRITING !!!
+================================================================
+The THREE transcripts below are Sky's PERSONAL VOICEPRINT.
+You are CLONING this exact human voice. HOW to speak (tone,
+Telugu+English code-mix, pauses, rhythm, teacher voice) MUST be
+copied from these 3 samples.
+
+HARD CONTENT BOUNDARY:
+- The 3 reference transcripts are NOT a source of facts, topics,
+  examples, names, dates, exams, departments or domain words.
+  They are VOICE SAMPLES only.
+- NEVER lift content from the transcripts. Take facts ONLY from
+  the USER INPUT below.
+
+================================================================
+STYLE REFERENCE -- HOW to speak (full transcripts):
+================================================================
+${buildStyleRefs(overrides)}
+================================================================
+END STYLE REFERENCE -- mimic the voice above, not the topics.
+================================================================
+`.trim();
+}
+
 function buildSystemPrompt(
   videoType: "GENERAL" | "SUBJECTIVE",
   inputMode: "topic" | "transcript" | "pdf" | "idea",
@@ -84,8 +111,6 @@ function buildSystemPrompt(
     : "WRITE ONE complete, original sky academy Telugu voiceover script on the given topic / idea.";
   const min = Math.max(50, targetWords - 50);
   const max = targetWords + 50;
-  // NOTE: streaming mode -> ask for PLAIN Telugu text (no JSON envelope) so
-  // partial tokens are immediately renderable.
   const today = new Date().toISOString().slice(0, 10);
   return `
 You are an expert Telugu video script writer for sky academy.
@@ -94,66 +119,27 @@ ${taskLine}
 ================================================================
 THREE-LAYER RULE (DO NOT VIOLATE -- READ TWICE)
 ================================================================
-1. WHAT to speak  -> comes ONLY from the USER INPUT below
-     (TOPIC / TITLE, CHAPTER / IDEA CONTEXT, SOURCE MATERIAL,
-      SPECIAL INSTRUCTIONS). This is the idea-engine output.
+1. WHAT to speak  -> comes ONLY from the USER INPUT (in the user message).
 2. HOW to speak   -> comes ONLY from the 3 STYLE REFERENCE
-     transcripts (tone, Telugu+English code-mix, pauses,
-     rhythm, teacher voice).
+     transcripts (in the user message). Tone, code-mix, pauses,
+     rhythm, teacher voice.
 3. WHERE to place which point -> comes ONLY from the SKY DNA
-     block (structure, ordering, promo placement, CTAs,
+     block below (structure, ordering, promo placement, CTAs,
      PYQ/MCQ slots).
 
-HARD CONTENT BOUNDARY (most common failure -- avoid):
-- The 3 reference transcripts are NOT a source of facts, topics,
-  examples, names, dates, exams, departments or domain words.
-  They are voice samples only.
-- NEVER lift content from the transcripts. Do NOT mention
-  "railway", "RRB", "IPL", "auction", a specific exam, a
-  specific year, a specific scheme, a specific person or any
-  example UNLESS that exact thing appears in the USER INPUT.
-- If the user input is about SSC / Banking, the script must be
-  about SSC / Banking only -- zero spillover from transcript
-  topics.
-- Do not invent stats, ranks, cut-offs, vacancy numbers, dates,
-  winners, results, scores, prize money. If the user input does
-  not give a number, do not write one.
-
 TIME / RECENCY RULE:
-- Today's date is ${today}. Treat anything dated before today as
-  ALREADY HAPPENED (past tense). Do not say a completed event
-  "is going to happen" or "మెగా ఆక్షన్ జరగబోతుంది" for an event
-  that is already over. If unsure, speak generally without a
-  year.
+- Today's date is ${today}. Past-dated events are PAST TENSE.
 
 ================================================================
-ABSOLUTE WORD-COUNT TARGET (HARDEST CONSTRAINT -- DO NOT VIOLATE)
+ABSOLUTE WORD-COUNT TARGET (HARDEST CONSTRAINT)
 ================================================================
-- The FINAL Telugu script MUST contain approximately ${targetWords} words.
-- Hard acceptable range: ${min} to ${max} Telugu words (whitespace-separated tokens). NEVER less than ${min}. NEVER more than ${max}.
-- Before you stop writing, INTERNALLY COUNT the words. If you are below ${min}, you MUST continue writing -- do NOT end the script.
-- If the USER INPUT (topic / source / context) is too short to naturally reach ${min} words, you MUST EXPAND using your own general knowledge of that same subject:
-    * Add real-world examples relevant to the topic.
-    * Add sub-topics and break each sub-topic into smaller teaching points.
-    * Add exam-relevance context (SSC / Banking / Group 1 / Group 2 / RRB) where it genuinely fits the topic.
-    * Add historical background, key personalities, important dates, definitions, classifications, and cause-effect chains around the topic.
-    * Add 2-3 small analogies or classroom-style mini-stories tied to the topic.
-    * Add a short recap of the key points near the end.
-- NEVER pad with empty filler, repetition, or off-topic content just to hit the count. Every added sentence MUST teach something useful about the SAME topic.
-- If the source is far too long, condense without losing the core teaching, but the final length MUST still fall inside ${min}-${max} words.
-- Stopping early (a 600-700 word script when ${targetWords} was asked) is a CRITICAL FAILURE. Keep writing until you are inside the target band.
+- FINAL Telugu script MUST be approximately ${targetWords} words.
+- Hard range: ${min} to ${max} whitespace-separated Telugu tokens.
+- If source is short, EXPAND with on-topic exam context / examples / PYQs.
+- If source is too long, CONDENSE without losing teaching.
+- Stopping early (e.g. 600 words when ${targetWords} asked) is a CRITICAL FAILURE.
 
-CONTENT EXPANSION CHECKLIST (use it to reach the target length naturally):
-  [ ] Hook tied to the exact topic
-  [ ] Definition / core concept
-  [ ] 2-4 sub-topics, each explained with a small example
-  [ ] Real-world / exam-relevant examples
-  [ ] Common student doubts answered
-  [ ] PYQ / MCQ framing where relevant
-  [ ] Extra fact / detail tied to the topic
-  [ ] Final recap of the key points
-
-OUTPUT: Return ONLY the Telugu voiceover script as PLAIN TEXT (no JSON, no markdown, no fences, no preamble, no closing remarks).
+OUTPUT: Return ONLY the Telugu voiceover script as PLAIN TEXT (no JSON, no markdown, no fences, no preamble).
 - ONE continuous text, natural paragraph breaks with blank lines.
 - Telugu Unicode only. ZERO Roman transliteration.
 - ZERO emojis. ALL numbers as English words. Use "--" for pauses.
@@ -162,14 +148,7 @@ SKY DNA (WHERE / structure -- WHAT-to-place-WHERE):
 ${dna}
 
 ${TELUGU_TTS_MASTER_PROMPT}
-
-STYLE REFERENCE (HOW to speak ONLY -- NOT a content source):
-The blocks below are voice samples. Mimic the rhythm, fillers,
-code-mix and teacher tone EXACTLY. Do NOT copy their topics,
-facts, examples, names, numbers or domain words into this script.
-${buildStyleRefs(overrides)}
 `.trim();
-
 }
 
 function countWords(s: string): number {
