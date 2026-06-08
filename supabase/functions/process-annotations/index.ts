@@ -8,6 +8,11 @@ const corsHeaders = {
 
 function getSupabaseServiceKey() {
   console.log(`[SupabaseEnv] ${Object.keys(Deno.env.toObject()).filter((name) => name.includes("SUPABASE") || name.includes("SB_")).sort().join(",")}`);
+  for (const name of ["SUPABASE_SECRET_KEYS", "CUSTOM_SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEYS"]) {
+    const raw = Deno.env.get(name) ?? "";
+    const type = raw.includes("sb_secret_") ? "secret-container" : raw.startsWith("sb_publishable_") || raw.includes("sb_publishable_") ? "publishable" : raw.startsWith("eyJ") ? "legacy" : raw.trim().startsWith("{") || raw.trim().startsWith("[") ? "json" : raw ? "other" : "missing";
+    console.log(`[SupabaseEnvShape] ${name} type=${type} length=${raw.length}`);
+  }
 
   const secretKeys = Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0];
   if (secretKeys) {
