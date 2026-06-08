@@ -124,36 +124,43 @@ async function callGamma(inputText: string, themeName: string, supabase: ReturnT
       let dimensions: { width: number; height: number } | null = null
 
       if (data.exportUrl) {
-        const exportRes = await fetch(data.exportUrl)
-        if (!exportRes.ok) throw new Error(`Gamma PNG export download failed (${exportRes.status})`)
-        const exportBytes = new Uint8Array(await exportRes.arrayBuffer())
-        let pngBytes: Uint8Array | null = null
+        try {
+          const exportRes = await fetch(data.exportUrl)
+          if (!exportRes.ok) throw new Error(`Gamma PNG export download failed (${exportRes.status})`)
+          const exportBytes = new Uint8Array(await exportRes.arrayBuffer())
+          let pngBytes: Uint8Array | null = null
 
-        const isPng = exportBytes[0] === 0x89 && exportBytes[1] === 0x50 && exportBytes[2] === 0x4e && exportBytes[3] === 0x47
-        if (isPng) {
-          pngBytes = exportBytes
-        } else {
-          const zip = await JSZip.loadAsync(exportBytes.buffer.slice(exportBytes.byteOffset, exportBytes.byteOffset + exportBytes.byteLength))
-          const pngFile = Object.values(zip.files).find((file) => !file.dir && file.name.toLowerCase().endsWith(".png"))
-          if (!pngFile) throw new Error("Gamma PNG export did not contain a PNG slide")
-          pngBytes = new Uint8Array(await pngFile.async("uint8array"))
+          const isPng = exportBytes[0] === 0x89 && exportBytes[1] === 0x50 && exportBytes[2] === 0x4e && exportBytes[3] === 0x47
+          if (isPng) {
+            pngBytes = exportBytes
+          } else {
+            const zip = await JSZip.loadAsync(exportBytes.buffer.slice(exportBytes.byteOffset, exportBytes.byteOffset + exportBytes.byteLength))
+            const pngFile = Object.values(zip.files).find((file) => !file.dir && file.name.toLowerCase().endsWith(".png"))
+            if (!pngFile) throw new Error("Gamma PNG export did not contain a PNG slide")
+            pngBytes = new Uint8Array(await pngFile.async("uint8array"))
+          }
+
+          dimensions = readPngDimensions(pngBytes)
+          const ratio = dimensions.width / dimensions.height
+          if (Math.abs(ratio - 16 / 9) > 0.02) {
+            console.warn(`Gamma returned non-16:9 PNG export (${dimensions.width}x${dimensions.height}); keeping Gamma URL`)
+          } else {
+            const slideNumber = String((chunkIndex ?? 0) + 1).padStart(3, "0")
+            const path = `${scriptId}/slide_${slideNumber}.png`
+            const { error: uploadError } = await supabase.storage
+              .from("slides")
+              .upload(path, pngBytes, { contentType: "image/png", upsert: true })
+
+            if (uploadError) {
+              console.warn(`Slide PNG upload skipped: ${uploadError.message}`)
+            } else {
+              const { data: publicData } = supabase.storage.from("slides").getPublicUrl(path)
+              previewUrl = publicData.publicUrl
+            }
+          }
+        } catch (exportError) {
+          console.warn(`Gamma PNG export skipped: ${exportError instanceof Error ? exportError.message : String(exportError)}`)
         }
-
-        dimensions = readPngDimensions(pngBytes)
-        const ratio = dimensions.width / dimensions.height
-        if (Math.abs(ratio - 16 / 9) > 0.02) {
-          throw new Error(`Gamma did not return a 16:9 PNG export (${dimensions.width}x${dimensions.height})`)
-        }
-
-        const slideNumber = String((chunkIndex ?? 0) + 1).padStart(3, "0")
-        const path = `${scriptId}/slide_${slideNumber}.png`
-        const { error: uploadError } = await supabase.storage
-          .from("slides")
-          .upload(path, pngBytes, { contentType: "image/png", upsert: true })
-        if (uploadError) throw uploadError
-
-        const { data: publicData } = supabase.storage.from("slides").getPublicUrl(path)
-        previewUrl = publicData.publicUrl
       }
 
       return {
