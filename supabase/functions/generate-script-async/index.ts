@@ -58,6 +58,26 @@ function buildStyleRefs(overrides?: TrainingOverrides) {
   ).join("\n\n");
 }
 
+export function buildStyleBlock(overrides?: TrainingOverrides) {
+  return `
+================================================================
+!!! VOICE CLONE LOCK -- READ EVERY WORD BEFORE WRITING !!!
+================================================================
+The THREE transcripts below are Sky's PERSONAL VOICEPRINT.
+You are CLONING this exact human voice. HOW to speak (tone,
+code-mix, rhythm, fillers, teacher pacing) MUST be copied from
+these 3 samples. They are NOT a source of facts.
+
+================================================================
+STYLE REFERENCE -- HOW to speak (full transcripts):
+================================================================
+${buildStyleRefs(overrides)}
+================================================================
+END STYLE REFERENCE -- mimic the voice above, not the topics.
+================================================================
+`.trim();
+}
+
 function buildSystemPrompt(
   videoType: "GENERAL" | "SUBJECTIVE",
   inputMode: "topic" | "transcript" | "pdf" | "idea",
@@ -85,23 +105,13 @@ OUTPUT: Return ONLY {"script":"<full Telugu voiceover as ONE continuous block>"}
 - Telugu Unicode only. ZERO Roman transliteration.
 - ZERO emojis. ALL numbers as English words. Use "--" for pauses.
 
-================================================================
-!!! VOICE CLONE LOCK -- ABSOLUTE HIGHEST PRIORITY ON STYLE !!!
-================================================================
-The THREE transcripts below are Sky's PERSONAL VOICEPRINT. CLONE this exact
-human voice. The DNA decides WHAT to say; transcripts decide HOW.
-On every style decision -- voice wins.
+PRIORITY:
+1. STYLE REFERENCE transcripts (in the user message) decide HOW to speak.
+2. SKY DNA below decides WHERE to place which point.
+3. USER INPUT (in the user message) decides WHAT to speak about.
+If style and DNA conflict on voice, STYLE REFERENCE wins.
 
-
-
-================================================================
-STYLE REFERENCE -- READ EVERY WORD (HOW to speak):
-================================================================
-${buildStyleRefs(overrides)}
-
-================================================================
-SKY DNA (WHAT to say only -- voice still wins):
-================================================================
+SKY DNA (WHERE / structure):
 ${dna}
 
 ${TELUGU_TTS_MASTER_PROMPT}
