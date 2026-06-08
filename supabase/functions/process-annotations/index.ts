@@ -6,6 +6,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function getSupabaseServiceKey() {
+  const candidates = [
+    Deno.env.get("SUPABASE_SECRET_KEYS"),
+    Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY"),
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+  ];
+
+  for (const raw of candidates) {
+    const key = raw?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0] ?? raw?.trim();
+    if (key) return key;
+  }
+  return "";
+}
+
 // ============================================================
 // 2-GPT Annotation Pipeline
 //
@@ -28,10 +42,7 @@ serve(async (req) => {
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SECRET_KEYS") ??
-        Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY") ??
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-        "",
+      getSupabaseServiceKey(),
     );
 
     const { script_id, chunk_id, chunk_number, slide_source } = await req.json();
