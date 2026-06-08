@@ -6,6 +6,8 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { streamText } from "npm:ai";
+import { createLovableAiGatewayProvider, getLovableAiGatewayRunId } from "../_shared/ai-gateway.ts";
 import { extractGeminiText, geminiGenerateJson, geminiStreamResponse, normalizeGeminiModel, requireGoogleApiKey } from "../_shared/google-ai.ts";
 import {
   anthropicStreamResponse,
@@ -52,6 +54,7 @@ interface Body {
   inputMode?: "topic" | "transcript" | "pdf" | "idea";
   wordCount?: number;
   specialInstructions?: string;
+  provider?: string;
   model?: string;
   idea_id?: string | null;
   title?: string;
@@ -233,8 +236,12 @@ serve(async (req) => {
       150,
       Math.min(5000, Number(body.wordCount) || 1800),
     );
-    const useClaude = isClaudeModel(body.model);
-    const model = useClaude
+    const provider = (body.provider || "").trim();
+    const useLovableGemini = provider === "lovable-gemini";
+    const useClaude = !useLovableGemini && isClaudeModel(body.model);
+    const model = useLovableGemini
+      ? (body.model || "google/gemini-3.5-flash").trim()
+      : useClaude
       ? normalizeClaudeModel(body.model)
       : normalizeGeminiModel(body.model, "gemini-2.5-pro");
     const factCheckModel = normalizeGeminiModel(body.factCheckModel, "gemini-2.5-pro");
@@ -260,17 +267,27 @@ serve(async (req) => {
     const userPrompt = parts.join("\n\n");
 
     let googleApiKey = "";
-    try {
-      // Google key is always required (fact-checker uses Gemini).
-      googleApiKey = requireGoogleApiKey();
-    } catch (_) {
-      return new Response(
-        JSON.stringify({ error: "GOOGLE_API_KEY missing" }),
-        {
+    let lovableApiKey = "";
+    if (useLovableGemini) {
+      lovableApiKey = Deno.env.get("LOVABLE_API_KEY")?.trim() || "";
+      if (!lovableApiKey) {
+        return new Response(JSON.stringify({ error: "LOVABLE_API_KEY missing" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+        });
+      }
+    } else {
+      try {
+        googleApiKey = requireGoogleApiKey();
+      } catch (_) {
+        return new Response(
+          JSON.stringify({ error: "GOOGLE_API_KEY missing" }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
     }
 
     let anthropicApiKey = "";
@@ -490,42 +507,87 @@ serve(async (req) => {
           return stopReason;
         };
 
+        const drainLovableGemini = async (): Promise<string | null> => {
+          const gateway = createLovableAiGatewayProvider(lovableApiKey, getLovableAiGatewayRunId(req));
+          const result = streamText({
+            model: gateway(model),
+            system: systemPrompt,
+            prompt: fullUserPrompt,
+            temperature: 0.5,
+            maxOutputTokens: 32000,
+          });
+
+          for await (const delta of result.textStream) {
+            if (!delta) continue;
+            full += delta;
+            controller.enqueue(
+              encoder.encode(
+                `event: token\ndata: ${JSON.stringify({ t: delta })}\n\n`,
+              ),
+            );
+            await checkpoint();
+          }
+          await checkpoint(true);
+          return null;
+        };
+
         // ----- First pass -----
-        const firstRes = useClaude
-          ? await anthropicStreamResponse(anthropicApiKey, {
-              model,
-              system: systemPrompt,
-              user: fullUserPrompt,
-              temperature: 0.2,
-              maxTokens: Math.min(32000, Math.max(4096, targetWords * 8)),
-            })
-          : await geminiStreamResponse(googleApiKey, {
-              model,
-              system: systemPrompt,
-              user: fullUserPrompt,
-              temperature: 0.5,
-              maxOutputTokens: 32000,
-            });
+        if (useLovableGemini) {
+          try {
+            lastStopReason = await drainLovableGemini();
+          } catch (e) {
+            const message = String((e as Error)?.message ?? e);
+            await supa.from("scripts").update({
+              status: "FAILED",
+              script_error: `Lovable AI: ${message.slice(0, 500)}`,
+            }).eq("id", scriptId);
+            controller.enqueue(
+              encoder.encode(
+                `event: error\ndata: ${JSON.stringify({
+                  message: `Lovable AI error: ${message.slice(0, 200)}`,
+                })}\n\n`,
+              ),
+            );
+            controller.close();
+            return;
+          }
+        } else {
+          const firstRes = useClaude
+            ? await anthropicStreamResponse(anthropicApiKey, {
+                model,
+                system: systemPrompt,
+                user: fullUserPrompt,
+                temperature: 0.2,
+                maxTokens: Math.min(32000, Math.max(4096, targetWords * 8)),
+              })
+            : await geminiStreamResponse(googleApiKey, {
+                model,
+                system: systemPrompt,
+                user: fullUserPrompt,
+                temperature: 0.5,
+                maxOutputTokens: 32000,
+              });
 
-        if (!firstRes.ok || !firstRes.body) {
-          const t = await firstRes.text().catch(() => "");
-          const providerLabel = useClaude ? "Anthropic" : "Google";
-          await supa.from("scripts").update({
-            status: "FAILED",
-            script_error: `${providerLabel} ${firstRes.status}: ${t.slice(0, 500)}`,
-          }).eq("id", scriptId);
-          controller.enqueue(
-            encoder.encode(
-              `event: error\ndata: ${JSON.stringify({
-                message: `${providerLabel} AI error ${firstRes.status}: ${t.slice(0, 200)}`,
-              })}\n\n`,
-            ),
-          );
-          controller.close();
-          return;
+          if (!firstRes.ok || !firstRes.body) {
+            const t = await firstRes.text().catch(() => "");
+            const providerLabel = useClaude ? "Anthropic" : "Google";
+            await supa.from("scripts").update({
+              status: "FAILED",
+              script_error: `${providerLabel} ${firstRes.status}: ${t.slice(0, 500)}`,
+            }).eq("id", scriptId);
+            controller.enqueue(
+              encoder.encode(
+                `event: error\ndata: ${JSON.stringify({
+                  message: `${providerLabel} AI error ${firstRes.status}: ${t.slice(0, 200)}`,
+                })}\n\n`,
+              ),
+            );
+            controller.close();
+            return;
+          }
+
+          lastStopReason = await drainResponse(firstRes);
         }
-
-        lastStopReason = await drainResponse(firstRes);
         console.log(`[generate-script-stream] first pass done: ${countWords(full)} words, stop_reason=${lastStopReason}`);
 
         // ----- Continuation loop (Claude only) -----

@@ -539,6 +539,7 @@ function ScriptGenerator() {
             inputMode,
             wordCount,
             specialInstructions,
+            provider,
             model,
             idea_id: selectedIdeaId || null,
             title: inputMode === "pdf" ? (chapterContext.trim() || topic.trim() || "Untitled Script") : (topic.trim() || "Untitled Script"),
