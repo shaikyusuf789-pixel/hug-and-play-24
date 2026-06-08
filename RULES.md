@@ -2,6 +2,13 @@
 
 These rules apply to EVERY change in this repo. The AI agent must follow them on every turn.
 
+## Rule 0 — Approval + risk report first
+Before changing code, database, secrets, deployments, or backend functions:
+1. Investigate and explain the real root cause first.
+2. Tell Jerry what the proposed fix will touch.
+3. Tell Jerry what related issues/regressions could arise from that fix.
+4. Wait for Jerry's approval before applying the fix.
+
 ## Rule 1 — UI Spec is the source of truth
 After ANY UI change to a page:
 1. Take a screenshot of the updated page (desktop **and** mobile if the layout differs).
