@@ -339,11 +339,11 @@ DNA RULES FOR GENERAL (content only):
    Group 1 / Group 2). Not a paragraph.
 3. Body: Pack facts, names, dates, numbers, records FROM THE INPUT.
    Frame PYQs / MCQs around each major fact.
-4. Memory Hints: Max 2-3 short coding tricks / mnemonics. No long
-   analogies.
-5. Community: ONE short line max — handled inside the promos.
-6. Final Segments: Fact-dense recap + rapid-fire MCQ framing. NO long
+4. Community: ONE short line max — handled inside the promos.
+5. Final Segments: Fact-dense recap + rapid-fire MCQ framing. NO long
    motivational closing.
+
+NO MEMORY TRICKS / MNEMONICS / CODING HINTS anywhere in the script.
 
 ${CONTENT_MIX_BLOCK}
 
