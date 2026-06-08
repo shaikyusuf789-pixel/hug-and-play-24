@@ -286,11 +286,11 @@ SKY DNA RULES (content only -- no tone):
    / Group 2). Not a paragraph.
 3. Body: Pack facts, names, dates, numbers, records FROM THE INPUT.
    Frame PYQs / MCQs around each major fact.
-4. Memory Hints: Max 2-3 short coding tricks / mnemonics. No long
-   analogies or motivational stories.
-5. Community: ONE short line max -- handled inside the promos.
-6. Final Segments: Fact-dense recap + rapid-fire MCQ framing. ZERO
+4. Community: ONE short line max -- handled inside the promos.
+5. Final Segments: Fact-dense recap + rapid-fire MCQ framing. ZERO
    motivational closing.
+
+NO MEMORY TRICKS / MNEMONICS / CODING HINTS anywhere in the script.
 
 FORBIDDEN PATTERNS:
 - STRICTLY ZERO motivation/emotional padding.
@@ -311,10 +311,10 @@ SKY DNA RULES (content only -- no tone):
 2. The "Link": Connect to related concepts / previous topics.
 3. PYQ Alert: For EVERY major sub-topic, state if/when it was asked
    (year + exam) and frame the likely MCQ.
-4. Memory Key: ONE short mnemonic / coding image per major concept.
-   Not a story.
-5. Final Seg: Fact + PYQ recap. Short sign-off. ZERO motivational
+4. Final Seg: Fact + PYQ recap. Short sign-off. ZERO motivational
    monologue.
+
+NO MEMORY TRICKS / MNEMONICS / CODING IMAGES anywhere in the script.
 
 FORBIDDEN PATTERNS:
 - STRICTLY ZERO motivation/emotional padding.
@@ -329,7 +329,7 @@ PRIORITY (do not violate):
   1. STYLE REFERENCE transcripts decide HOW to speak
      (language, words, fillers, pauses, toning).
   2. SKY DNA decides WHAT to speak
-     (promotions, PYQ analysis, memory hints, CTAs, structure).
+     (promotions, PYQ analysis, CTAs, structure).
 If the two ever conflict on style, the STYLE REFERENCE wins.
 
 BRAND SAFETY (CRITICAL):

@@ -198,8 +198,9 @@ motivation is allowed.
            "ఇది ఇలా అడగొచ్చు: ఎవరు...?" then immediately answer).
            Cover SSC, Banking, Group 1, Group 2, RRB style framings.
 
-  ~10-15%  Memory hooks / coding tricks / mnemonics / short one-line
-           analogies linking facts -- NOT long motivational stories.
+  0%       Memory tricks / mnemonics / coding hints. STRICTLY ZERO.
+           Do NOT include any mnemonic devices, memory hooks, or
+           coding-style tricks. Pure teaching only.
 
   0%       Motivation / mentorship voice. STRICTLY ZERO.
            DO NOT include any "war strategy", "life balance", "6-month plan",
@@ -320,11 +321,11 @@ SKY DNA RULES (content only -- no tone):
    / Group 2). Not a paragraph.
 3. Body: Pack facts, names, dates, numbers, records FROM THE INPUT.
    Frame PYQs / MCQs around each major fact.
-4. Memory Hints: Max 2-3 short coding tricks / mnemonics. No long
-   analogies.
-5. Community: ONE short line max -- handled inside the promos.
-6. Final Segments: Fact-dense recap + rapid-fire MCQ framing. NO long
+4. Community: ONE short line max -- handled inside the promos.
+5. Final Segments: Fact-dense recap + rapid-fire MCQ framing. NO long
    motivational closing.
+
+NO MEMORY TRICKS / MNEMONICS / CODING HINTS anywhere in the script.
 
 ${CONTENT_MIX_BLOCK}
 
@@ -344,10 +345,10 @@ SKY DNA RULES (content only -- no tone):
 2. The "Link": Connect to related concepts / previous topics.
 3. PYQ Alert: For EVERY major sub-topic, state if/when it was asked
    (year + exam) and frame the likely MCQ.
-4. Memory Key: ONE short mnemonic / coding image per major concept.
-   Not a story.
-5. Final Seg: Fact + PYQ recap. Short sign-off. No motivational
+4. Final Seg: Fact + PYQ recap. Short sign-off. No motivational
    monologue.
+
+NO MEMORY TRICKS / MNEMONICS / CODING IMAGES anywhere in the script.
 
 ${CONTENT_MIX_BLOCK}
 

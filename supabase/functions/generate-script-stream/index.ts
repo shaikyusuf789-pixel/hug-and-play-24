@@ -150,7 +150,7 @@ CONTENT EXPANSION CHECKLIST (use it to reach the target length naturally):
   [ ] Real-world / exam-relevant examples
   [ ] Common student doubts answered
   [ ] PYQ / MCQ framing where relevant
-  [ ] Short memory trick / mnemonic
+  [ ] Extra fact / detail tied to the topic
   [ ] Final recap of the key points
 
 OUTPUT: Return ONLY the Telugu voiceover script as PLAIN TEXT (no JSON, no markdown, no fences, no preamble, no closing remarks).

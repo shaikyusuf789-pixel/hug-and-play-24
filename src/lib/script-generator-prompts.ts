@@ -13,7 +13,7 @@ import { SKY_STYLE_TRANSCRIPTS } from "./training-transcripts";
  *  Priority order when there is a conflict:
  *    1. Reference transcripts (highest) — language, styling, word formation,
  *       filler words, toning, pauses.
- *    2. SKY DNA — promotions, PYQ analysis, memory hints, community/CTA.
+ *    2. SKY DNA — promotions, PYQ analysis, community/CTA.
  *
  *  SKY DNA has been intentionally stripped of all tone / voice / style /
  *  pacing instructions. Those now come ONLY from the reference transcripts.
@@ -211,8 +211,9 @@ you exceed motivation, CUT motivation — never cut facts.
            "ఇది ఇలా అడగొచ్చు: ఎవరు...?" then immediately answer).
            Cover SSC, Banking, Group 1, Group 2, RRB style framings.
 
-  ~10-15%  Memory hooks / coding tricks / mnemonics / one-line
-           analogies linking facts — NOT long motivational stories.
+  0%       Memory tricks / mnemonics / coding hints. STRICTLY ZERO.
+           Do NOT include any mnemonic devices, memory hooks, or
+           coding-style tricks. Pure teaching only.
 
   ~5-7%    Motivation / mentorship voice. STRICTLY capped at 7%.
            No long "war strategy", "life balance", "6-month plan",
@@ -338,11 +339,11 @@ DNA RULES FOR GENERAL (content only):
    Group 1 / Group 2). Not a paragraph.
 3. Body: Pack facts, names, dates, numbers, records FROM THE INPUT.
    Frame PYQs / MCQs around each major fact.
-4. Memory Hints: Max 2-3 short coding tricks / mnemonics. No long
-   analogies.
-5. Community: ONE short line max — handled inside the promos.
-6. Final Segments: Fact-dense recap + rapid-fire MCQ framing. NO long
+4. Community: ONE short line max — handled inside the promos.
+5. Final Segments: Fact-dense recap + rapid-fire MCQ framing. NO long
    motivational closing.
+
+NO MEMORY TRICKS / MNEMONICS / CODING HINTS anywhere in the script.
 
 ${CONTENT_MIX_BLOCK}
 
@@ -366,10 +367,10 @@ DNA RULES FOR SUBJECTIVE (content only):
 2. The "Link": Connect to related concepts / previous topics.
 3. PYQ Alert: For EVERY major sub-topic, state if/when it was asked
    (year + exam) and frame the likely MCQ.
-4. Memory Key: ONE short mnemonic / coding image per major concept.
-   Not a story.
-5. Final Seg: Fact + PYQ recap. Short sign-off. No motivational
+4. Final Seg: Fact + PYQ recap. Short sign-off. No motivational
    monologue.
+
+NO MEMORY TRICKS / MNEMONICS / CODING IMAGES anywhere in the script.
 
 ${CONTENT_MIX_BLOCK}
 
@@ -384,7 +385,7 @@ PRIORITY (do not violate):
   1. STYLE REFERENCE transcripts decide HOW to speak
      (language, words, fillers, pauses, toning).
   2. SKY DNA decides WHAT to speak
-     (promotions, PYQ analysis, memory hints, CTAs, structure).
+     (promotions, PYQ analysis, CTAs, structure).
 If the two ever conflict on style, the STYLE REFERENCE wins.
 `;
 
