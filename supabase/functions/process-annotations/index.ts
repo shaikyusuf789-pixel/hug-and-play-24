@@ -7,15 +7,12 @@ const corsHeaders = {
 };
 
 function getSupabaseServiceKey() {
-  const candidates = [
-    Deno.env.get("SUPABASE_SECRET_KEYS"),
-    Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY"),
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
-  ];
+  const secretKeys = Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0];
+  if (secretKeys) return secretKeys;
 
-  for (const raw of candidates) {
-    const key = raw?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0] ?? raw?.trim();
-    if (key) return key;
+  for (const name of ["CUSTOM_SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_ROLE_KEY"]) {
+    const raw = Deno.env.get(name)?.trim();
+    if (raw?.startsWith("sb_secret_") || raw?.startsWith("eyJ")) return raw;
   }
   return "";
 }
