@@ -236,8 +236,12 @@ serve(async (req) => {
       150,
       Math.min(5000, Number(body.wordCount) || 1800),
     );
-    const useClaude = isClaudeModel(body.model);
-    const model = useClaude
+    const provider = (body.provider || "").trim();
+    const useLovableGemini = provider === "lovable-gemini";
+    const useClaude = !useLovableGemini && isClaudeModel(body.model);
+    const model = useLovableGemini
+      ? (body.model || "google/gemini-3.5-flash").trim()
+      : useClaude
       ? normalizeClaudeModel(body.model)
       : normalizeGeminiModel(body.model, "gemini-2.5-pro");
     const factCheckModel = normalizeGeminiModel(body.factCheckModel, "gemini-2.5-pro");
@@ -263,17 +267,27 @@ serve(async (req) => {
     const userPrompt = parts.join("\n\n");
 
     let googleApiKey = "";
-    try {
-      // Google key is always required (fact-checker uses Gemini).
-      googleApiKey = requireGoogleApiKey();
-    } catch (_) {
-      return new Response(
-        JSON.stringify({ error: "GOOGLE_API_KEY missing" }),
-        {
+    let lovableApiKey = "";
+    if (useLovableGemini) {
+      lovableApiKey = Deno.env.get("LOVABLE_API_KEY")?.trim() || "";
+      if (!lovableApiKey) {
+        return new Response(JSON.stringify({ error: "LOVABLE_API_KEY missing" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+        });
+      }
+    } else {
+      try {
+        googleApiKey = requireGoogleApiKey();
+      } catch (_) {
+        return new Response(
+          JSON.stringify({ error: "GOOGLE_API_KEY missing" }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
     }
 
     let anthropicApiKey = "";
