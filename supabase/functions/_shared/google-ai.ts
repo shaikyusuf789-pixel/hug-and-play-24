@@ -12,11 +12,11 @@ export function normalizeGeminiModel(model: string | undefined, fallback = "gemi
   const lower = raw.toLowerCase();
 
   if (!raw) return fallback;
-  if (lower.includes("gpt-4o-mini") || lower.includes("gpt-4.0mini") || lower.includes("mini")) {
+  if (lower.startsWith("gemini-") || lower.startsWith("google/")) return raw.replace(/^google\//, "");
+  if (lower.includes("gpt-4o-mini") || lower.includes("gpt-4.0mini") || lower.includes("gpt-5-mini")) {
     return "gemini-2.5-flash-lite";
   }
   if (lower.startsWith("gpt-") || lower.includes("openai")) return "gemini-2.5-pro";
-  if (lower.startsWith("gemini-") || lower.startsWith("google/")) return raw.replace(/^google\//, "");
 
   return fallback;
 
