@@ -564,7 +564,7 @@ serve(async (req) => {
             }
 
             const contMessages: AnthropicMessage[] = [
-              { role: "user", content: userPrompt },
+              { role: "user", content: fullUserPrompt },
               { role: "assistant", content: full.trimEnd() },
               {
                 role: "user",
