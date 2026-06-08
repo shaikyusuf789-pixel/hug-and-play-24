@@ -156,6 +156,7 @@ async function runBackground(
       system: systemPrompt,
       user: userPrompt,
       temperature: 0.5,
+      maxOutputTokens: 32000,
       responseMimeType: "application/json",
     });
     const script = extractScriptText(content);
