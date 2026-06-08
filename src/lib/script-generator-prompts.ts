@@ -13,7 +13,7 @@ import { SKY_STYLE_TRANSCRIPTS } from "./training-transcripts";
  *  Priority order when there is a conflict:
  *    1. Reference transcripts (highest) — language, styling, word formation,
  *       filler words, toning, pauses.
- *    2. SKY DNA — promotions, PYQ analysis, memory hints, community/CTA.
+ *    2. SKY DNA — promotions, PYQ analysis, community/CTA.
  *
  *  SKY DNA has been intentionally stripped of all tone / voice / style /
  *  pacing instructions. Those now come ONLY from the reference transcripts.
