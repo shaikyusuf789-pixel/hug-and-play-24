@@ -9,6 +9,13 @@ const corsHeaders = {
 
 const BUCKET = "audio-files";
 
+function getSupabaseServiceKey() {
+  return Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0]
+    ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+    ?? Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")
+    ?? "";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -18,7 +25,7 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      (Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!,
+      getSupabaseServiceKey(),
     );
 
     const { data: chunk, error: chunkErr } = await supabase
