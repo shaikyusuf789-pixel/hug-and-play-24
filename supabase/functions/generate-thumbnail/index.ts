@@ -20,9 +20,16 @@ const ALLOWED_MODELS = new Set([
   "google/gemini-2.5-flash-image",
 ]);
 
+function getSupabaseServiceKey() {
+  return Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0]
+    ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+    ?? Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")
+    ?? "";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, (Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!);
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, getSupabaseServiceKey());
 
   try {
     const body = await req.json();
