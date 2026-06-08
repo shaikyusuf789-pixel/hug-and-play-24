@@ -169,21 +169,11 @@ serve(async (req) => {
   }
 
   try {
-    const { chunkId, action, themeName, _diag } = await req.json()
+    const { chunkId, action, themeName } = await req.json()
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const supabaseKey = getSupabaseServiceKey()
     const supabase = createClient(supabaseUrl, supabaseKey)
-
-    if (_diag) {
-      const sk = Deno.env.get('SUPABASE_SECRET_KEYS') ?? ''
-      const cu = Deno.env.get('CUSTOM_SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      return new Response(JSON.stringify({
-        secretKeysPrefix: sk.slice(0, 20), secretKeysLen: sk.length,
-        customPrefix: cu.slice(0, 14), customLen: cu.length,
-        chosenPrefix: supabaseKey.slice(0, 14), chosenLen: supabaseKey.length,
-      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
-    }
 
     const { data: chunk, error: fetchError } = await supabase
       .from('script_chunks')
