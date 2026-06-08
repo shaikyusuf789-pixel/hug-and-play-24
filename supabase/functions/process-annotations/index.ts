@@ -1,10 +1,31 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+function getSupabaseServiceKey() {
+  const secretKeys = Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0];
+  if (secretKeys) return secretKeys;
+
+  for (const name of ["SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEYS"]) {
+    const raw = Deno.env.get(name)?.trim();
+    const key = raw?.match(/sb_publishable_[A-Za-z0-9_-]+/)?.[0] ?? raw;
+    if (key?.startsWith("sb_publishable_")) return key;
+  }
+
+  for (const name of ["CUSTOM_SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_ROLE_KEY"]) {
+    const raw = Deno.env.get(name)?.trim();
+    if (raw?.startsWith("eyJ")) return raw;
+  }
+  return "";
+}
+
+function getSupabaseUrl() {
+  return "https://eozteueesaemhcmbqcxt.supabase.co";
+}
 
 // ============================================================
 // 2-GPT Annotation Pipeline
@@ -27,8 +48,8 @@ serve(async (req) => {
 
   try {
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      getSupabaseUrl(),
+      getSupabaseServiceKey(),
     );
 
     const { script_id, chunk_id, chunk_number, slide_source } = await req.json();
