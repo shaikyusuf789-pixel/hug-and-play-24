@@ -10,19 +10,20 @@ const corsHeaders = {
 const BUCKET = "audio-files";
 
 function getSupabaseServiceKey() {
-  // Project has legacy JWT keys disabled. Active key is sb_secret_... in CUSTOM_SUPABASE_SERVICE_ROLE_KEY.
-  // Prefer new-format sb_secret_ keys first; fall back to SUPABASE_SERVICE_ROLE_KEY only if it is also new-format.
-  const custom = Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")?.trim();
-  if (custom?.startsWith("sb_secret_")) return custom;
+  // Match process-queue's resolution order (the one that works in this project):
+  // 1. sb_secret_ from SUPABASE_SECRET_KEYS  2. sb_publishable_ fallback  3. legacy SRK
+  const secretKey = Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0];
+  if (secretKey) return secretKey;
 
-  const fromSecrets = Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0];
-  if (fromSecrets) return fromSecrets;
+  for (const name of ["SUPABASE_PUBLISHABLE_KEY", "SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEYS"]) {
+    const raw = Deno.env.get(name)?.trim();
+    const key = raw?.match(/sb_publishable_[A-Za-z0-9_-]+/)?.[0] ?? raw;
+    if (key?.startsWith("sb_publishable_")) return key;
+  }
 
-  const srk = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim();
-  if (srk?.startsWith("sb_secret_")) return srk;
-
-  // Last resort (will likely be a disabled legacy JWT, but better than empty)
-  return custom || srk || "";
+  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+    ?? Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")
+    ?? "";
 }
 
 Deno.serve(async (req) => {
