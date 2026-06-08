@@ -10,12 +10,20 @@ const corsHeaders = {
 const BUCKET = "audio-files";
 
 function getSupabaseServiceKey() {
-  const fromSecrets = Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0];
-  if (fromSecrets) return fromSecrets;
+  // Match process-queue's resolution order (the one that works in this project):
+  // 1. sb_secret_ from SUPABASE_SECRET_KEYS  2. sb_publishable_ fallback  3. legacy SRK
+  const secretKey = Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0];
+  if (secretKey) return secretKey;
 
-  const direct = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim()
-    || Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")?.trim();
-  return direct || "";
+  for (const name of ["SUPABASE_PUBLISHABLE_KEY", "SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEYS"]) {
+    const raw = Deno.env.get(name)?.trim();
+    const key = raw?.match(/sb_publishable_[A-Za-z0-9_-]+/)?.[0] ?? raw;
+    if (key?.startsWith("sb_publishable_")) return key;
+  }
+
+  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+    ?? Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")
+    ?? "";
 }
 
 Deno.serve(async (req) => {
@@ -36,7 +44,8 @@ Deno.serve(async (req) => {
       .eq("id", chunkId)
       .maybeSingle();
 
-    if (chunkErr || !chunk) return json({ error: "Chunk not found" }, 400);
+    if (chunkErr) return json({ error: "DB read failed", detail: chunkErr.message }, 500);
+    if (!chunk) return json({ error: "Chunk not found", chunkId }, 404);
     if (!chunk.content?.trim()) return json({ error: "Chunk content empty" }, 400);
 
     // Filter out emotion tags for non-Cartesia providers to avoid them being read as text
