@@ -36,6 +36,10 @@ async function reclaimStale(sb: any) {
     .eq("slide_job_status", "processing").lt("slide_job_started_at", cutoff);
   await sb.from("script_chunks").update({ audio_job_status: "queued" })
     .eq("audio_job_status", "processing").lt("audio_job_started_at", cutoff);
+  // Render-clip watchdog: worker crashed mid-render → reset to pending
+  await sb.from("video_clips")
+    .update({ status: "pending", error_msg: "reclaimed: stuck in rendering" })
+    .eq("status", "rendering").lt("updated_at", cutoff);
 }
 
 // Atomically claim one queued slide chunk (queued → processing)
