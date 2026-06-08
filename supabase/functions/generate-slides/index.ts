@@ -199,7 +199,7 @@ serve(async (req) => {
     const { chunkId, action, themeName } = await req.json()
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseKey = getSupabaseServiceKey()
+    const supabaseKey = await getSupabaseServiceKey()
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     const { data: chunk, error: fetchError } = await supabase
