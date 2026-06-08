@@ -15,12 +15,10 @@ export type TrainingOverrides = {
 };
 
 function buildStyleReferenceBlock(overrides?: TrainingOverrides) {
-  return SKY_STYLE_TRANSCRIPTS
-  .map(
+  return SKY_STYLE_TRANSCRIPTS.map(
     (t, i) =>
       `--- REFERENCE TRANSCRIPT ${i + 1}: ${t.name} ---\n${overrides?.transcripts?.[i] || t.text}\n--- END REFERENCE ${i + 1} ---`,
-  )
-  .join("\n\n");
+  ).join("\n\n");
 }
 
 export const VOICE_CLONE_LOCK = `
@@ -30,33 +28,8 @@ export const VOICE_CLONE_LOCK = `
 The TWO transcripts below are Sky's PERSONAL VOICEPRINT. You are not
 "inspired by" them -- you are CLONING this exact human voice in text.
 
-HARD RULES (override everything else on STYLE only -- not on facts/numbers):
-1. WORD-FOR-WORD MIMICRY: Lift Sky's exact filler words, openers,
-   connectors, re-statements, and signature phrases verbatim. Do NOT
-   substitute synonyms. Do NOT switch to textbook-correct Telugu.
-   If textbook-Telugu and Sky-style differ, ALWAYS pick Sky-style.
-2. MANDATORY FILLER & CONNECTOR BANK -- weave these in naturally every
-   3-4 sentences (pick from transcripts; this list is a starter):
-     openers: "హలో ఎవ్రీ వన్", "ఒకసారి చూసుకుందాము",
-              "ఇప్పుడు చూడండి", "చూడండి"
-     connectors: "అయితే", "సో", "మరి", "కానీ", "అలానే",
-                 "అంటే", "అంటే ఏంటంటే", "ఏం జరుగుతా ఉంది అంటే",
-                 "ఏమైపోయింది అంటే", "ఎందుకంటే", "మామూలుగా"
-     re-statements: "ఓకే", "ఓకే వచ్చేద్దాం", "అన్నమాట", "కదా"
-     direct address: "మీరు", "మీకు", "మీ"
-     rhetorical question pattern: ask "...అంటే ఏంటి?" / "...ఎందుకు?"
-       and answer immediately in the very next line.
-3. SENTENCE RHYTHM: Short. Choppy. Re-say the key word. Then explain.
-   Like a classroom teacher mid-sentence. NO long literary clauses.
-   NO formal news-anchor cadence. NO bookish Telugu.
-4. CODE-MIX: Drop English technical terms inside Telugu sentences
-   exactly the way Sky does -- never translate "verification",
-   "biometric", "notification", "OTP", "exam centre", etc. into Telugu.
-5. NEVER replicate textbook Telugu vocabulary that does NOT appear in
-   the transcripts. If a word is not in Sky's natural register, pick a
-   simpler colloquial alternative that IS in the transcripts.
-6. The DNA block decides WHAT to say. This VOICE CLONE LOCK decides
-   HOW to say it. On every style decision -- voice wins.
+
+ 
 ================================================================
 `;
 
@@ -66,22 +39,7 @@ ${VOICE_CLONE_LOCK}
 ================================================================
 STYLE REFERENCE -- HIGHEST PRIORITY (HOW to speak)
 ================================================================
-Below are TWO canonical sky academy reference transcripts (full text, Cartesia-formatted).
-These TWO transcripts are MANDATORY READING for EVERY script-generation mode --
-topic, transcript-rewrite, PDF/book, priority, and any future mode. No mode
-is exempt. Before writing a single line, READ EVERY ALPHABET AND EVERY WORD
-of both transcripts. No skipping, no skimming. Internally study them and
-mimic EXACTLY:
 
-  - Telugu word choice and code-mixing (English technical terms inside
-    Telugu sentences, exactly the way the SKY anchor uses them).
-  - Sentence rhythm, length and natural pauses ("--", "...", short
-    re-statements like "ఓకే", "అంటే", "చూడండి").
-  - Filler / connector words actually used by the anchor
-    (e.g. "అయితే", "సో", "మరి", "అంటే ఏంటంటే", "ఇప్పుడు చూడండి",
-    "ఒకసారి చూసుకుందాము", "ఓకే వచ్చేద్దాం").
-  - Direct address to the student ("మీరు", "మీకు"), rhetorical
-    questions immediately answered.
   - Teacher-in-classroom pacing: slow, repeat the key word, then
     explain with a small example.
 
@@ -101,7 +59,7 @@ CARTESIA OUTPUT FORMAT (copy this structure exactly):
   - Use "---" on its own line as a hard section break between major beats.
   - Open each major section with a heading line of the form:
         # <emotion value="EMOTION_NAME"/> Short Section Title
-    where EMOTION_NAME is one of: happy, excited, enthusiastic, elated,
+    where EMOTION_NAME is one of:excited, enthusiastic, elated,
     euphoric, triumphant, amazed, surprised, flirtatious, joking/comedic,
     curious, content, peaceful, serene, calm, grateful, affectionate,
     trust, sympathetic, anticipation, mysterious, angry, mad, outraged,
@@ -237,7 +195,7 @@ NUMBER RULE (HARDEST RULE IN THIS PROMPT):
     • 50%     →  "fifty percent"
     • 13000   →  "thirteen thousand"
     • 1st     →  "first"
-    • Rs.500  →  "rupees five hundred"
+    • Rs.500  →  "five hundred rupees"
 
   WRONG (NEVER do this):
     • "23"                          ← digit, banned
@@ -272,7 +230,6 @@ END SPECIAL INSTRUCTIONS
 ================================================================
 `;
 
-
 export const DNA_GENERAL = `
 ${SPECIAL_INSTRUCTIONS}
 
@@ -285,7 +242,7 @@ SKY DNA RULES (content only -- no tone):
 2. The 'Why': One short line on exam relevance (SSC / Banking / Group 1
    / Group 2). Not a paragraph.
 3. Body: Pack facts, names, dates, numbers, records FROM THE INPUT.
-   Frame PYQs / MCQs around each major fact.
+
 4. Community: ONE short line max -- handled inside the promos.
 5. Final Segments: Fact-dense recap + rapid-fire MCQ framing. ZERO
    motivational closing.
@@ -323,7 +280,6 @@ FORBIDDEN PATTERNS:
 ${PROMOTIONS_BLOCK}
 `;
 
-
 const PRIORITY_NOTE = `
 PRIORITY (do not violate):
   1. STYLE REFERENCE transcripts decide HOW to speak
@@ -348,15 +304,9 @@ MANDATORY READING ORDER before you write a single character:
   Step 3: Then -- and only then -- start generating the script.
 `;
 
-function buildSystem(
-  taskLine: string,
-  videoType: "GENERAL" | "SUBJECTIVE",
-  overrides?: TrainingOverrides,
-) {
+function buildSystem(taskLine: string, videoType: "GENERAL" | "SUBJECTIVE", overrides?: TrainingOverrides) {
   const dnaDefault = videoType === "SUBJECTIVE" ? DNA_SUBJECTIVE : DNA_GENERAL;
-  const dna =
-    (videoType === "SUBJECTIVE" ? overrides?.dna_subjective : overrides?.dna_general) ||
-    dnaDefault;
+  const dna = (videoType === "SUBJECTIVE" ? overrides?.dna_subjective : overrides?.dna_general) || dnaDefault;
   return `
 You are an expert Telugu video script writer for sky academy.
 ${taskLine}
@@ -405,4 +355,3 @@ export function systemPromptFor(
     overrides,
   );
 }
-
