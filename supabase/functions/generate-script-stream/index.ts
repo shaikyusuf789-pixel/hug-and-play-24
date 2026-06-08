@@ -480,15 +480,16 @@ serve(async (req) => {
           ? await anthropicStreamResponse(anthropicApiKey, {
               model,
               system: systemPrompt,
-              user: userPrompt,
+              user: fullUserPrompt,
               temperature: 0.2,
               maxTokens: Math.min(32000, Math.max(4096, targetWords * 8)),
             })
           : await geminiStreamResponse(googleApiKey, {
               model,
               system: systemPrompt,
-              user: userPrompt,
+              user: fullUserPrompt,
               temperature: 0.5,
+              maxOutputTokens: 32000,
             });
 
         if (!firstRes.ok || !firstRes.body) {
