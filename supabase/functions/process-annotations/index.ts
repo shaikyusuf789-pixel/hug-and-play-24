@@ -6,6 +6,115 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// ============================================================
+// Deterministic phrase → timestamp aligner
+// ============================================================
+// Replaces the GPT Stage-2 "timing sync" call. The previous Stage-2
+// frequently anchored annotations to the wrong (earliest) occurrence
+// of a sub-word, firing them 3–17 seconds too early.
+//
+// Strategy:
+//   1. Tokenize match_text into content words (drop stop-words/punct).
+//   2. Slide a window across ts_words. For each window position,
+//      score how many of the match tokens appear (in order, fuzzy).
+//   3. Return the start time of the best-scoring window.
+//   4. If no window scores well (>= 50% token coverage), drop the
+//      annotation rather than guessing.
+// ============================================================
+
+const STOP = new Set([
+  "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
+  "of", "for", "to", "in", "on", "at", "by", "with", "from", "as",
+  "and", "or", "but", "so", "if", "then", "than", "that", "this",
+  "these", "those", "it", "its", "i", "you", "we", "they", "he", "she",
+  "will", "would", "can", "could", "should", "may", "might", "do", "does",
+  "did", "has", "have", "had",
+]);
+
+function normalize(s: string): string {
+  return (s || "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function tokenize(s: string): string[] {
+  return normalize(s).split(" ").filter((w) => w && !STOP.has(w));
+}
+
+function tokenMatch(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  // prefix match in either direction handles plurals/inflections
+  if (a.length >= 4 && b.startsWith(a)) return true;
+  if (b.length >= 4 && a.startsWith(b)) return true;
+  return false;
+}
+
+/**
+ * Find the timestamp where `matchText` is spoken in `tsWords`.
+ *
+ * Returns null if no confident match found.
+ *
+ * @param matchText  Phrase from the script we want to align to audio.
+ * @param tsWords    Array of {text|word, start} word-level timestamps.
+ * @param minAfter   Earliest acceptable start time (used to anchor
+ *                   subsequent annotations after previously placed ones).
+ */
+function alignPhrase(
+  matchText: string,
+  tsWords: Array<{ text?: string; word?: string; start: number }>,
+  minAfter = 0,
+): { start: number; score: number } | null {
+  const tokens = tokenize(matchText);
+  if (tokens.length === 0 || tsWords.length === 0) return null;
+
+  const wordTokens = tsWords.map((w) => normalize(w.text || w.word || ""));
+  const windowSize = Math.max(tokens.length + 2, 6);
+
+  let best: { start: number; score: number } | null = null;
+
+  for (let i = 0; i < wordTokens.length; i++) {
+    const startTime = Number(tsWords[i].start) || 0;
+    if (startTime < minAfter) continue;
+
+    // Count how many match tokens appear (in order) within the window
+    const windowEnd = Math.min(wordTokens.length, i + windowSize);
+    let cursor = i;
+    let hits = 0;
+    let firstHitTime: number | null = null;
+
+    for (const tok of tokens) {
+      let found = -1;
+      for (let j = cursor; j < windowEnd; j++) {
+        if (tokenMatch(tok, wordTokens[j])) {
+          found = j;
+          break;
+        }
+      }
+      if (found >= 0) {
+        hits++;
+        if (firstHitTime === null) {
+          firstHitTime = Number(tsWords[found].start) || startTime;
+        }
+        cursor = found + 1;
+      }
+    }
+
+    const score = hits / tokens.length;
+    if (score > (best?.score ?? 0) && firstHitTime !== null) {
+      best = { start: firstHitTime, score };
+      if (score === 1) break; // perfect match, stop early
+    }
+  }
+
+  // Require at least 50% token coverage to accept
+  if (!best || best.score < 0.5) return null;
+  return best;
+}
+
+// ============================================================
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -14,18 +123,15 @@ serve(async (req) => {
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
     const { script_id, chunk_id, chunk_number, slide_source } = await req.json();
+    if (!script_id || !chunk_id) throw new Error("Missing script_id or chunk_id");
 
-    if (!script_id || !chunk_id) {
-      throw new Error("Missing script_id or chunk_id");
-    }
+    console.log(`[Annotations] script=${script_id} chunk=${chunk_id} source=${slide_source}`);
 
-    console.log(`[Annotations] Processing script ${script_id}, chunk ${chunk_id}, source ${slide_source}`);
-
-    // 1. Fetch data
+    // 1. Fetch chunk + OCR + timestamps
     const [chunkRes, ocrRes, tsRes] = await Promise.all([
       supabase.from("script_chunks").select("content").eq("id", chunk_id).single(),
       supabase.from("ocr_results").select("words").eq("chunk_id", chunk_id).eq("slide_source", slide_source).single(),
@@ -33,50 +139,62 @@ serve(async (req) => {
     ]);
 
     if (chunkRes.error) throw new Error(`Chunk not found: ${chunkRes.error.message}`);
-    if (ocrRes.error) throw new Error(`OCR results not found: ${ocrRes.error.message}`);
+    if (ocrRes.error) throw new Error(`OCR not found: ${ocrRes.error.message}`);
     if (tsRes.error) throw new Error(`Timestamps not found: ${tsRes.error.message}`);
 
-    const script_text = chunkRes.data.content;
+    const script_text: string = chunkRes.data.content || "";
     const ocr_words = JSON.parse(ocrRes.data.words || "[]");
     const ts_words = JSON.parse(tsRes.data.words || "[]");
+
+    const audioDuration = ts_words.length
+      ? Number(ts_words[ts_words.length - 1].end || ts_words[ts_words.length - 1].start || 0)
+      : 0;
 
     const openAiKey = Deno.env.get("OPENAI_API_KEY");
     if (!openAiKey) throw new Error("Missing OPENAI_API_KEY");
 
-    // --- STAGE 1: GPT-4o (Decision & BBoxes) ---
+    // --- STAGE 1: GPT-4o (selection + LONG match_text for alignment) ---
     const stage1_prompt = `
-Improve the annotation pipeline by choosing the best annotation targets for an educational video.
+You are an educational video director selecting annotations for a slide.
 
 INPUTS:
-1. SCRIPT TEXT: "${script_text}"
-2. OCR DATA (Words found on slide with coordinates): ${JSON.stringify(ocr_words)}
+1. SPOKEN SCRIPT (what the narrator says, in order):
+"""
+${script_text}
+"""
+
+2. OCR WORDS visible on the slide (with bounding boxes):
+${JSON.stringify(ocr_words)}
 
 TASK:
-- Pick 8–12 strong annotations per chunk.
-- Include key subtopics and important supporting keywords/phrases.
-- EVERY chosen annotation must map to visible OCR text.
-- Spread annotations across the slide content.
-- Identify the exact spoken word/phrase from the script that corresponds to this visual element for timing later. Store this in "match_text".
+Pick 8–12 high-impact annotations for this clip.
 
-CRITICAL QUALITY RULES:
-1. NO OVER-COMBINING: Keep annotations separate and specific. Do not merge unrelated concepts.
-2. NO LONG ANNOTATIONS: Maximum annotation length is 6 words. Never use full long sentences. Focus on keywords or short punchy phrases.
-3. SELECTIVE HIGHLIGHTING: Do NOT underline or circle the main global slide title (the big heading at the top) if it is just a background header that is already visible. Only highlight it if it's a specific "Topic of the Day" being introduced for the first time in this clip.
-4. VISUAL CLARITY: Prefer fewer strong annotations over many weak ones if the slide is crowded.
-5. SPECIFICITY: Each annotation should highlight one distinct concept at a time.
+For EACH annotation return:
+- "type":         "circle" or "underline" only (no other types).
+- "target_text":  the exact text from OCR to highlight (1–6 words max).
+- "bbox":         {x, y, w, h} copied from OCR.
+- "match_text":   the FULL surrounding phrase from the SCRIPT (NOT from OCR)
+                  where the narrator EXPLAINS this concept. Must be
+                  6–15 consecutive words copied verbatim from the script,
+                  containing the target keyword. This is used to align
+                  the annotation to the audio timeline.
 
-RULES:
-- ONLY 'circle' and 'underline' types are allowed.
-- Return a JSON object with a key "annotations" which is a list of:
-  { 
-    "type": "circle"|"underline", 
-    "target_text": "text as it appears in OCR", 
-    "match_text": "exact word/phrase from the script to match timing",
-    "bbox": {"x":0, "y":0, "w":0, "h":0}
-  }
+CRITICAL RULES:
+A. match_text MUST be a substring of the SCRIPT, not the OCR. Copy
+   6–15 words around the moment the narrator actually talks about this
+   concept (not where it first appears in an agenda list).
+B. If the same keyword appears multiple times in the script (e.g. once
+   in an intro agenda and again in the deep-dive section), pick the
+   DEEP-DIVE occurrence — the moment the narrator EXPLAINS it.
+C. Never pick the main slide title/heading as an annotation unless it
+   is genuinely the topic-of-the-day being introduced.
+D. Keep target_text short (≤6 words). Never highlight a full sentence.
+E. Spread annotations across the slide content; avoid clustering.
+
+Return JSON: { "annotations": [ { type, target_text, match_text, bbox }, ... ] }
 `;
 
-    console.log("[AI] Stage 1: Running GPT-4o (Target Selection)...");
+    console.log("[AI] Stage 1: selecting targets...");
     const res1 = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -86,7 +204,11 @@ RULES:
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are an expert educational video director. You choose only the most impactful keywords to highlight. You never merge unrelated concepts. Return only JSON." },
+          {
+            role: "system",
+            content:
+              "You select educational video annotations. You always quote match_text verbatim from the SPOKEN SCRIPT (not OCR), choosing the deep-dive occurrence over the agenda/intro occurrence. Return only JSON.",
+          },
           { role: "user", content: stage1_prompt },
         ],
         response_format: { type: "json_object" },
@@ -95,99 +217,103 @@ RULES:
 
     const data1 = await res1.json();
     if (!res1.ok) throw new Error(`GPT-4o failed: ${JSON.stringify(data1)}`);
-    
     const stage1_content = JSON.parse(data1.choices[0].message.content || "{}");
-    const proposed_annotations = stage1_content.annotations || [];
-    console.log(`[AI] Stage 1 finished. Proposed ${proposed_annotations.length} annotations.`);
+    const proposed = stage1_content.annotations || [];
+    console.log(`[AI] Stage 1 proposed ${proposed.length} annotations.`);
 
-    if (proposed_annotations.length === 0) {
+    if (proposed.length === 0) {
       return new Response(JSON.stringify({ ok: true, annotation_count: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // --- STAGE 2: GPT-4o (Timing Sync) ---
-    const stage2_prompt = `
-Fix the timing of selected annotations using the provided timestamps.
+    // --- STAGE 2: deterministic alignment (no GPT) ---
+    console.log("[Align] Deterministic phrase alignment starting...");
+    const aligned: any[] = [];
+    let lastStart = 0;
 
-INPUTS:
-1. SCRIPT TEXT: "${script_text}"
-2. PROPOSED ANNOTATIONS: ${JSON.stringify(proposed_annotations)}
-3. EXACT WORD TIMESTAMPS: ${JSON.stringify(ts_words.map((w: any) => ({ w: w.text, s: w.start })))}
+    // Detect intro/agenda region: first 25% of script (where lists like
+    // "1. Eligibility 2. Age Limit 3. Qualification" usually live).
+    // We'll avoid placing annotations in the first 25% of audio unless
+    // their match_text actually lives in the first 25% of the script.
+    const introCutoffAudio = audioDuration * 0.25;
+    const scriptLen = script_text.length;
+    const introCutoffScript = Math.floor(scriptLen * 0.25);
+    const scriptLower = script_text.toLowerCase();
 
-TASK:
-- Match each "match_text" to the exact spoken word or phrase in the timestamp list.
-- "start_time" must be the exact moment the FIRST word of the match_text begins.
+    for (const ann of proposed) {
+      const matchText: string = ann.match_text || ann.target_text || "";
+      if (!matchText) continue;
 
-TIMING RULES (CRITICAL):
-1. NO EARLY TIMING: Do not guess. The annotation must appear exactly when the word is SPOKEN.
-2. CONTEXTUAL MATCHING: Use the SCRIPT TEXT to determine which occurrence of a word is correct. If "Newton" is mentioned as a general intro but later discussed as "Newton's First Law", ensure the annotation for the First Law matches the later timestamp.
-3. EXACT START: The start_time MUST match the 's' value of the first word in the timestamp list that matches the match_text.
-4. NO DEFAULTING TO START: Do not use timestamps before 2.0s for specific content highlights unless that word is literally the first thing said in the clip.
-5. DROP IF UNSURE: If you cannot find a clear match in the timestamps for the specific phrase in its correct context, set "start_time" to null.
+      // Try alignment, preferring matches AFTER the last placed annotation
+      // (annotations are usually returned in slide-reading order).
+      let result = alignPhrase(matchText, ts_words, lastStart);
 
-BALANCE RULES:
-- If too many items share the same time, keep the strongest one and remove the rest.
-- Ensure annotations are not too crowded or too sparse (aim for a comfortable rhythm).
+      // If nothing after lastStart, retry from the beginning.
+      if (!result) result = alignPhrase(matchText, ts_words, 0);
+      if (!result) {
+        console.log(`[Align] DROP "${ann.target_text}" — no confident match.`);
+        continue;
+      }
 
-SELF-CHECK:
-- Does this start_time match the EXACT word in the script?
-- Is it too early? (If it's in the first 2 seconds but the concept is discussed later, it's WRONG).
-- Is the text too long? (Should have been caught in Stage 1, but filter here if needed).
+      // Guard C: drop early annotations whose phrase isn't in the intro of the script.
+      if (result.start < introCutoffAudio) {
+        const matchLower = normalize(matchText);
+        const idxInScript = scriptLower.indexOf(matchLower.split(" ")[0] || "");
+        const isPhraseInIntro = idxInScript >= 0 && idxInScript < introCutoffScript;
+        if (!isPhraseInIntro) {
+          // Re-align forcing search past the intro audio region
+          const retry = alignPhrase(matchText, ts_words, introCutoffAudio);
+          if (retry && retry.score >= 0.5) {
+            result = retry;
+          } else {
+            console.log(
+              `[Align] DROP "${ann.target_text}" — early-firing guard (matched ${result.start.toFixed(2)}s, no intro context).`,
+            );
+            continue;
+          }
+        }
+      }
 
-RULES:
-- Return a JSON object with a key "annotations".
-- ONLY include annotations with a valid numeric start_time.
-`;
+      lastStart = result.start;
 
-    console.log("[AI] Stage 2: Running GPT-4o (Timing Sync)...");
-    const res2 = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${openAiKey}`,
+      aligned.push({
+        type: ann.type,
+        target_text: ann.target_text,
+        bbox: ann.bbox,
+        start_time: Number(result.start.toFixed(2)),
+        _score: Number(result.score.toFixed(2)),
+      });
+
+      console.log(
+        `[Align] "${ann.target_text}" → ${result.start.toFixed(2)}s (score=${result.score.toFixed(2)})`,
+      );
+    }
+
+    // Strip internal score before saving
+    const final_annotations = aligned.map(({ _score, ...rest }) => rest);
+
+    console.log(`[Align] Final count: ${final_annotations.length} of ${proposed.length} proposed.`);
+
+    // 2. Save
+    const { error: upsertError } = await supabase.from("clip_annotations").upsert(
+      {
+        script_id,
+        chunk_id,
+        chunk_number,
+        slide_source,
+        annotations: JSON.stringify(final_annotations),
+        updated_at: new Date().toISOString(),
       },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: "You are a precise audio-visual sync specialist. You ensure timings are exact based on the spoken script. You avoid early timing at all costs. Return only JSON." },
-          { role: "user", content: stage2_prompt },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
-
-    const data2 = await res2.json();
-    if (!res2.ok) throw new Error(`GPT-4o failed: ${JSON.stringify(data2)}`);
-
-    const stage2_content = JSON.parse(data2.choices[0].message.content || "{}");
-    let final_annotations = stage2_content.annotations || [];
-    
-    // Final filtering: Ensure numeric start_time and basic quality
-    final_annotations = final_annotations.filter((ann: any) => 
-      typeof ann.start_time === 'number' && ann.start_time >= 0
+      { onConflict: "script_id,chunk_id,slide_source" },
     );
 
-    console.log(`[AI] Stage 2 finished. Final count after filtering: ${final_annotations.length}.`);
+    if (upsertError) throw new Error(`Save failed: ${upsertError.message}`);
 
-    // 2. Save to DB
-    const { error: upsertError } = await supabase.from("clip_annotations").upsert({
-      script_id,
-      chunk_id,
-      chunk_number,
-      slide_source,
-      annotations: JSON.stringify(final_annotations),
-      updated_at: new Date().toISOString(),
-    }, {
-      onConflict: "script_id,chunk_id,slide_source"
-    });
-
-    if (upsertError) throw new Error(`Failed to save annotations: ${upsertError.message}`);
-
-    return new Response(JSON.stringify({ ok: true, annotation_count: final_annotations.length }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-
+    return new Response(
+      JSON.stringify({ ok: true, annotation_count: final_annotations.length }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   } catch (error: any) {
     console.error("[Annotations Error]", error);
     return new Response(JSON.stringify({ error: error.message }), {
