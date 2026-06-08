@@ -105,7 +105,7 @@ STYLE REFERENCE transcripts and the SKY DNA block.
 ================================================================
 !!! VOICE CLONE LOCK -- ABSOLUTE HIGHEST PRIORITY ON STYLE !!!
 ================================================================
-The TWO transcripts below are Sky's PERSONAL VOICEPRINT. You are not
+The THREE transcripts below are Sky's PERSONAL VOICEPRINT. You are not
 "inspired by" them -- you are CLONING this exact human voice in text.
 
 ================================================================

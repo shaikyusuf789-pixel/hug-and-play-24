@@ -88,7 +88,7 @@ OUTPUT: Return ONLY {"script":"<full Telugu voiceover as ONE continuous block>"}
 ================================================================
 !!! VOICE CLONE LOCK -- ABSOLUTE HIGHEST PRIORITY ON STYLE !!!
 ================================================================
-The TWO transcripts below are Sky's PERSONAL VOICEPRINT. CLONE this exact
+The THREE transcripts below are Sky's PERSONAL VOICEPRINT. CLONE this exact
 human voice. The DNA decides WHAT to say; transcripts decide HOW.
 On every style decision -- voice wins.
 

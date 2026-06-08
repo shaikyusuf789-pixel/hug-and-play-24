@@ -1,6 +1,6 @@
 // Deno-side script-generation prompts.
 // Three pillars only:
-//   HOW to speak   -> 2 STYLE REFERENCE transcripts (style only, not facts)
+//   HOW to speak   -> 3 STYLE REFERENCE transcripts (style only, not facts)
 //   WHAT to speak  -> USER INPUT (topic / idea / PDF / transcript)
 //   WHERE to place -> SKY DNA (structure + promo placement)
 

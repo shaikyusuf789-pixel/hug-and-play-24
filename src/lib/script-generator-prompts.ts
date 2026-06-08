@@ -3,7 +3,7 @@ import { SKY_STYLE_TRANSCRIPTS } from "./training-transcripts";
 /**
  * Script generation prompt building blocks.
  * Three pillars only:
- *   HOW to speak   -> 2 STYLE REFERENCE transcripts (style only, not facts)
+ *   HOW to speak   -> 3 STYLE REFERENCE transcripts (style only, not facts)
  *   WHAT to speak  -> USER INPUT (topic / idea / PDF / transcript)
  *   WHERE to place -> SKY DNA (structure + promo placement)
  */
@@ -17,7 +17,7 @@ export const STYLE_REFERENCE_INSTRUCTIONS = `
 ================================================================
 STYLE REFERENCE -- HOW to speak (style only, NOT a content source)
 ================================================================
-The two transcripts below are Sky's voice samples. Mimic the rhythm,
+The three transcripts below are Sky's voice samples. Mimic the rhythm,
 code-mix, and teacher tone. Do NOT copy their topics, facts, examples,
 names, numbers or domain words into the new script.
 
