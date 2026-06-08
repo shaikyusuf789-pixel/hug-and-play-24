@@ -198,8 +198,9 @@ motivation is allowed.
            "ఇది ఇలా అడగొచ్చు: ఎవరు...?" then immediately answer).
            Cover SSC, Banking, Group 1, Group 2, RRB style framings.
 
-  ~10-15%  Memory hooks / coding tricks / mnemonics / short one-line
-           analogies linking facts -- NOT long motivational stories.
+  0%       Memory tricks / mnemonics / coding hints. STRICTLY ZERO.
+           Do NOT include any mnemonic devices, memory hooks, or
+           coding-style tricks. Pure teaching only.
 
   0%       Motivation / mentorship voice. STRICTLY ZERO.
            DO NOT include any "war strategy", "life balance", "6-month plan",
