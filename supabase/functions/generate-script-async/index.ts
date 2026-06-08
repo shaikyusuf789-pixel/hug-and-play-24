@@ -318,7 +318,7 @@ serve(async (req) => {
 
     // Kick off background work
     // @ts-ignore - EdgeRuntime is available in Supabase edge runtime
-    EdgeRuntime.waitUntil(runBackground(supa, row.id, systemPrompt, userPrompt, model, factCheckModel, googleApiKey));
+    EdgeRuntime.waitUntil(runBackground(supa, row.id, systemPrompt, fullUserPrompt, model, factCheckModel, googleApiKey));
 
     return new Response(
       JSON.stringify({
