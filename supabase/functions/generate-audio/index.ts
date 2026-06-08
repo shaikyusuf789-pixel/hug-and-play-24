@@ -30,28 +30,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { chunkId, provider = "elevenlabs", voiceId, model, _diag } = await req.json();
-    if (_diag) {
-      // Diagnostic: test each available key against a known chunk
-      const url = Deno.env.get("SUPABASE_URL")!;
-      const candidates: Record<string, string> = {
-        CUSTOM_SUPABASE_SERVICE_ROLE_KEY: Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")?.trim() || "",
-        SUPABASE_SERVICE_ROLE_KEY: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim() || "",
-        SUPABASE_SECRET_KEYS_match: Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0] || "",
-      };
-      const results: Record<string, any> = {};
-      for (const [name, key] of Object.entries(candidates)) {
-        if (!key) { results[name] = { present: false }; continue; }
-        try {
-          const c = createClient(url, key);
-          const { error } = await c.from("script_chunks").select("id").limit(1);
-          results[name] = { present: true, prefix: key.slice(0, 12), len: key.length, error: error?.message || null };
-        } catch (e: any) {
-          results[name] = { present: true, prefix: key.slice(0, 12), len: key.length, error: String(e?.message || e) };
-        }
-      }
-      return json({ diag: results }, 200);
-    }
+    const { chunkId, provider = "elevenlabs", voiceId, model } = await req.json();
     if (!chunkId) return json({ error: "chunkId required" }, 400);
 
     const supabase = createClient(
