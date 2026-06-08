@@ -462,6 +462,8 @@ function AnnotationsPage() {
         if (kind === "ts")   return !tsMap[c.id];
         if (kind === "ai")   return !aiMap[c.id];
         if (kind === "clip") {
+          // Must have annotations before we can render — skip silently otherwise.
+          if (!aiMap[c.id]) return false;
           const v = clipMap[c.id];
           return !v || !v.file_url || (v.status && v.status !== "done");
         }
