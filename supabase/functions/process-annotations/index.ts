@@ -17,6 +17,10 @@ function getSupabaseServiceKey() {
   return "";
 }
 
+function getSupabaseUrl() {
+  return "https://eozteueesaemhcmbqcxt.supabase.co";
+}
+
 // ============================================================
 // 2-GPT Annotation Pipeline
 //
@@ -38,7 +42,7 @@ serve(async (req) => {
 
   try {
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
+      getSupabaseUrl(),
       getSupabaseServiceKey(),
     );
 
