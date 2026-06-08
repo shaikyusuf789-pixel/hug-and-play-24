@@ -119,7 +119,7 @@ ENHANCED SCRIPT (numbers as English words + RICH punctuation + HEAVY breaks + fr
 Cartesia emotion tags, facts unchanged):
 `;
 
-    const systemInstruction = "You are a Telugu narration tool that (a) rewrites every number — including digits, Telugu numerals, and Telugu number WORDS like రెండు వేల ఇరవై ఆరు — into context-aware spoken English words, (b) adds rich punctuation, paragraph breaks, and inline Cartesia <emotion value=\"name\"/> tags using only the 60 allowed emotions, and (c) slightly reshapes wording to mimic Jerry's narration style from the 2 reference transcripts (fillers, connectors, rhythm) WITHOUT changing any facts, numbers, names, or meaning.";
+    const systemInstruction = "You are a Telugu narration tool that (a) rewrites every number -- including digits, Telugu numerals, and Telugu number words like రెండు వేల ఇరవై ఆరు -- into context-aware spoken English words, and (b) adds rich punctuation, paragraph breaks, and inline Cartesia <emotion value=\"name\"/> tags using only the 60 allowed emotions, WITHOUT changing any facts, numbers, names, or meaning.";
 
     const model = "gemini-2.5-pro";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
