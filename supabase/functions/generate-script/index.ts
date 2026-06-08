@@ -5,18 +5,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { geminiGenerateText, normalizeGeminiModel, requireGoogleApiKey } from "../_shared/google-ai.ts";
-import {
-  DNA_GENERAL,
-  DNA_SUBJECTIVE,
-  TELUGU_TTS_MASTER_PROMPT,
-  type TrainingOverrides,
-} from "./prompts.ts";
+import { DNA_GENERAL, DNA_SUBJECTIVE, TELUGU_TTS_MASTER_PROMPT, type TrainingOverrides } from "./prompts.ts";
 import { SKY_STYLE_TRANSCRIPTS } from "./transcripts.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface Body {
@@ -35,14 +29,12 @@ interface Body {
 }
 
 function buildStyleRefs(overrides?: TrainingOverrides) {
-  return SKY_STYLE_TRANSCRIPTS
-    .map(
-      (t, i) =>
-        `--- REFERENCE TRANSCRIPT ${i + 1}: ${t.name} ---\n${
-          overrides?.transcripts?.[i] || t.text
-        }\n--- END REFERENCE ${i + 1} ---`,
-    )
-    .join("\n\n");
+  return SKY_STYLE_TRANSCRIPTS.map(
+    (t, i) =>
+      `--- REFERENCE TRANSCRIPT ${i + 1}: ${t.name} ---\n${
+        overrides?.transcripts?.[i] || t.text
+      }\n--- END REFERENCE ${i + 1} ---`,
+  ).join("\n\n");
 }
 
 function buildSystemPrompt(
@@ -51,15 +43,15 @@ function buildSystemPrompt(
   targetWords: number,
   overrides?: TrainingOverrides,
 ) {
-  const dna = videoType === "SUBJECTIVE"
-    ? (overrides?.dna_subjective || DNA_SUBJECTIVE)
-    : (overrides?.dna_general || DNA_GENERAL);
+  const dna =
+    videoType === "SUBJECTIVE" ? overrides?.dna_subjective || DNA_SUBJECTIVE : overrides?.dna_general || DNA_GENERAL;
 
-  const taskLine = inputMode === "transcript"
-    ? "REWRITE the provided competitor transcript into ONE continuous sky academy Telugu voiceover script."
-    : inputMode === "pdf"
-    ? "ADAPT the provided book / PDF text into ONE continuous sky academy Telugu teaching voiceover."
-    : "WRITE ONE complete, original sky academy Telugu voiceover script on the given topic / idea.";
+  const taskLine =
+    inputMode === "transcript"
+      ? "REWRITE the provided competitor transcript into ONE continuous sky academy Telugu voiceover script."
+      : inputMode === "pdf"
+        ? "ADAPT the provided book / PDF text into ONE continuous sky academy Telugu teaching voiceover."
+        : "WRITE ONE complete, original sky academy Telugu voiceover script on the given topic / idea.";
 
   const min = Math.max(50, targetWords - 50);
   const max = targetWords + 50;
@@ -76,7 +68,7 @@ ABSOLUTE WORD-COUNT TARGET (HARDEST CONSTRAINT)
 - Count words as whitespace-separated tokens of the Telugu script.
 - If the source material (topic / transcript / PDF) is too short to
   reach ${min} words, you MUST expand using your own general knowledge:
-  relevant exam context, real-world examples, motivational angles,
+  relevant exam context, real-world examples
   Indian polity / history / current affairs links, study tips, PYQ
   references, analogies, and sky academy-style anecdotes. NEVER stop
   short. NEVER pad with filler or repetition just to hit the count --
@@ -164,7 +156,9 @@ function extractScriptText(raw: string): string {
   try {
     const obj = JSON.parse(t);
     if (typeof obj?.script === "string") return obj.script.trim();
-  } catch (_) { /* fall through */ }
+  } catch (_) {
+    /* fall through */
+  }
   // Try to locate first {...} block.
   const s = t.indexOf("{");
   const e = t.lastIndexOf("}");
@@ -172,7 +166,9 @@ function extractScriptText(raw: string): string {
     try {
       const obj = JSON.parse(t.slice(s, e + 1));
       if (typeof obj?.script === "string") return obj.script.trim();
-    } catch (_) { /* fall through */ }
+    } catch (_) {
+      /* fall through */
+    }
   }
   // Last resort: return the raw text as the script.
   return t;
@@ -190,15 +186,9 @@ serve(async (req) => {
   try {
     const body = (await req.json()) as Body;
 
-    const inputMode = (body.inputMode ?? "topic") as
-      | "topic" | "transcript" | "pdf" | "idea";
-    const videoType =
-      ((body.videoType ?? "subjective").toString().toUpperCase()) as
-        "GENERAL" | "SUBJECTIVE";
-    const targetWords = Math.max(
-      150,
-      Math.min(5000, Number(body.wordCount) || 660),
-    );
+    const inputMode = (body.inputMode ?? "topic") as "topic" | "transcript" | "pdf" | "idea";
+    const videoType = (body.videoType ?? "subjective").toString().toUpperCase() as "GENERAL" | "SUBJECTIVE";
+    const targetWords = Math.max(150, Math.min(5000, Number(body.wordCount) || 660));
     const model = normalizeGeminiModel(body.model, "gemini-2.5-pro");
     const save = body.save !== false;
 
@@ -209,21 +199,22 @@ serve(async (req) => {
       parts.push(`CHAPTER / IDEA CONTEXT:\n${body.chapterContext}`);
     }
     if (body.content) {
-      const label = inputMode === "transcript"
-        ? "SOURCE COMPETITOR TRANSCRIPT"
-        : inputMode === "pdf"
-        ? "SOURCE BOOK / PDF TEXT"
-        : "SOURCE MATERIAL";
+      const label =
+        inputMode === "transcript"
+          ? "SOURCE COMPETITOR TRANSCRIPT"
+          : inputMode === "pdf"
+            ? "SOURCE BOOK / PDF TEXT"
+            : "SOURCE MATERIAL";
       parts.push(`${label}:\n${body.content}`);
     }
     if (body.specialInstructions) {
       parts.push(`SPECIAL INSTRUCTIONS (must be respected):\n${body.specialInstructions}`);
     }
     if (parts.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "No input provided (topic / content / context all empty)." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "No input provided (topic / content / context all empty)." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
     parts.push(
       `\nGenerate ONE continuous Telugu script of approximately ${targetWords} words (range ${targetWords - 50}-${targetWords + 50}). Use your general knowledge to add motivation, exam relevance, examples, or strategy if the source is short. Return JSON: {"script":"..."} ONLY.`,
@@ -234,17 +225,14 @@ serve(async (req) => {
     try {
       googleApiKey = requireGoogleApiKey();
     } catch (_) {
-      return new Response(
-        JSON.stringify({ error: "GOOGLE_API_KEY missing on server" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "GOOGLE_API_KEY missing on server" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Pull any boss-edited training overrides.
-    const supa = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const overrideKeys = [
       "training:transcript_1",
       "training:transcript_2",
@@ -253,13 +241,8 @@ serve(async (req) => {
       "training:sky_dna_general",
       "training:sky_dna_subjective",
     ];
-    const { data: settingsRows } = await supa
-      .from("app_settings")
-      .select("key, value")
-      .in("key", overrideKeys);
-    const settingsMap = new Map(
-      (settingsRows ?? []).map((r: any) => [r.key, r.value]),
-    );
+    const { data: settingsRows } = await supa.from("app_settings").select("key, value").in("key", overrideKeys);
+    const settingsMap = new Map((settingsRows ?? []).map((r: any) => [r.key, r.value]));
     const readVal = (k: string): string | null => {
       const v = settingsMap.get(k);
       if (!v) return null;
@@ -278,15 +261,13 @@ serve(async (req) => {
       dna_subjective: readVal("training:sky_dna_subjective"),
     };
 
-    const systemPrompt = buildSystemPrompt(
-      videoType,
-      inputMode,
-      targetWords,
-      overrides,
-    );
+    const systemPrompt = buildSystemPrompt(videoType, inputMode, targetWords, overrides);
 
     console.log("generate-script call", {
-      inputMode, videoType, targetWords, model,
+      inputMode,
+      videoType,
+      targetWords,
+      model,
       topicLen: (body.topic ?? "").length,
       contentLen: (body.content ?? "").length,
       contextLen: (body.chapterContext ?? "").length,
@@ -302,10 +283,10 @@ serve(async (req) => {
     });
     const script = extractScriptText(content);
     if (!script) {
-      return new Response(
-        JSON.stringify({ error: "Model returned empty script", raw: content }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Model returned empty script", raw: content }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const wordCount = countWords(script);
@@ -353,9 +334,9 @@ serve(async (req) => {
     );
   } catch (e) {
     console.error("generate-script fatal", e);
-    return new Response(
-      JSON.stringify({ error: String((e as Error)?.message ?? e) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: String((e as Error)?.message ?? e) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
