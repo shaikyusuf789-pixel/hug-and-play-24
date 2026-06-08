@@ -5,19 +5,18 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { geminiGenerateJson, geminiGenerateText, normalizeGeminiModel, requireGoogleApiKey } from "../_shared/google-ai.ts";
 import {
-  DNA_GENERAL,
-  DNA_SUBJECTIVE,
-  TELUGU_TTS_MASTER_PROMPT,
-  type TrainingOverrides,
-} from "./prompts.ts";
+  geminiGenerateJson,
+  geminiGenerateText,
+  normalizeGeminiModel,
+  requireGoogleApiKey,
+} from "../_shared/google-ai.ts";
+import { DNA_GENERAL, DNA_SUBJECTIVE, TELUGU_TTS_MASTER_PROMPT, type TrainingOverrides } from "./prompts.ts";
 import { SKY_STYLE_TRANSCRIPTS } from "./transcripts.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface Body {
@@ -51,14 +50,12 @@ OUTPUT: Return ONLY a JSON object: {"findings":[{"claim":"<exact wrong sentence 
 If no genuine issues, return {"findings":[]}. Do not return anything else. No markdown, no commentary.`;
 
 function buildStyleRefs(overrides?: TrainingOverrides) {
-  return SKY_STYLE_TRANSCRIPTS
-    .map(
-      (t, i) =>
-        `--- REFERENCE TRANSCRIPT ${i + 1}: ${t.name} ---\n${
-          overrides?.transcripts?.[i] || t.text
-        }\n--- END REFERENCE ${i + 1} ---`,
-    )
-    .join("\n\n");
+  return SKY_STYLE_TRANSCRIPTS.map(
+    (t, i) =>
+      `--- REFERENCE TRANSCRIPT ${i + 1}: ${t.name} ---\n${
+        overrides?.transcripts?.[i] || t.text
+      }\n--- END REFERENCE ${i + 1} ---`,
+  ).join("\n\n");
 }
 
 function buildSystemPrompt(
@@ -67,14 +64,14 @@ function buildSystemPrompt(
   targetWords: number,
   overrides?: TrainingOverrides,
 ) {
-  const dna = videoType === "SUBJECTIVE"
-    ? (overrides?.dna_subjective || DNA_SUBJECTIVE)
-    : (overrides?.dna_general || DNA_GENERAL);
-  const taskLine = inputMode === "transcript"
-    ? "REWRITE the provided competitor transcript into ONE continuous sky academy Telugu voiceover script."
-    : inputMode === "pdf"
-    ? "ADAPT the provided book / PDF text into ONE continuous sky academy Telugu teaching voiceover."
-    : "WRITE ONE complete, original sky academy Telugu voiceover script on the given topic / idea.";
+  const dna =
+    videoType === "SUBJECTIVE" ? overrides?.dna_subjective || DNA_SUBJECTIVE : overrides?.dna_general || DNA_GENERAL;
+  const taskLine =
+    inputMode === "transcript"
+      ? "REWRITE the provided competitor transcript into ONE continuous sky academy Telugu voiceover script."
+      : inputMode === "pdf"
+        ? "ADAPT the provided book / PDF text into ONE continuous sky academy Telugu teaching voiceover."
+        : "WRITE ONE complete, original sky academy Telugu voiceover script on the given topic / idea.";
   const min = Math.max(50, targetWords - 50);
   const max = targetWords + 50;
   return `
@@ -95,20 +92,7 @@ The TWO transcripts below are Sky's PERSONAL VOICEPRINT. CLONE this exact
 human voice. The DNA decides WHAT to say; transcripts decide HOW.
 On every style decision -- voice wins.
 
-HARD RULES:
-1. WORD-FOR-WORD MIMICRY of Sky's fillers, openers, connectors, re-statements.
-   Never substitute synonyms. Never switch to textbook Telugu.
-2. MANDATORY FILLER BANK (use every 3-4 sentences):
-   openers: "హలో ఎవ్రీ వన్", "ఒకసారి చూసుకుందాము", "ఇప్పుడు చూడండి", "చూడండి"
-   connectors: "అయితే", "సో", "మరి", "కానీ", "అలానే", "అంటే", "అంటే ఏంటంటే",
-               "ఏం జరుగుతా ఉంది అంటే", "ఏమైపోయింది అంటే", "ఎందుకంటే", "మామూలుగా"
-   re-statements: "ఓకే", "ఓకే వచ్చేద్దాం", "అన్నమాట", "కదా"
-   rhetorical: ask "...అంటే ఏంటి?" / "...ఎందుకు?" then answer next line.
-3. SHORT CHOPPY SENTENCES. Re-say the key word. Then explain. Classroom teacher
-   mid-sentence -- not a news anchor. No long literary clauses.
-4. CODE-MIX: keep English technical terms ("verification", "biometric", "OTP",
-   "notification", "exam centre") inside Telugu sentences as Sky does.
-5. NEVER use textbook Telugu vocab absent from the transcripts.
+
 
 ================================================================
 STYLE REFERENCE -- READ EVERY WORD (HOW to speak):
@@ -167,17 +151,17 @@ async function runBackground(
     const script = extractScriptText(content);
     const wc = countWords(script);
 
-    await supa.from("scripts").update({
-      content: script,
-      word_count: wc,
-      status: "SCRIPT_DONE",
-    }).eq("id", scriptId);
+    await supa
+      .from("scripts")
+      .update({
+        content: script,
+        word_count: wc,
+        status: "SCRIPT_DONE",
+      })
+      .eq("id", scriptId);
 
     // 2) Fact-check
-    await supa.from("scripts").update({ status: "FACT_CHECKING" }).eq(
-      "id",
-      scriptId,
-    );
+    await supa.from("scripts").update({ status: "FACT_CHECKING" }).eq("id", scriptId);
 
     let findings: any[] = [];
     let fcError: string | null = null;
@@ -193,16 +177,22 @@ async function runBackground(
       fcError = `fact-check error: ${(e as Error).message}`;
     }
 
-    await supa.from("scripts").update({
-      fact_check_findings: { findings, error: fcError, checked_at: new Date().toISOString(), model: factCheckModel },
-      status: "FACT_CHECKED",
-    }).eq("id", scriptId);
+    await supa
+      .from("scripts")
+      .update({
+        fact_check_findings: { findings, error: fcError, checked_at: new Date().toISOString(), model: factCheckModel },
+        status: "FACT_CHECKED",
+      })
+      .eq("id", scriptId);
   } catch (e) {
     console.error("background error", e);
-    await supa.from("scripts").update({
-      status: "FAILED",
-      script_error: String((e as Error)?.message ?? e).slice(0, 1000),
-    }).eq("id", scriptId);
+    await supa
+      .from("scripts")
+      .update({
+        status: "FAILED",
+        script_error: String((e as Error)?.message ?? e).slice(0, 1000),
+      })
+      .eq("id", scriptId);
   }
 }
 
@@ -213,15 +203,9 @@ serve(async (req) => {
   try {
     const body = (await req.json()) as Body;
 
-    const inputMode = (body.inputMode ?? "idea") as
-      | "topic" | "transcript" | "pdf" | "idea";
-    const videoType =
-      ((body.videoType ?? "general").toString().toUpperCase()) as
-        "GENERAL" | "SUBJECTIVE";
-    const targetWords = Math.max(
-      150,
-      Math.min(5000, Number(body.wordCount) || 1800),
-    );
+    const inputMode = (body.inputMode ?? "idea") as "topic" | "transcript" | "pdf" | "idea";
+    const videoType = (body.videoType ?? "general").toString().toUpperCase() as "GENERAL" | "SUBJECTIVE";
+    const targetWords = Math.max(150, Math.min(5000, Number(body.wordCount) || 1800));
     const model = normalizeGeminiModel(body.model, "gemini-2.5-pro");
     const factCheckModel = normalizeGeminiModel(body.factCheckModel, "gemini-2.5-pro");
 
@@ -251,19 +235,13 @@ serve(async (req) => {
     try {
       googleApiKey = requireGoogleApiKey();
     } catch (_) {
-      return new Response(
-        JSON.stringify({ error: "GOOGLE_API_KEY missing" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+      return new Response(JSON.stringify({ error: "GOOGLE_API_KEY missing" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const supa = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const overrideKeys = [
       "training:transcript_1",
@@ -273,12 +251,8 @@ serve(async (req) => {
       "training:sky_dna_general",
       "training:sky_dna_subjective",
     ];
-    const { data: settingsRows } = await supa.from("app_settings").select(
-      "key, value",
-    ).in("key", overrideKeys);
-    const settingsMap = new Map(
-      (settingsRows ?? []).map((r: any) => [r.key, r.value]),
-    );
+    const { data: settingsRows } = await supa.from("app_settings").select("key, value").in("key", overrideKeys);
+    const settingsMap = new Map((settingsRows ?? []).map((r: any) => [r.key, r.value]));
     const readVal = (k: string): string | null => {
       const v = settingsMap.get(k);
       if (!v) return null;
@@ -297,12 +271,7 @@ serve(async (req) => {
       dna_subjective: readVal("training:sky_dna_subjective"),
     };
 
-    const systemPrompt = buildSystemPrompt(
-      videoType,
-      inputMode,
-      targetWords,
-      overrides,
-    );
+    const systemPrompt = buildSystemPrompt(videoType, inputMode, targetWords, overrides);
 
     const title = body.title || body.topic || "sky academy Script";
 
@@ -313,39 +282,30 @@ serve(async (req) => {
     }
 
     // Create placeholder row IMMEDIATELY
-    const { data: row, error: insErr } = await supa.from("scripts").insert({
-      idea_id: body.idea_id ?? null,
-      title,
-      content: "",
-      word_count: 0,
-      video_type: videoType,
-      model,
-      status: "PROCESSING",
-    }).select().single();
+    const { data: row, error: insErr } = await supa
+      .from("scripts")
+      .insert({
+        idea_id: body.idea_id ?? null,
+        title,
+        content: "",
+        word_count: 0,
+        video_type: videoType,
+        model,
+        status: "PROCESSING",
+      })
+      .select()
+      .single();
 
     if (insErr || !row) {
-      return new Response(
-        JSON.stringify({ error: "DB insert failed", detail: insErr?.message }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+      return new Response(JSON.stringify({ error: "DB insert failed", detail: insErr?.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Kick off background work
     // @ts-ignore - EdgeRuntime is available in Supabase edge runtime
-    EdgeRuntime.waitUntil(
-      runBackground(
-        supa,
-        row.id,
-        systemPrompt,
-        userPrompt,
-        model,
-        factCheckModel,
-        googleApiKey,
-      ),
-    );
+    EdgeRuntime.waitUntil(runBackground(supa, row.id, systemPrompt, userPrompt, model, factCheckModel, googleApiKey));
 
     return new Response(
       JSON.stringify({
@@ -362,12 +322,9 @@ serve(async (req) => {
       },
     );
   } catch (e) {
-    return new Response(
-      JSON.stringify({ error: String((e as Error)?.message ?? e) }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    return new Response(JSON.stringify({ error: String((e as Error)?.message ?? e) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
