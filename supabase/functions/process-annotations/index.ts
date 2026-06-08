@@ -8,12 +8,19 @@ const corsHeaders = {
 
 function getSupabaseServiceKey() {
   const secretKeys = Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0];
-  if (secretKeys) return secretKeys;
+  if (secretKeys) {
+    console.log(`[SupabaseKey] source=SUPABASE_SECRET_KEYS type=secret length=${secretKeys.length}`);
+    return secretKeys;
+  }
 
   for (const name of ["CUSTOM_SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_ROLE_KEY"]) {
     const raw = Deno.env.get(name)?.trim();
-    if (raw?.startsWith("sb_secret_") || raw?.startsWith("eyJ")) return raw;
+    if (raw?.startsWith("sb_secret_") || raw?.startsWith("eyJ")) {
+      console.log(`[SupabaseKey] source=${name} type=${raw.startsWith("sb_secret_") ? "secret" : "legacy"} length=${raw.length}`);
+      return raw;
+    }
   }
+  console.log("[SupabaseKey] missing usable backend key");
   return "";
 }
 
