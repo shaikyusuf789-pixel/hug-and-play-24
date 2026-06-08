@@ -283,6 +283,8 @@ serve(async (req) => {
     };
 
     const systemPrompt = buildSystemPrompt(videoType, inputMode, targetWords, overrides);
+    const styleBlock = buildStyleBlock(overrides);
+    const fullUserPrompt = `${styleBlock}\n\n================================================================\nUSER INPUT -- WHAT to speak about (facts/topic come ONLY from here):\n================================================================\n${userPrompt}\n\nFINAL REMINDER: Mimic the TONE / RHYTHM / CODE-MIX of the 3 REFERENCE TRANSCRIPTS above. Take FACTS only from the USER INPUT block. Follow the SKY DNA placement from the system prompt.`;
 
     const title = body.title || body.topic || "sky academy Script";
 
