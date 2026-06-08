@@ -473,7 +473,11 @@ function AnnotationsPage() {
         toast.info(`${label}: nothing to do — all chunks already have output`);
         return;
       }
-      toast.info(`${label}: processing ${pending.length} missing chunk(s)…`);
+      const skipped = kind === "clip"
+        ? chunks.filter((c) => !aiMap[c.id] && (!clipMap[c.id]?.file_url || clipMap[c.id]?.status !== "done")).length
+        : 0;
+      const skipNote = skipped ? ` (skipped ${skipped} without annotations)` : "";
+      toast.info(`${label}: processing ${pending.length} chunk(s) one at a time${skipNote}…`);
       let ok = 0, fail = 0;
       for (const c of pending) {
         try {
