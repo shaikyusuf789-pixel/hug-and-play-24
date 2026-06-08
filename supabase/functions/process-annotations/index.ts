@@ -7,27 +7,19 @@ const corsHeaders = {
 };
 
 function getSupabaseServiceKey() {
-  console.log(`[SupabaseEnv] ${Object.keys(Deno.env.toObject()).filter((name) => name.includes("SUPABASE") || name.includes("SB_")).sort().join(",")}`);
-  for (const name of ["SUPABASE_SECRET_KEYS", "CUSTOM_SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEYS"]) {
-    const raw = Deno.env.get(name) ?? "";
-    const type = raw.includes("sb_secret_") ? "secret-container" : raw.startsWith("sb_publishable_") || raw.includes("sb_publishable_") ? "publishable" : raw.startsWith("eyJ") ? "legacy" : raw.trim().startsWith("{") || raw.trim().startsWith("[") ? "json" : raw ? "other" : "missing";
-    console.log(`[SupabaseEnvShape] ${name} type=${type} length=${raw.length}`);
-  }
-
   const secretKeys = Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0];
-  if (secretKeys) {
-    console.log(`[SupabaseKey] source=SUPABASE_SECRET_KEYS type=secret length=${secretKeys.length}`);
-    return secretKeys;
+  if (secretKeys) return secretKeys;
+
+  for (const name of ["SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEYS"]) {
+    const raw = Deno.env.get(name)?.trim();
+    const key = raw?.match(/sb_publishable_[A-Za-z0-9_-]+/)?.[0] ?? raw;
+    if (key?.startsWith("sb_publishable_")) return key;
   }
 
   for (const name of ["CUSTOM_SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_ROLE_KEY"]) {
     const raw = Deno.env.get(name)?.trim();
-    if (raw?.startsWith("sb_secret_") || raw?.startsWith("eyJ")) {
-      console.log(`[SupabaseKey] source=${name} type=${raw.startsWith("sb_secret_") ? "secret" : "legacy"} length=${raw.length}`);
-      return raw;
-    }
+    if (raw?.startsWith("eyJ")) return raw;
   }
-  console.log("[SupabaseKey] missing usable backend key");
   return "";
 }
 
