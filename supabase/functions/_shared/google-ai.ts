@@ -3,6 +3,7 @@ export type GeminiTextOptions = {
   system?: string;
   user: string;
   temperature?: number;
+  maxOutputTokens?: number;
   responseMimeType?: "text/plain" | "application/json";
 };
 
@@ -51,7 +52,29 @@ function googleUrl(model: string, apiKey: string, stream = false) {
   return `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:${action}${join}key=${encodeURIComponent(assertGoogleAiStudioApiKey(apiKey))}`;
 }
 
+// Gemini 3.x Pro / reasoning models deprecated `temperature` and silently
+// burn tokens on internal "thinking". Detect them so we can drop temperature
+// and bump output budget so style/transcript instructions actually reach the
+// final visible output.
+function isReasoningProModel(model: string) {
+  const m = model.toLowerCase();
+  return /gemini-3(\.\d+)?-pro/.test(m);
+}
+
 export function buildGeminiBody(options: GeminiTextOptions) {
+  const modelName = (options.model || "").toLowerCase();
+  const reasoning = isReasoningProModel(modelName);
+
+  const generationConfig: Record<string, unknown> = {};
+  if (!reasoning) {
+    generationConfig.temperature = options.temperature ?? 0.2;
+  }
+  if (options.responseMimeType) {
+    generationConfig.responseMimeType = options.responseMimeType;
+  }
+  // Default high so reasoning tokens don't starve the visible output.
+  generationConfig.maxOutputTokens = options.maxOutputTokens ?? (reasoning ? 32000 : 8192);
+
   const body: Record<string, unknown> = {
     contents: [
       {
@@ -59,10 +82,7 @@ export function buildGeminiBody(options: GeminiTextOptions) {
         parts: [{ text: options.user }],
       },
     ],
-    generationConfig: {
-      temperature: options.temperature ?? 0.2,
-      ...(options.responseMimeType ? { responseMimeType: options.responseMimeType } : {}),
-    },
+    generationConfig,
   };
 
   if (options.system?.trim()) {
@@ -79,6 +99,10 @@ export function extractGeminiText(payload: any) {
     .trim();
 }
 
+export function extractGeminiFinishReason(payload: any): string | null {
+  return payload?.candidates?.[0]?.finishReason ?? null;
+}
+
 export async function geminiGenerateText(apiKey: string, options: GeminiTextOptions) {
   const model = normalizeGeminiModel(options.model);
   const response = await fetch(googleUrl(model, apiKey), {
@@ -89,12 +113,22 @@ export async function geminiGenerateText(apiKey: string, options: GeminiTextOpti
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => "");
-    throw new Error(`Google AI error ${response.status}: ${errorText.slice(0, 1000)}`);
+    throw new Error(`Google AI error ${response.status} [model=${model}]: ${errorText.slice(0, 1000)}`);
   }
 
   const json = await response.json();
   const text = extractGeminiText(json);
-  if (!text) throw new Error("Google AI returned an empty response");
+  const finishReason = extractGeminiFinishReason(json);
+  const usage = json?.usageMetadata;
+
+  console.log(`[gemini] model=${model} finishReason=${finishReason} usage=${JSON.stringify(usage)} textLen=${text.length}`);
+
+  if (!text) {
+    const hint = finishReason === "MAX_TOKENS"
+      ? " (MAX_TOKENS -- reasoning tokens consumed the budget; increase maxOutputTokens or trim input)"
+      : "";
+    throw new Error(`Google AI returned an empty response [model=${model} finishReason=${finishReason}]${hint} usage=${JSON.stringify(usage)}`);
+  }
   return text;
 }
 
