@@ -15,12 +15,10 @@ export type TrainingOverrides = {
 };
 
 function buildStyleReferenceBlock(overrides?: TrainingOverrides) {
-  return SKY_STYLE_TRANSCRIPTS
-  .map(
+  return SKY_STYLE_TRANSCRIPTS.map(
     (t, i) =>
       `--- REFERENCE TRANSCRIPT ${i + 1}: ${t.name} ---\n${overrides?.transcripts?.[i] || t.text}\n--- END REFERENCE ${i + 1} ---`,
-  )
-  .join("\n\n");
+  ).join("\n\n");
 }
 
 function buildStyleReferenceInstructions(overrides?: TrainingOverrides) {
@@ -35,17 +33,7 @@ is exempt. Before writing a single line, READ EVERY ALPHABET AND EVERY WORD
 of both transcripts. No skipping, no skimming. Internally study them and
 mimic EXACTLY:
 
-  - Telugu word choice and code-mixing (English technical terms inside
-    Telugu sentences, exactly the way the SKY anchor uses them).
-  - Sentence rhythm, length and natural pauses ("--", "...", short
-    re-statements like "ఓకే", "అంటే", "చూడండి").
-  - Filler / connector words actually used by the anchor
-    (e.g. "అయితే", "సో", "మరి", "అంటే ఏంటంటే", "ఇప్పుడు చూడండి",
-    "ఒకసారి చూసుకుందాము", "ఓకే వచ్చేద్దాం").
-  - Direct address to the student ("మీరు", "మీకు"), rhetorical
-    questions immediately answered.
-  - Teacher-in-classroom pacing: slow, repeat the key word, then
-    explain with a small example.
+
 
 These TWO transcripts OVERRIDE any tonal hint that may appear elsewhere.
 For language, styling, word formation, filler words, toning, paragraph
@@ -308,7 +296,6 @@ END SPECIAL INSTRUCTIONS
 ================================================================
 `;
 
-
 export const DNA_GENERAL = `
 ${SPECIAL_INSTRUCTIONS}
 
@@ -357,7 +344,6 @@ ${REPLICA_RULES}
 ${PROMOTIONS_BLOCK}
 `;
 
-
 const PRIORITY_NOTE = `
 THREE-LAYER RULE (DO NOT VIOLATE):
   1. WHAT to speak  -> ONLY from USER INPUT (topic, chapter/idea
@@ -401,16 +387,9 @@ MANDATORY READING ORDER before you write a single character:
   Step 4: Then -- and only then -- start generating.
 `;
 
-
-function buildSystem(
-  taskLine: string,
-  videoType: "GENERAL" | "SUBJECTIVE",
-  overrides?: TrainingOverrides,
-) {
+function buildSystem(taskLine: string, videoType: "GENERAL" | "SUBJECTIVE", overrides?: TrainingOverrides) {
   const dnaDefault = videoType === "SUBJECTIVE" ? DNA_SUBJECTIVE : DNA_GENERAL;
-  const dna =
-    (videoType === "SUBJECTIVE" ? overrides?.dna_subjective : overrides?.dna_general) ||
-    dnaDefault;
+  const dna = (videoType === "SUBJECTIVE" ? overrides?.dna_subjective : overrides?.dna_general) || dnaDefault;
   return `
 You are an expert Telugu video script writer for sky academy.
 ${taskLine}
@@ -459,4 +438,3 @@ export function systemPromptFor(
     overrides,
   );
 }
-
