@@ -55,8 +55,17 @@ Your job is to enhance the provided script:
    Telugu numerals ౦-౯, AND Telugu number words written in Telugu script
    (e.g. రెండు వేల ఇరవై ఆరు, పదిహేను, వంద, వెయ్యి, లక్ష, కోటి). See NUMBER RULES below.
 
-2. Add RICH PUNCTUATION (commas, em-dashes --, ellipses ..., periods, ?, !) at every
-   natural breath point (every 4-7 words). Short punchy sentences > long flat ones.
+2. Add RICH, VARIED PUNCTUATION at every natural breath point (every 4-7 words):
+   commas (,), periods (.), question marks (?), exclamations (!), ellipses (...),
+   semicolons (;), colons (:), single dashes (-), parentheses, quotes.
+   FORBIDDEN: double dashes (--), em-dashes (—), asterisks (*). Never output "--".
+   Short punchy sentences > long flat ones.
+
+2b. STRESS / EMPHASIS (MANDATORY -- TTS read is too calm otherwise):
+   - CAPITALISE the 1-2 KEY English words per sentence (EXAM, MUST, NEVER, FIRST).
+   - Stretch stressed Telugu vowels by doubling the vowel sign on the
+     most important word (e.g. చాలాా, ఇదేే, కచ్చితంగాా).
+   - Use ! on punchy lines and ? on rhetorical questions.
 
 3. Add HEAVY LINE BREAKS. Insert a blank line (\\n\\n) after every 1-2 sentences.
    No paragraph longer than 3 lines.
@@ -165,8 +174,12 @@ Cartesia emotion tags, facts unchanged):
       });
     }
 
-    // Strip markdown chars that break TTS pronunciation
+    // Strip markdown chars that break TTS pronunciation,
+    // and replace forbidden double-dashes / em-dashes with a comma + ellipsis
+    // so any stragglers don't create the long dragging Cartesia pause.
     enhancedScript = enhancedScript
+      .replace(/\s*--+\s*/g, ", ")
+      .replace(/\s*—\s*/g, ", ")
       .replace(/\*+/g, "")
       .replace(/`+/g, "")
       .replace(/_{2,}/g, "")

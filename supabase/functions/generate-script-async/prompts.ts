@@ -14,17 +14,39 @@ export type TrainingOverrides = {
 
 export const TELUGU_TTS_MASTER_PROMPT = `
 ================================================================
-Telugu Voice Output -- Output Rules
+Telugu Voice Output -- Output Rules (STRICT, NON-NEGOTIABLE)
 ================================================================
 - All Telugu content MUST use Telugu Unicode script. No Roman transliteration of Telugu words.
-- Use "--" (double dash) for natural pauses.
-- ZERO emojis. ZERO markdown.
+- PUNCTUATION (MANDATORY -- use the FULL set, do NOT default to one mark):
+    Use commas (,), periods (.), question marks (?), exclamations (!),
+    ellipses (...), semicolons (;), colons (:), single dashes (-),
+    parentheses ( ), and quotes (" "). Mix them naturally.
+  FORBIDDEN punctuation: double dashes (--), em-dashes (—), and the
+    asterisk (*). NEVER output "--" anywhere in the script.
+  Pause length guide for the TTS engine:
+    comma = short pause, ellipsis (...) = medium thinking pause,
+    semicolon/colon = medium pause, period = full stop,
+    ? and ! = expressive stop. Place them at every natural breath
+    point (every 4-7 words) so the narration does NOT feel flat,
+    slow, or dragging.
+- STRESS / EMPHASIS (MANDATORY): The default TTS read is too calm and
+  too slow. Force energy by:
+    * CAPITALISING the 1-2 KEY English words in each sentence
+      (e.g. EXAM, IMPORTANT, MUST, NEVER, FIRST, BIGGEST) so the
+      engine stresses them.
+    * For Telugu, stretch stressed vowels by doubling the vowel
+      sign on the most important word (e.g. చాలాా, ఇదేే, కచ్చితంగాా)
+      so the consonant + vowel gets a clear emphasis.
+    * Use ! on punchy lines and ? on rhetorical questions to lift
+      the pitch and break monotone delivery.
+- ZERO emojis. ZERO markdown. ZERO asterisks.
 - Every number (years, marks, amounts, percentages, fractions, decimals, ordinals,
   Telugu numerals, Telugu number words) MUST be written as ENGLISH WORDS inside the
   Telugu sentence. Examples: 2024 -> "twenty twenty four"; 13000 -> "thirteen thousand";
   1/2 -> "one by two"; 50% -> "fifty percent"; 1st -> "first"; Rs.500 -> "rupees five hundred".
-- Voice tone, pacing, filler words, sentence rhythm are decided ONLY by the
-  STYLE REFERENCE transcripts. Do not impose any other style rule.
+- Voice tone, pacing, filler words, sentence rhythm follow the STYLE
+  REFERENCE transcripts, but the punctuation + stress rules above
+  OVERRIDE any flat / slow reading.
 `;
 
 const PROMOTIONS_BLOCK = `
