@@ -6,6 +6,8 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { streamText } from "npm:ai";
+import { createLovableAiGatewayProvider, getLovableAiGatewayRunId } from "../_shared/ai-gateway.ts";
 import { extractGeminiText, geminiGenerateJson, geminiStreamResponse, normalizeGeminiModel, requireGoogleApiKey } from "../_shared/google-ai.ts";
 import {
   anthropicStreamResponse,
@@ -52,6 +54,7 @@ interface Body {
   inputMode?: "topic" | "transcript" | "pdf" | "idea";
   wordCount?: number;
   specialInstructions?: string;
+  provider?: string;
   model?: string;
   idea_id?: string | null;
   title?: string;
