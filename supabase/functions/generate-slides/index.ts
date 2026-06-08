@@ -48,7 +48,8 @@ async function callGamma(inputText: string, themeName: string, supabase: ReturnT
   const strictInstructions = [
     "PRESERVE MODE — the input text is FINAL COPY. Reproduce every word EXACTLY as provided. Do NOT rewrite, paraphrase, summarize, condense, expand, translate, reorder, add, or remove ANY word, bullet, punctuation, or line break.",
     "Output exactly one 16:9 widescreen slide (1920x1080) for YouTube/PowerPoint. Not a document, webpage, social post, square or vertical card. No fluid/tall/scrolling layout.",
-    "Layout: title at top, balanced two-column or compact grid below. Fit ALL preserved text by adjusting font size and spacing ONLY — never by editing the text.",
+    "Layout: title at top, balanced two-column or compact grid below. USE THE FULL SLIDE AREA — spread content edge-to-edge so the slide is comfortably filled, not crammed into a small center block.",
+    "TYPOGRAPHY (CRITICAL): font sizes must be MODERATE and clearly readable on a TV/YouTube thumbnail — NOT tiny ant-sized text and NOT giant elephant-sized text. Target body/bullet text around 28–36pt and heading around 48–60pt on a 1920x1080 canvas. Prefer adding a second column or expanding the layout over shrinking the font.",
     `Visual style: apply the ${themeName} theme. Include one relevant AI-generated image that fits the slide topic.`,
   ].join(" ")
 
@@ -168,11 +169,14 @@ serve(async (req) => {
     if (action === 'generate-prompt') {
       const promptResult = await geminiGenerateText(requireGoogleApiKey(), {
         model: 'gemini-2.5-flash-lite',
-        system: `You are an expert at creating slide content. ALWAYS write the output in ENGLISH ONLY, regardless of the input language. If the source text is in Telugu, Hindi, or any non-English language, translate the meaning into clear, natural English first, then produce the slide. Your output must be exactly one English heading followed by exactly 4 SHORT English bullet points (max 10 words each). No transliteration, no native script, no other text.
+        system: `You are an expert at creating slide content. ALWAYS write the output in ENGLISH ONLY, regardless of the input language. If the source text is in Telugu, Hindi, or any non-English language, translate the meaning into clear, natural English first, then produce the slide. Your output must be exactly one English heading followed by 5 to 8 SHORT English bullet points (max 12 words each). No transliteration, no native script, no other text.
+
+COVERAGE RULE (CRITICAL):
+The chunk may contain MULTIPLE distinct sub-topics (e.g. age limits AND educational qualifications, vacancy AND syllabus). You MUST cover EVERY sub-topic present in the chunk — never drop the second half. If there are two sub-topics, split bullets across both (e.g. 3+3 or 4+4). When helpful, prefix bullets with a short sub-topic tag like "Age:" or "Education:" so both topics are visibly represented.
 
 CRITICAL — VOCABULARY REUSE RULE:
 The bullets will later be matched word-for-word against the spoken audio of this same chunk. To make that alignment work, REUSE the exact same English words, phrases, and key nouns/verbs that already appear (or are the direct English translation of) the source chunk. Prefer the chunk's own vocabulary over fancy synonyms. Keep numbers, names, brand terms, and technical words verbatim. Short, plain bullets that echo the chunk's wording > clever rephrased bullets.`,
-        user: `Source chunk (this is the FINAL spoken script — may be in any language; translate to English while keeping the same words/phrases wherever possible):\n\n${chunk.content}\n\nProduce: one English heading and exactly 4 SHORT English bullet points (max 10 words each). English only. REUSE the chunk's own words/phrases as much as possible so the bullets read like a condensed echo of the script, not a paraphrase. Keep bullets tight so the slide renders with large readable font.`,
+        user: `Source chunk (this is the FINAL spoken script — may be in any language; translate to English while keeping the same words/phrases wherever possible):\n\n${chunk.content}\n\nProduce: one English heading and 5 to 8 SHORT English bullet points (max 12 words each). English only. COVER EVERY sub-topic in the chunk — do not drop the second half if the chunk has two themes. REUSE the chunk's own words/phrases as much as possible. Keep bullets tight and moderately sized so the slide fills the full area with comfortable, readable (not ant-sized) font.`,
         temperature: 0.2,
       })
 
