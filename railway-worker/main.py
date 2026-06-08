@@ -17,6 +17,12 @@ Pipeline routes:
 import json
 import os
 import tempfile
+import threading
+
+# Global render lock — ensures only ONE clip renders at a time on the worker.
+# Each render holds ~1500 raw RGBA frames in memory (≈5GB); running multiple
+# in parallel OOM-kills the container. BackgroundTasks queue up behind this.
+RENDER_LOCK = threading.Lock()
 from contextlib import asynccontextmanager
 from pathlib import Path
 
