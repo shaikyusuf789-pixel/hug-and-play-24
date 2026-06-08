@@ -317,6 +317,10 @@ serve(async (req) => {
       targetWords,
       overrides,
     );
+    const styleBlock = buildStyleBlock(overrides);
+    // Put the voice samples FIRST in the user turn so reasoning models
+    // (gemini 3.x pro) and Claude don't skip them via "lost in the middle".
+    const fullUserPrompt = `${styleBlock}\n\n================================================================\nUSER INPUT -- WHAT to speak about (facts/topic come ONLY from here):\n================================================================\n${userPrompt}\n\nFINAL REMINDER: Mimic the TONE / RHYTHM / CODE-MIX of the 3 REFERENCE TRANSCRIPTS above. Take FACTS only from the USER INPUT block. Follow the SKY DNA placement from the system prompt.`;
     // Initial placeholder title -- gets REPLACED with an AI-derived title
     // after generation completes (see deriveTitleFromText below).
     const rawTitle = (body.title || body.topic || "").trim();
