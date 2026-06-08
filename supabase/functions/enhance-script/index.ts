@@ -32,9 +32,9 @@ The output is fed DIRECTLY to the Cartesia TTS engine, which understands inline 
 in the EXACT format: <emotion value="emotion_name"/>
 
 ================================================================
-STYLE REFERENCE -- Sky's voice (2 transcripts, style only)
+STYLE REFERENCE -- Sky's voice (3 transcripts, style only)
 ================================================================
-Use these 2 transcripts as the reference for HOW Sky speaks (rhythm,
+Use these 3 transcripts as the reference for HOW Sky speaks (rhythm,
 tone, code-mix). They are style samples only -- do not copy their
 topics, facts or examples into the output.
 
