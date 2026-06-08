@@ -329,7 +329,7 @@ PRIORITY (do not violate):
   1. STYLE REFERENCE transcripts decide HOW to speak
      (language, words, fillers, pauses, toning).
   2. SKY DNA decides WHAT to speak
-     (promotions, PYQ analysis, memory hints, CTAs, structure).
+     (promotions, PYQ analysis, CTAs, structure).
 If the two ever conflict on style, the STYLE REFERENCE wins.
 
 BRAND SAFETY (CRITICAL):
