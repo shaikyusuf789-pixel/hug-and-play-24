@@ -11,15 +11,15 @@ const corsHeaders = {
 const GAMMA_API = "https://public-api.gamma.app/v1.0/generations"
 
 function getSupabaseServiceKey() {
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim()
-    ?? Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")?.trim()
-    ?? ""
-  if (serviceRoleKey) return serviceRoleKey
-
+  // Project has legacy JWT keys DISABLED, so SUPABASE_SERVICE_ROLE_KEY (auto-injected JWT)
+  // is rejected by PostgREST. Use the modern sb_secret_* key first.
   const secretKey = Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0]
   if (secretKey) return secretKey
 
-  return ""
+  const custom = Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")?.trim()
+  if (custom?.startsWith("sb_secret_")) return custom
+
+  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 }
 
 function readPngDimensions(bytes: Uint8Array) {
