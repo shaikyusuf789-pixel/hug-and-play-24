@@ -11,20 +11,21 @@ const corsHeaders = {
 const GAMMA_API = "https://public-api.gamma.app/v1.0/generations"
 
 function getSupabaseServiceKey() {
-  // Match generate-audio / process-queue resolution (proven to work in this project):
-  // 1. sb_secret_ from SUPABASE_SECRET_KEYS  2. sb_publishable_ fallback  3. legacy SRK
+  // SERVICE-ROLE ONLY. This function writes to script_chunks and uploads to the
+  // `slides` storage bucket — both require service-role auth. Never fall back to
+  // publishable/anon keys here: anon cannot upload to `slides`, which surfaces as
+  // "new row violates row-level security policy".
+  // Priority: 1) sb_secret_ from SUPABASE_SECRET_KEYS  2) CUSTOM_SUPABASE_SERVICE_ROLE_KEY  3) legacy SUPABASE_SERVICE_ROLE_KEY
   const secretKey = Deno.env.get("SUPABASE_SECRET_KEYS")?.match(/sb_secret_[A-Za-z0-9_-]+/)?.[0]
   if (secretKey) return secretKey
 
-  for (const name of ["SUPABASE_PUBLISHABLE_KEY", "SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEYS"]) {
-    const raw = Deno.env.get(name)?.trim()
-    const key = raw?.match(/sb_publishable_[A-Za-z0-9_-]+/)?.[0] ?? raw
-    if (key?.startsWith("sb_publishable_")) return key
-  }
+  const custom = Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")?.trim()
+  if (custom) return custom
 
-  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
-    ?? Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY")
-    ?? ""
+  const legacy = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim()
+  if (legacy) return legacy
+
+  throw new Error("No service-role key available (SUPABASE_SECRET_KEYS / CUSTOM_SUPABASE_SERVICE_ROLE_KEY / SUPABASE_SERVICE_ROLE_KEY all missing)")
 }
 
 function readPngDimensions(bytes: Uint8Array) {
